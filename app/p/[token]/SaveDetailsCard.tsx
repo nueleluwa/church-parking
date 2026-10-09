@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { errorBox, field, primaryButton } from "@/components/ui";
+import { errorBox, field, redButton } from "@/components/ui";
 import { Spinner } from "@/components/Spinner";
 import { saveGuestDetails, type SaveDetailsState } from "./actions";
 
@@ -47,7 +47,7 @@ export function SaveDetailsCard({ token }: { token: string }) {
             {state.error}
           </p>
         )}
-        <button disabled={pending} className={primaryButton}>
+        <button disabled={pending} className={redButton}>
           {pending && <Spinner />}
           {pending ? "Please wait..." : "Create my account"}
         </button>

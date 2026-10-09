@@ -4,7 +4,7 @@ import { useActionState, useRef, useState } from "react";
 import { BlockedCard } from "@/components/BlockedCard";
 import { Plate } from "@/components/Plate";
 import { Spinner } from "@/components/Spinner";
-import { errorBox, field, primaryButton, secondaryButton } from "@/components/ui";
+import { errorBox, field, outlineButton, redButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import { checkInAsGuest, type CheckInState } from "./actions";
 
@@ -12,11 +12,9 @@ type Props = {
   areaSlug: string;
   services: { id: number; name: string; time: string }[];
   defaultServiceId: number;
-  /** Returns to the welcome (sign in or guest). Hidden while a refusal is showing. */
-  onBack?: () => void;
 };
 
-export function GuestForm({ areaSlug, services, defaultServiceId, onBack }: Props) {
+export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
   const [state, action, pending] = useActionState<CheckInState, FormData>(checkInAsGuest, {});
   const formRef = useRef<HTMLFormElement>(null);
   const { values, bind } = useFields({
@@ -90,14 +88,9 @@ export function GuestForm({ areaSlug, services, defaultServiceId, onBack }: Prop
           </p>
         )}
 
-        <button type="button" onClick={review} className={primaryButton}>
+        <button type="button" onClick={review} className={redButton}>
           Get my pass
         </button>
-        {onBack && (
-          <button type="button" onClick={onBack} className="w-full text-center font-medium text-accent underline">
-            Back
-          </button>
-        )}
       </div>
 
       {showConfirm && !showBlocked && (
@@ -112,11 +105,11 @@ export function GuestForm({ areaSlug, services, defaultServiceId, onBack }: Prop
           <p className="text-sm text-ink-soft">
             The attendant will check these when you leave. A wrong plate or number can hold up your car.
           </p>
-          <button type="submit" disabled={pending} className={primaryButton}>
+          <button type="submit" disabled={pending} className={redButton}>
             {pending && <Spinner />}
             {pending ? "Please wait..." : "Yes, get my pass"}
           </button>
-          <button type="button" onClick={() => setConfirmedAt(null)} disabled={pending} className={secondaryButton}>
+          <button type="button" onClick={() => setConfirmedAt(null)} disabled={pending} className={outlineButton}>
             Change something
           </button>
         </div>

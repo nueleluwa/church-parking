@@ -68,3 +68,8 @@ Each entry records what was decided and why. To change a decision, add a new ent
 ## D-15 Guests can save their details as a member account (CI-7, brought forward)
 **Decision:** on a guest's own pass, an optional "Save your details" card lets them choose a PIN and become a member. The name, phone number and car they already gave are kept. It works only from the phone that holds the pass, in one database step (`convert_guest_to_member`), and the visit becomes the member's own.
 **Why:** the member-screen brief asks guests to be offered this, and the spec lists it as v1.1. It is built, not just shown, so nothing on screen promises something that does not work.
+
+## D-16 Member screens follow the member journey: red main buttons, title headers, tab bar
+**Decision:** member-facing screens use the layout of `references/Church Parking Check-In Journey.png`: a title header with a back arrow for Check In, Confirm Check In, Continue as guest and My Account (the logo header stays on the welcome, the pass and the home page), a two-step stepper, selectable car rows with a red radio, a pale-red panel for service and area, a green "checked in" pass card, underline tabs for My Account, and a member tab bar (Home, My Vehicles, History, More). Main buttons on these screens are church red.
+**Not changed:** attendant and admin screens keep black main buttons, so **Release car** is never beside a red button that looks the same. Status colours stay as in D-11, so the pass is green when valid.
+**Why:** the church preferred the journey's look for members. Red is safe on member screens because nothing there is a risky action.

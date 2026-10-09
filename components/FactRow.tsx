@@ -9,12 +9,12 @@ import type { ReactNode } from "react";
 export function FactRow({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
     <div className="@container py-3">
-      <div className="flex flex-col gap-0.5 @[17rem]:flex-row @[17rem]:items-start @[17rem]:justify-between @[17rem]:gap-3">
+      <div className="flex flex-col gap-0.5 @[15rem]:flex-row @[15rem]:items-start @[15rem]:justify-between @[15rem]:gap-3">
         <dt className="flex shrink-0 items-center gap-2 text-ink-soft">
           <span aria-hidden="true">{icon}</span>
           {label}
         </dt>
-        <dd className="min-w-0 break-words pl-7 font-semibold @[17rem]:pl-0 @[17rem]:text-right">{children}</dd>
+        <dd className="min-w-0 break-words pl-7 font-semibold @[15rem]:pl-0 @[15rem]:text-right">{children}</dd>
       </div>
     </div>
   );

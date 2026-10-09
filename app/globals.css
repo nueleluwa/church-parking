@@ -19,6 +19,7 @@
 
   /* Church red: accents, links, focus, warnings. Close to the logo's infinity mark. */
   --color-accent: #b3121b;
+  --color-accent-dark: #8f0e15;
   --color-danger: #b3121b;
 
   /* Status colours, used the same way everywhere (see StatusBadge):

@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
-import { IconCar } from "@/components/icons";
-import { primaryButton } from "@/components/ui";
+import { AreaCard } from "@/components/AreaCard";
+import { IconCheck } from "@/components/icons";
+import { PrivacyNotice } from "@/components/PrivacyNotice";
+import { TitleHeader } from "@/components/TitleHeader";
+import { redButton } from "@/components/ui";
 import {
   getAreaBySlug,
   getPassByToken,
@@ -53,87 +56,78 @@ export default async function CheckInPage({ params }: { params: Promise<{ area: 
   const noServiceMessage = hasServiceToday(now, allServices)
     ? "The services have finished for today. Please see an attendant."
     : "There is no service today. Check-in opens on Sunday.";
+  const addVehicleHref = `/account?next=${encodeURIComponent(`/c/${area.slug}`)}`;
 
-  const guestForm = (
-    <GuestForm areaSlug={area.slug} services={services} defaultServiceId={picked?.id ?? 0} />
-  );
+  // A member with saved cars: choose a car, then Check in. That flow draws its own title header.
+  if (member && vehicles.length > 0) {
+    return (
+      <MemberCheckIn
+        areaSlug={area.slug}
+        areaName={area.name}
+        addVehicleHref={addVehicleHref}
+        vehicles={vehicles}
+        services={services}
+        defaultServiceId={picked?.id ?? 0}
+        noServiceMessage={noServiceMessage}
+      />
+    );
+  }
+
+  // Someone not signed in, with no pass yet and a service open: the welcome, then the guest form.
+  if (!member && !hasLivePass && services.length > 0) {
+    return (
+      <GuestEntry
+        areaSlug={area.slug}
+        areaName={area.name}
+        services={services}
+        defaultServiceId={picked?.id ?? 0}
+      />
+    );
+  }
 
   return (
     <>
-      <AppHeader />
-      <main className="mx-auto max-w-md space-y-4 px-4 py-6">
-        <div className="rounded-card bg-card p-6 shadow-sm">
-          <p className="text-sm font-medium text-ink-soft">You are parking in</p>
-          <h1 className="flex items-center gap-3 text-3xl font-bold">
-            <IconCar className="h-8 w-8 text-accent" />
-            {area.name}
-          </h1>
+      {member ? <TitleHeader title="Check In" backHref="/account" /> : <AppHeader />}
+      <main className="mx-auto max-w-md space-y-5 px-4 pb-10 pt-6">
+        <AreaCard name={area.name} />
 
-          {member ? (
-            <div className="mt-5">
-              {vehicles.length === 0 ? (
-                <div className="space-y-3">
-                  <p>You have no saved cars yet. Save your car once, then check in with two taps.</p>
-                  <Link href={`/account?next=${encodeURIComponent(`/c/${area.slug}`)}`} className={primaryButton}>
-                    Save my car
-                  </Link>
-                </div>
-              ) : (
-                <MemberCheckIn
-                  areaSlug={area.slug}
-                  areaName={area.name}
-                  addVehicleHref={`/account?next=${encodeURIComponent(`/c/${area.slug}`)}`}
-                  vehicles={vehicles}
-                  services={services}
-                  defaultServiceId={picked?.id ?? 0}
-                  noServiceMessage={noServiceMessage}
-                />
-              )}
-              <p className="mt-4 text-center">
-                <Link href="/account" className="font-medium text-accent underline">
-                  My account
-                </Link>
+        {member ? (
+          <div className="space-y-3 rounded-card bg-card p-5 shadow-sm">
+            <p>You have no saved cars yet. Save your car once, then check in with two taps.</p>
+            <Link href={addVehicleHref} className={redButton}>
+              Save my car
+            </Link>
+          </div>
+        ) : hasLivePass ? (
+          <div className="space-y-4">
+            <div className="space-y-3 rounded-card border-2 border-success bg-success-soft p-5">
+              <p className="flex items-center gap-2 font-bold">
+                <IconCheck className="h-5 w-5 shrink-0" />
+                You already have a pass on this phone.
               </p>
+              <p className="text-sm text-ink-soft">
+                Staying for more than one service? Your pass is good all day. You do not need to check in again.
+              </p>
+              <Link href={`/p/${token}`} className={redButton}>
+                Show my pass
+              </Link>
             </div>
-          ) : hasLivePass ? (
-            <div className="mt-5 space-y-4">
-              <div className="space-y-3">
-                <p className="font-medium">You already have a pass on this phone.</p>
-                <p className="text-sm text-ink-soft">
-                  Staying for more than one service? Your pass is good all day. You don&apos;t need to check in again.
-                </p>
-                <Link href={`/p/${token}`} className={primaryButton}>
-                  Show my pass
-                </Link>
-              </div>
-              {services.length > 0 && (
-                <details>
-                  <summary className="cursor-pointer font-medium text-accent underline">
-                    Check in a different car
-                  </summary>
-                  <div className="mt-4">{guestForm}</div>
-                </details>
-              )}
-            </div>
-          ) : services.length === 0 ? (
-            <p className="mt-5 font-medium">{noServiceMessage}</p>
-          ) : (
-            <div className="mt-4">
-              <GuestEntry
-                areaSlug={area.slug}
-                areaName={area.name}
-                services={services}
-                defaultServiceId={picked?.id ?? 0}
-              />
-            </div>
-          )}
-        </div>
+            {services.length > 0 && (
+              <details className="rounded-card bg-card p-5 shadow-sm">
+                <summary className="cursor-pointer font-semibold text-accent underline">
+                  Check in a different car
+                </summary>
+                <div className="mt-4">
+                  <GuestForm areaSlug={area.slug} services={services} defaultServiceId={picked?.id ?? 0} />
+                </div>
+              </details>
+            )}
+          </div>
+        ) : (
+          <p className="rounded-card bg-card p-5 font-medium shadow-sm">{noServiceMessage}</p>
+        )}
 
-        <p className="px-2 text-sm text-ink-soft">
-          We ask for your name, phone number and plate number so an attendant can check that the
-          right person drives the car away. Only church parking staff can see them. We keep them for
-          24 months, then delete them.
-        </p>
+        <PrivacyNotice />
       </main>
     </>
   );

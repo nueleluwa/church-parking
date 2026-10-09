@@ -123,7 +123,7 @@ test("a member's history shows a parked car in green and a finished visit in neu
   await expect(admin.getByText("Car released")).toBeVisible({ timeout: 60_000 });
 
   await page.reload();
-  const left = page.getByText("Left", { exact: true });
+  const left = page.getByText("Released", { exact: true });
   await expect(left).toBeVisible({ timeout: 60_000 });
   expect(await left.evaluate((n) => getComputedStyle(n.closest("span")!).borderColor)).not.toBe(GREEN);
 });

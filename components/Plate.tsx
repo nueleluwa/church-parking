@@ -15,22 +15,35 @@ const SIZES = {
   md: "border-2 px-2.5 py-1 text-xl text-[clamp(1rem,8cqw,1.5rem)]",
 } as const;
 
+const PLAIN = {
+  xl: "text-3xl text-[clamp(1.5rem,11cqw,2.5rem)]",
+  lg: "text-2xl text-[clamp(1.25rem,9.5cqw,2rem)]",
+  md: "text-lg text-[clamp(1rem,7cqw,1.25rem)]",
+} as const;
+
 export function Plate({
   plate,
   size = "lg",
   align = "center",
+  variant = "boxed",
   className = "",
 }: {
   plate: string;
   size?: keyof typeof SIZES;
   align?: "center" | "start";
+  /** boxed: like a real plate (attendant screens). plain: bold text only (member screens). */
+  variant?: "boxed" | "plain";
   className?: string;
 }) {
   return (
     <div className={`@container w-full min-w-0 ${align === "center" ? "text-center" : "text-left"} ${className}`}>
       <span
         data-plate
-        className={`inline-flex max-w-full items-center justify-center whitespace-nowrap rounded-xl border-ink bg-white font-extrabold leading-none tracking-wider ${SIZES[size]}`}
+        className={
+          variant === "plain"
+            ? `inline-block max-w-full whitespace-nowrap font-extrabold leading-tight tracking-wide ${PLAIN[size]}`
+            : `inline-flex max-w-full items-center justify-center whitespace-nowrap rounded-xl border-ink bg-white font-extrabold leading-none tracking-wider ${SIZES[size]}`
+        }
       >
         {formatPlate(plate)}
       </span>

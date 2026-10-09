@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { errorBox, field, primaryButton } from "@/components/ui";
+import { errorBox, field, redButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import { signUp, type FormState } from "../actions";
 
@@ -49,7 +49,7 @@ export function SignUpForm({ next }: { next: string }) {
           {state.error}
         </p>
       )}
-      <button disabled={pending} className={primaryButton}>
+      <button disabled={pending} className={redButton}>
         {pending ? "Please wait..." : "Create my account"}
       </button>
     </form>

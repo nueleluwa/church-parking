@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { IconPlus } from "@/components/icons";
-import { field, primaryButton, secondaryButton } from "@/components/ui";
+import { field, outlineButton, redButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import { VehicleRow } from "@/components/VehicleRow";
 import { Spinner } from "@/components/Spinner";
@@ -29,7 +29,7 @@ export function VehicleItem({ vehicle }: { vehicle: Vehicle }) {
   }
 
   return (
-    <li className="rounded-2xl border-2 border-edge/20 bg-card p-3">
+    <li className="py-3">
       <VehicleRow
         plate={vehicle.plate}
         make={vehicle.make}
@@ -88,11 +88,11 @@ export function VehicleItem({ vehicle }: { vehicle: Vehicle }) {
           </label>
           <Messages state={state} />
           <div className="grid grid-cols-2 gap-3">
-            <button disabled={pending} className={primaryButton}>
+            <button disabled={pending} className={redButton}>
               {pending && <Spinner />}
               {pending ? "Saving..." : "Save details"}
             </button>
-            <button type="button" disabled={pending} onClick={() => setMode("view")} className={secondaryButton}>
+            <button type="button" disabled={pending} onClick={() => setMode("view")} className={outlineButton}>
               Cancel
             </button>
           </div>
@@ -105,7 +105,7 @@ export function VehicleItem({ vehicle }: { vehicle: Vehicle }) {
           <p className="font-semibold">Remove this car from your account? You can add it again later.</p>
           <div className="grid grid-cols-2 gap-3">
             <button className="rounded-full bg-danger px-4 py-3 font-semibold text-white">Yes, remove</button>
-            <button type="button" onClick={() => setMode("view")} className={secondaryButton}>
+            <button type="button" onClick={() => setMode("view")} className={outlineButton}>
               Keep it
             </button>
           </div>
@@ -115,20 +115,35 @@ export function VehicleItem({ vehicle }: { vehicle: Vehicle }) {
   );
 }
 
-export function AddVehicleToggle({ children, startOpen = false }: { children: React.ReactNode; startOpen?: boolean }) {
+/**
+ * The "My vehicles" heading with a small + Add vehicle button on its right. Pressing it opens
+ * the add form just below the heading.
+ */
+export function AddVehicleToggle({
+  title,
+  children,
+  startOpen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  startOpen?: boolean;
+}) {
   const [open, setOpen] = useState(startOpen);
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="flex items-center gap-1.5 rounded-full border-2 border-edge bg-white px-4 py-2 font-semibold"
-      >
-        <IconPlus className="h-4 w-4" />
-        Add vehicle
-      </button>
-      {open && <div className="mt-4">{children}</div>}
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-xl font-bold">{title}</h2>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="flex shrink-0 items-center gap-1.5 rounded-xl border-2 border-edge/40 bg-white px-3.5 py-2 font-semibold"
+        >
+          <IconPlus className="h-4 w-4" />
+          Add vehicle
+        </button>
+      </div>
+      {open && <div className="mt-4 rounded-card bg-card p-5 shadow-sm">{children}</div>}
     </div>
   );
 }

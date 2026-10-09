@@ -7,6 +7,12 @@ const buttonBase =
 
 export const primaryButton = `${buttonBase} bg-action text-white shadow-sm hover:bg-action-dark`;
 
+/** Main button on member-facing screens (check-in, pass, account): church red, like the member journey. Attendant screens keep black. */
+export const redButton = `${buttonBase} bg-accent text-white shadow-sm hover:bg-accent-dark`;
+
+/** The quieter partner of redButton: white with a dark outline. */
+export const outlineButton = `${buttonBase} border-2 border-edge/70 bg-white text-ink hover:bg-page`;
+
 export const secondaryButton = `${buttonBase} border-2 border-edge bg-white text-ink hover:bg-page`;
 
 export const dangerButton = `${buttonBase} border-2 border-danger bg-white text-danger hover:bg-page`;

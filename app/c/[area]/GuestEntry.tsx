@@ -2,61 +2,77 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { AppHeader } from "@/components/AppHeader";
+import { AreaCard } from "@/components/AreaCard";
 import { IconUser } from "@/components/icons";
-import { primaryButton, secondaryButton } from "@/components/ui";
+import { PrivacyNotice } from "@/components/PrivacyNotice";
+import { TitleHeader } from "@/components/TitleHeader";
+import { outlineButton, redButton } from "@/components/ui";
 import { GuestForm } from "./GuestForm";
 
 type Props = {
   areaSlug: string;
-  areaName?: string;
+  areaName: string;
   services: { id: number; name: string; time: string }[];
   defaultServiceId: number;
 };
 
 /**
- * The welcome for someone who is not signed in: sign in as a member (fastest), or continue
- * as a guest, which opens the short guest form. The car park already comes from the QR sign.
+ * What someone sees when they scan a car park sign and are not signed in. It is the whole
+ * screen, header included: the welcome has the logo header, and the guest form has a title
+ * header with a back arrow, as in the member journey. The car park comes from the QR sign,
+ * so there is nothing to choose.
  */
-export function GuestEntry({ areaSlug, services, defaultServiceId }: Props) {
+export function GuestEntry({ areaSlug, areaName, services, defaultServiceId }: Props) {
   const [guest, setGuest] = useState(false);
   const next = encodeURIComponent(`/c/${areaSlug}`);
 
   if (guest) {
     return (
-      <GuestForm
-        areaSlug={areaSlug}
-        services={services}
-        defaultServiceId={defaultServiceId}
-        onBack={() => setGuest(false)}
-      />
+      <>
+        <TitleHeader title="Continue as guest" onBack={() => setGuest(false)} />
+        <main className="mx-auto max-w-md space-y-5 px-4 pb-10 pt-6">
+          <p className="text-ink-soft">
+            Enter your name, phone number and plate number. You do not need an account.
+          </p>
+          <GuestForm areaSlug={areaSlug} services={services} defaultServiceId={defaultServiceId} />
+          <PrivacyNotice />
+        </main>
+      </>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <p className="text-ink-soft">
-        Check in your car and get your digital parking pass in seconds.
-      </p>
-      <ol className="space-y-1 text-sm text-ink-soft">
-        <li>1. Choose how to continue.</li>
-        <li>2. Check in your car.</li>
-        <li>3. Show your pass at the exit.</li>
-      </ol>
-      <div className="space-y-3">
-        <Link href={`/account/signin?next=${next}`} className={primaryButton}>
-          Sign in to my account
-        </Link>
-        <button type="button" onClick={() => setGuest(true)} className={secondaryButton}>
-          <IconUser className="h-5 w-5" />
-          Continue as guest
-        </button>
-      </div>
-      <p className="text-center">
-        New member?{" "}
-        <Link href={`/account/signup?next=${next}`} className="font-semibold text-accent underline">
-          Create an account
-        </Link>
-      </p>
-    </div>
+    <>
+      <AppHeader />
+      <main className="mx-auto max-w-md space-y-6 px-4 pb-10 pt-6">
+        <AreaCard name={areaName} />
+
+        <div>
+          <h1 className="text-4xl font-extrabold leading-tight">Church Parking Made Simple</h1>
+          <p className="mt-3 text-lg text-ink-soft">
+            Scan, register and get your digital parking pass in seconds.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <Link href={`/account/signin?next=${next}`} className={redButton}>
+            Sign in to my account
+          </Link>
+          <button type="button" onClick={() => setGuest(true)} className={outlineButton}>
+            <IconUser className="h-5 w-5" />
+            Continue as guest
+          </button>
+          <p className="pt-1 text-center">
+            New member?{" "}
+            <Link href={`/account/signup?next=${next}`} className="font-semibold text-accent underline">
+              Create an account
+            </Link>
+          </p>
+        </div>
+
+        <PrivacyNotice />
+      </main>
+    </>
   );
 }

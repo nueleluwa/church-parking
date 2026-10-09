@@ -29,7 +29,7 @@ test("member saves a car, checks in with two taps, guest cannot take the plate, 
 
   await signUp(page, phone, "4821", "?next=/c/cp1");
   await expect(page).toHaveURL(/\/c\/cp1$/, { timeout: 60_000 });
-  await expect(page.getByText("You have no saved cars yet")).toBeVisible();
+  await expect(page.getByText("You have no saved cars yet")).toBeVisible({ timeout: 60_000 });
 
   await page.goto("/account");
   await page.getByLabel("Plate number").fill(plate);
@@ -67,8 +67,10 @@ test("member saves a car, checks in with two taps, guest cannot take the plate, 
   await page.goto("/account");
   await expect(page.getByRole("link", { name: "Show my pass" })).toBeVisible();
 
-  // Sign out, then 5 wrong PINs pause sign-in, even for the right PIN
+  // Sign out (it is on the More screen), then 5 wrong PINs pause sign-in, even for the right PIN
+  await page.goto("/account/more");
   await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/$/, { timeout: 30_000 });
   for (let i = 0; i < 5; i++) {
     await page.goto("/account/signin");
     await page.getByLabel("Phone number").fill(phone);
@@ -89,6 +91,8 @@ test("a member can delete their account", async ({ page }) => {
   await expect(page).toHaveURL(/\/account\?welcome=1$/, { timeout: 60_000 });
   await expect(page.getByText("Keep this app on your phone")).toBeVisible();
 
+  // Deleting the account is on the More screen
+  await page.goto("/account/more");
   await page.locator("summary", { hasText: "Delete my account" }).click();
   await page.getByLabel("Your PIN", { exact: true }).fill("7391");
   await page.getByLabel("Yes, delete my account").check();

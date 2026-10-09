@@ -51,7 +51,7 @@ test("the QR sign opens the right car park with a clear welcome, a way in for me
   // The church logo, and the car park from the QR sign: nothing to choose
   await expect(page.locator("header img[alt='CCI']")).toBeVisible({ timeout: 60_000 });
   await expect(page.getByRole("heading", { name })).toBeVisible();
-  await expect(page.getByText("Check in your car and get your digital parking pass in seconds.")).toBeVisible();
+  await expect(page.getByText("Scan, register and get your digital parking pass in seconds.")).toBeVisible();
 
   // Members sign in (and come straight back here), or continue as a guest
   const signIn = page.getByRole("link", { name: "Sign in to my account" });
@@ -172,7 +172,7 @@ test("a member picks a car and checks in in two taps, with the car's picture and
   await expect(page.locator("[data-plate]")).toHaveText(`${first.slice(0, 3)} ${first.slice(3, 6)} ${first.slice(6)}`);
   await expect(page.getByText("Toyota Corolla · Silver")).toBeVisible();
   await expect(page.locator("[data-area]")).toHaveText(cp1);
-  await expect(page.getByText("From the QR sign")).toBeVisible();
+  await expect(page.getByText("Selected from the QR sign")).toBeVisible();
   await expect(page.getByText("Service", { exact: true })).toBeVisible();
   // No service step is in the way. The service can still be changed whenever there is more than one to choose from.
   const { data: services } = await adminClient().from("services").select("id, weekday, starts_at, ends_at").eq("active", true);
@@ -325,12 +325,11 @@ test("My vehicles can edit and remove a car, and Parking history lists real visi
   const rows = page.locator("main li").filter({ hasText: spaced });
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(0)).toContainText("Parked");
-  await expect(rows.nth(1)).toContainText("Left");
+  await expect(rows.nth(1)).toContainText("Released");
   await expect(rows.nth(0)).toContainText(await areaName("cp2"));
   await expect(rows.nth(1)).toContainText(await areaName("cp1"));
   await expect(rows.nth(0)).toContainText(/Today, \d{2}:\d{2}/);
   await expect(rows.nth(0)).toContainText(/Automated test service|Service \d/);
-  await expect(rows.first().locator(ILLUSTRATION)).toHaveCount(1);
   // The car that is still parked opens its pass; a finished visit has no link
   await expect(rows.nth(0).getByRole("link")).toHaveCount(1);
   await expect(rows.nth(1).getByRole("link")).toHaveCount(0);

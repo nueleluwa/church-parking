@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { BlockedCard } from "@/components/BlockedCard";
 import { FactRow } from "@/components/FactRow";
-import { IconCheck, IconClock, IconPin, IconPlus } from "@/components/icons";
+import { IconCheck, IconClock, IconLock, IconPin, IconPlus } from "@/components/icons";
 import { Plate } from "@/components/Plate";
+import { PrivacyNotice } from "@/components/PrivacyNotice";
 import { Spinner } from "@/components/Spinner";
-import { errorBox, field, primaryButton } from "@/components/ui";
+import { Stepper } from "@/components/Stepper";
+import { TitleHeader } from "@/components/TitleHeader";
+import { errorBox, field, redButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import { VehicleImage } from "@/components/VehicleImage";
 import { VehicleRow } from "@/components/VehicleRow";
@@ -28,10 +31,11 @@ type Props = {
 };
 
 /**
- * A returning member's check-in in two taps: choose a car, then Check in. The service
- * is chosen for them (rule R-1) and the car park comes from the QR sign, so the second
- * screen only confirms. A car already checked in today shows its pass instead, because
- * a pass is good for all three services.
+ * A returning member's check-in in two taps: choose a car, then Check in. The service is
+ * chosen for them (rule R-1) and the car park comes from the QR sign, so the second screen
+ * only confirms. A car already checked in today shows its pass instead, because a pass is
+ * good for all three services. This component draws the whole screen, header included,
+ * because the header title changes with the step ("Check In", then "Confirm Check In").
  */
 export function MemberCheckIn({
   areaSlug,
@@ -53,31 +57,42 @@ export function MemberCheckIn({
   const chosen = free.find((v) => v.id === vehicleId);
   const service = services.find((s) => String(s.id) === values.serviceId) ?? services[0];
   const hasService = services.length > 0;
+  const confirming = free.length > 0 && hasService && step === "confirm" && Boolean(chosen);
+  const manyCars = free.length > 1;
 
   return (
-    <div className="space-y-4">
-      {vehicles
-        .filter((v) => v.passToken)
-        .map((v) => (
-          <div key={v.id} className="rounded-2xl border-2 border-success bg-success-soft p-4">
-            <p className="flex items-center gap-2 font-bold">
-              <IconCheck className="h-5 w-5 shrink-0" />
-              Already checked in. Your pass is good all day.
-            </p>
-            <VehicleRow plate={v.plate} make={v.make} colour={v.colour} className="mt-3" />
-            <Link href={`/p/${v.passToken}`} className={`${primaryButton} mt-3`}>
-              Show my pass
-            </Link>
-          </div>
-        ))}
+    <>
+      <TitleHeader
+        title={confirming ? "Confirm Check In" : "Check In"}
+        onBack={confirming && manyCars ? () => setStep("choose") : undefined}
+        backHref={confirming && manyCars ? undefined : "/account"}
+      />
+      <main className="mx-auto max-w-md space-y-5 px-4 pb-10 pt-6">
+        {free.length > 0 && hasService && (
+          <Stepper steps={["Vehicle", "Confirm"]} current={confirming ? 2 : 1} />
+        )}
 
-      {free.length > 0 &&
-        (!hasService ? (
-          <p className="font-medium">{noServiceMessage}</p>
-        ) : step === "choose" || !chosen ? (
-          <div className="space-y-3">
-            <p className="font-medium">Which car are you checking in?</p>
-            <div role="group" aria-label="Your cars" className="space-y-2">
+        {vehicles
+          .filter((v) => v.passToken)
+          .map((v) => (
+            <div key={v.id} className="rounded-card border-2 border-success bg-success-soft p-4">
+              <p className="flex items-center gap-2 font-bold">
+                <IconCheck className="h-5 w-5 shrink-0" />
+                Already checked in. Your pass is good all day.
+              </p>
+              <VehicleRow plate={v.plate} make={v.make} colour={v.colour} className="mt-3" />
+              <Link href={`/p/${v.passToken}`} className={`${redButton} mt-3`}>
+                Show my pass
+              </Link>
+            </div>
+          ))}
+
+        {free.length > 0 && !hasService && <p className="font-medium">{noServiceMessage}</p>}
+
+        {free.length > 0 && hasService && !confirming && (
+          <section className="space-y-3">
+            <h2 className="text-xl font-bold">Select a vehicle</h2>
+            <div role="group" aria-label="Your cars" className="space-y-3">
               {free.map((v) => {
                 const selected = v.id === vehicleId;
                 return (
@@ -90,14 +105,14 @@ export function MemberCheckIn({
                       setStep("confirm");
                     }}
                     className={`flex w-full items-center gap-3 rounded-2xl border-2 p-3 text-left ${
-                      selected ? "border-edge bg-blush" : "border-edge/25 bg-card"
+                      selected ? "border-accent bg-blush" : "border-edge/15 bg-card"
                     }`}
                   >
                     <VehicleRow plate={v.plate} make={v.make} colour={v.colour} className="flex-1" />
                     <span
                       aria-hidden="true"
                       className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 ${
-                        selected ? "border-edge bg-action text-white" : "border-edge/40 bg-white"
+                        selected ? "border-accent bg-accent text-white" : "border-edge/30 bg-white"
                       }`}
                     >
                       {selected && <IconCheck className="h-4 w-4" />}
@@ -108,31 +123,33 @@ export function MemberCheckIn({
             </div>
             <Link
               href={addVehicleHref}
-              className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-edge/50 px-4 py-3 font-semibold"
+              className="flex items-center justify-center gap-2 rounded-2xl border-2 border-edge/30 bg-card px-4 py-3.5 font-semibold"
             >
               <IconPlus className="h-5 w-5" />
               Add a new vehicle
             </Link>
-          </div>
-        ) : state.blocked && dismissed !== state ? (
+          </section>
+        )}
+
+        {confirming && chosen && state.blocked && dismissed !== state && (
           <BlockedCard message={state.error ?? ""} onBack={() => setDismissed(state)} />
-        ) : (
-          <form action={action} className="space-y-4">
+        )}
+
+        {confirming && chosen && !(state.blocked && dismissed !== state) && (
+          <form action={action} className="space-y-5">
             <input type="hidden" name="area" value={areaSlug} />
             <input type="hidden" name="vehicleId" value={chosen.id} />
             <input type="hidden" name="serviceId" value={service?.id ?? ""} />
 
-            <div className="rounded-2xl border-2 border-edge/25 bg-card p-4 text-center">
-              <div className="flex flex-col items-center">
-                <VehicleImage size="lg" />
-                <Plate plate={chosen.plate} size="lg" className="mt-2" />
-                {describeVehicle(chosen) && (
-                  <p className="mt-2 text-base font-medium text-ink-soft">{describeVehicle(chosen)}</p>
-                )}
-              </div>
+            <div className="flex flex-col items-center text-center">
+              <VehicleImage size="xl" />
+              <Plate plate={chosen.plate} size="xl" variant="plain" className="mt-1" />
+              {describeVehicle(chosen) && (
+                <p className="mt-1 text-lg font-medium text-ink-soft">{describeVehicle(chosen)}</p>
+              )}
             </div>
 
-            <dl className="divide-y divide-edge/15 rounded-2xl border-2 border-edge/25 bg-card px-4">
+            <dl className="divide-y divide-accent/15 rounded-card bg-blush px-4">
               <FactRow icon={<IconClock className="h-5 w-5" />} label="Service">
                 <span className="block">{service?.name}</span>
                 <span className="block whitespace-nowrap text-sm font-medium text-ink-soft">{service?.time}</span>
@@ -140,7 +157,7 @@ export function MemberCheckIn({
                   <button
                     type="button"
                     onClick={() => setChangingService((v) => !v)}
-                    className="mt-1 text-sm font-medium text-accent underline"
+                    className="mt-1 text-sm font-semibold text-accent underline"
                   >
                     {changingService ? "Done" : "Change service"}
                   </button>
@@ -162,7 +179,10 @@ export function MemberCheckIn({
               )}
               <FactRow icon={<IconPin className="h-5 w-5" />} label="Parking area">
                 <span data-area>{areaName}</span>
-                <span className="block text-sm font-medium text-ink-soft">From the QR sign</span>
+                <span className="mt-0.5 flex items-start gap-1 text-sm font-medium text-ink-soft @[15rem]:justify-end">
+                  <IconLock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>Selected from the QR sign</span>
+                </span>
               </FactRow>
             </dl>
 
@@ -172,28 +192,31 @@ export function MemberCheckIn({
               </p>
             )}
 
-            <button disabled={pending} className={primaryButton}>
+            <button disabled={pending} className={redButton}>
               {pending ? <Spinner /> : <IconCheck />}
               {pending ? "Please wait..." : "Check in"}
             </button>
-            {free.length > 1 && (
+            {manyCars && (
               <button
                 type="button"
                 onClick={() => setStep("choose")}
                 disabled={pending}
-                className="w-full text-center font-medium text-accent underline"
+                className="w-full text-center font-semibold text-accent underline"
               >
                 Choose a different car
               </button>
             )}
           </form>
-        ))}
+        )}
 
-      {free.length === 0 && vehicles.length > 0 && (
-        <Link href={addVehicleHref} className="block text-center font-medium text-accent underline">
-          Add another vehicle
-        </Link>
-      )}
-    </div>
+        {free.length === 0 && vehicles.length > 0 && (
+          <Link href={addVehicleHref} className="block text-center font-semibold text-accent underline">
+            Add another vehicle
+          </Link>
+        )}
+
+        <PrivacyNotice />
+      </main>
+    </>
   );
 }

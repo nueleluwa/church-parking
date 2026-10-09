@@ -31,8 +31,8 @@ function ToneIcon({ tone, className }: { tone: Tone; className: string }) {
 type Props = {
   tone: Tone;
   children: ReactNode;
-  /** banner: a big solid status (pass). bar: a full-width strip across the top of a card. pill: a small label. soft: a light panel. */
-  variant?: "banner" | "bar" | "pill" | "soft";
+  /** banner: a big solid status. chip: a solid status on the pass. bar: a full-width strip across the top of a card. pill: a small label. soft: a light panel. */
+  variant?: "banner" | "bar" | "chip" | "pill" | "soft";
   className?: string;
 };
 
@@ -45,6 +45,17 @@ export function StatusBadge({ tone, children, variant = "pill", className = "" }
       >
         <ToneIcon tone={tone} className="h-8 w-8 shrink-0" />
         <p className="whitespace-nowrap text-3xl font-extrabold">{children}</p>
+      </div>
+    );
+  }
+  if (variant === "chip") {
+    return (
+      <div
+        role="status"
+        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full border-2 px-5 py-1.5 text-xl font-extrabold ${STYLES[tone]} ${className}`}
+      >
+        <ToneIcon tone={tone} className="h-6 w-6 shrink-0" />
+        <span>{children}</span>
       </div>
     );
   }

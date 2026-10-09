@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { errorBox, field, okBox, primaryButton, secondaryButton } from "@/components/ui";
+import { errorBox, field, okBox, outlineButton, redButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import { addVehicle, changePin, deleteAccount, type FormState } from "./actions";
 
@@ -55,7 +55,7 @@ export function AddVehicleForm() {
         <input {...bind("colour")} maxLength={20} autoComplete="off" placeholder="Silver" className={field} />
       </label>
       <Messages state={state} />
-      <button disabled={pending} className={primaryButton}>
+      <button disabled={pending} className={redButton}>
         {pending ? "Please wait..." : "Save car"}
       </button>
     </form>
@@ -86,7 +86,7 @@ export function ChangePinForm() {
         <input name="pin2" autoComplete="new-password" {...pin} />
       </label>
       <Messages state={state} />
-      <button disabled={pending} className={secondaryButton}>
+      <button disabled={pending} className={outlineButton}>
         {pending ? "Please wait..." : "Change PIN"}
       </button>
     </form>

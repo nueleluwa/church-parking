@@ -31,16 +31,16 @@ export function VehicleRow({
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2">
         <VehicleImage
           size="sm"
-          className="col-start-1 row-start-2 @[17rem]:row-span-2 @[17rem]:row-start-1 @[17rem]:w-20"
+          className="col-start-1 row-start-2 @[15rem]:row-span-2 @[15rem]:row-start-1 @[15rem]:w-16"
         />
-        <div className="col-span-2 col-start-1 row-start-1 min-w-0 @[17rem]:col-span-1 @[17rem]:col-start-2">
-          <Plate plate={plate} size="md" align="start" />
+        <div className="col-span-2 col-start-1 row-start-1 min-w-0 @[15rem]:col-span-1 @[15rem]:col-start-2">
+          <Plate plate={plate} size="md" align="start" variant="plain" />
         </div>
         {trailing && (
-          <div className="col-start-3 row-start-1 @[17rem]:row-span-2">{trailing}</div>
+          <div className="col-start-3 row-start-1 @[15rem]:row-span-2">{trailing}</div>
         )}
         <p
-          className={`col-span-2 col-start-2 row-start-2 min-w-0 truncate whitespace-nowrap text-sm text-ink-soft @[17rem]:col-span-1 @[17rem]:-mt-1 ${
+          className={`col-span-2 col-start-2 row-start-2 min-w-0 truncate whitespace-nowrap text-sm text-ink-soft @[15rem]:col-span-1 @[15rem]:-mt-1 ${
             details ? "" : "invisible"
           }`}
         >

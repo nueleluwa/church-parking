@@ -10,7 +10,8 @@ import Image from "next/image";
 const SIZES = {
   sm: "w-14", // lists: history
   md: "w-20", // lists: saved vehicles
-  lg: "w-36", // the confirmation and the pass
+  lg: "w-36", // the pass
+  xl: "w-44", // the confirmation, the main picture on that screen
 } as const;
 
 export function VehicleImage({ size = "md", className = "" }: { size?: keyof typeof SIZES; className?: string }) {
