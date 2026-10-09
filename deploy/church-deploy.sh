@@ -118,6 +118,16 @@ if [[ -x "$REL/deploy/db/migrate.sh" || -f "$REL/deploy/db/migrate.sh" ]]; then
   bash "$REL/deploy/db/migrate.sh" --with-backup
 fi
 
+# Keep the script and style files of every recent version, not just this one. A phone that opened the app before
+# this deploy still asks for the OLD files, and if they are gone the app reloads the page on the person (which
+# loses what they were doing). nginx serves these from here first. Files older than 30 days are removed.
+if [[ -d "$REL/.next/static" ]]; then
+  mkdir -p "$APP_DIR/static/_next/static"
+  cp -a "$REL/.next/static/." "$APP_DIR/static/_next/static/"
+  find "$APP_DIR/static/_next/static" -type f -mtime +30 -delete 2>/dev/null || true
+  find "$APP_DIR/static/_next/static" -type d -empty -delete 2>/dev/null || true
+fi
+
 log "Switching to the new version"
 ln -sfn "$REL" "$APP_DIR/current"
 pm2 startOrReload "$REL/deploy/ecosystem.config.cjs" --update-env >/dev/null

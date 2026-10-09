@@ -32,6 +32,7 @@ Look first, change nothing: `ssh user@server 'bash -s' < deploy/inspect-server.s
 | `/etc/ssl/churchparking/origin.pem`, `origin.key` | the Cloudflare Origin certificate and its key |
 | `/etc/nginx/conf.d/churchparking.conf`, `church-rest-proxy.conf` | the nginx site, and the local-only door to the database interface |
 | `/usr/local/bin/church-deploy`, `church-backup` | the deploy launcher (the only thing GitHub's key can run) and the backup tool, owned by root |
+| `/srv/church-parking/static/` | the script and style files of the last 30 days of versions, served by nginx so an open page keeps working after a deploy |
 | `/var/backups/church-parking/` | database backups |
 | `/home/deploy/.pm2/logs/` | the app's logs (trimmed to 14 days) |
 

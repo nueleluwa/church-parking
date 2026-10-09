@@ -96,6 +96,8 @@ grep -q "$NODE_DIR/bin" "/home/$APP_USER/.bashrc" 2>/dev/null || sed -i "1i expo
 chown "$APP_USER:$APP_USER" "/home/$APP_USER/.profile" "/home/$APP_USER/.bashrc"
 install -d -o "$APP_USER" -g "$APP_USER" -m 755 "$APP_DIR" "$APP_DIR/releases"
 install -d -o "$APP_USER" -g "$APP_USER" -m 750 "$APP_DIR/shared"
+# Readable by nginx (the shared folder is not): the script and style files of recent versions
+install -d -o "$APP_USER" -g "$APP_USER" -m 755 "$APP_DIR/static" "$APP_DIR/static/_next"
 install -d -o "$APP_USER" -g "$APP_USER" -m 700 "/home/$APP_USER/.ssh"
 if [[ ! -f "/home/$APP_USER/.ssh/id_ed25519" ]]; then
   sudo -u "$APP_USER" ssh-keygen -q -t ed25519 -N "" -C "church-parking-server-read-only" -f "/home/$APP_USER/.ssh/id_ed25519"
