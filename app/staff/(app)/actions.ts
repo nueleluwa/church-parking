@@ -16,11 +16,13 @@ import {
 import {
   buildScanCard,
   claimGuestVisit,
+  claimVisitForMemberByStaff,
   lagosDate,
   normalisePhone,
   normalisePlate,
   pickService,
   releaseVisit,
+  servicesForCheckIn,
   type ScanCard,
 } from "@/lib/rules";
 import { tokenFromScan } from "@/lib/rules/scan";
@@ -88,30 +90,73 @@ export async function revealPhone(visitId: string): Promise<{ phone: string } | 
 const registerSchema = z.object({
   area: z.string().min(1).max(40),
   plate: z.string().trim().min(1),
-  phone: z.string().trim().min(1),
+  phone: z.string().trim().optional(),
   name: z.string().trim().max(80).optional(),
+  forMember: z.enum(["yes", ""]).optional(),
 });
 
-export type RegisterState = { error?: string; reference?: string; plate?: string };
+export type RegisterState = {
+  error?: string;
+  reference?: string;
+  plate?: string;
+  /** The plate belongs to a member: offer "Register for the member". */
+  memberPlate?: boolean;
+  /** What was typed, sent back so the form keeps it (React clears a form after each action). */
+  values?: { area: string; plate: string; phone: string; name: string };
+};
 
-/** Manual registration (EX-4, OP-4): an attendant registers a car for a driver. */
+/**
+ * Manual registration (EX-4, OP-4): an attendant registers a car for a driver.
+ * A member's car is registered as the member's own visit when the attendant
+ * confirms, for members who are locked out, forgot their PIN or have no data.
+ */
 export async function registerCar(_prev: RegisterState, formData: FormData): Promise<RegisterState> {
   const staff = await currentStaff();
   if (!staff) return { error: "Please sign in again." };
 
-  const parsed = registerSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: "Please fill in the plate number, phone number and area." };
+  const raw = Object.fromEntries(formData);
+  const values = {
+    area: String(raw.area ?? ""),
+    plate: String(raw.plate ?? ""),
+    phone: String(raw.phone ?? ""),
+    name: String(raw.name ?? ""),
+  };
+  const fail = (error: string, extra: Partial<RegisterState> = {}): RegisterState => ({ error, values, ...extra });
 
-  const phone = normalisePhone(parsed.data.phone);
-  if (!phone) return { error: "Please enter a Nigerian phone number, like 0803 123 4567." };
+  const parsed = registerSchema.safeParse(raw);
+  if (!parsed.success) return fail("Please fill in the plate number and area.");
+
   const plate = normalisePlate(parsed.data.plate);
-  if (plate.length < 4 || plate.length > 10) return { error: "Please check the plate number." };
+  if (plate.length < 4 || plate.length > 10) return fail("Please check the plate number.");
 
   const area = await getAreaBySlug(parsed.data.area);
-  if (!area) return { error: "Please choose an area." };
+  if (!area) return fail("Please choose an area.");
 
-  const service = pickService(new Date(), await listActiveServices());
-  if (!service) return { error: "There is no service right now." };
+  const now = new Date();
+  const open = servicesForCheckIn(now, await listActiveServices());
+  const service = pickService(now, open) ?? open[0];
+  if (!service) return fail("The services have finished for today.");
+
+  if (parsed.data.forMember === "yes") {
+    const result = await claimVisitForMemberByStaff(claimStore, {
+      plate,
+      serviceId: service.id,
+      areaId: area.id,
+      serviceDate: today(),
+      staffId: staff.id,
+    });
+    if (result.status === "not_member") return fail("This car is not saved to a member account.");
+    if (result.status === "blocked") {
+      return fail("This car is already checked in for someone else. Tell the coordinator.");
+    }
+    await logAudit(staff.id, null, "register_for_member", { after: { reference: result.reference } });
+    return { reference: result.reference, plate };
+  }
+
+  const phone = normalisePhone(parsed.data.phone ?? "");
+  if (!phone) {
+    return fail("Please check the phone number. Example: 0803 123 4567, or +44 7700 900123 from abroad.");
+  }
 
   const result = await claimGuestVisit(claimStore, {
     name: parsed.data.name || "Not given",
@@ -126,9 +171,11 @@ export async function registerCar(_prev: RegisterState, formData: FormData): Pro
   });
 
   if (result.status === "blocked") {
-    return { error: "This car is already checked in, or belongs to a member. Tell the coordinator." };
+    return result.reason === "member_plate"
+      ? fail("This car belongs to a member. If the member is here, tap Register for the member.", { memberPlate: true })
+      : fail("This car is already checked in. Tell the coordinator.");
   }
-  if (result.status !== "ok") return { error: "Something went wrong. Please try again." };
+  if (result.status !== "ok") return fail("Something went wrong. Please try again.");
 
   await logAudit(staff.id, null, "manual_register", { after: { reference: result.reference } });
   return { reference: result.reference, plate };

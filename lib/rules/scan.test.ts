@@ -10,6 +10,7 @@ const base: ScanDetail = {
   areaName: "Car Park 1",
   serviceName: "Service 1",
   isGuest: true,
+  isNewCar: false,
   fullName: "Ada Obi",
   phone: "+2348031234567",
   releasedAt: null,
@@ -40,6 +41,23 @@ describe("buildScanCard", () => {
 
   test("a closed visit is flagged", () => {
     expect(buildScanCard({ ...base, status: "missed" }, today).state).toBe("closed");
+  });
+});
+
+describe("who the attendant checks", () => {
+  test("a guest is checked", () => {
+    expect(buildScanCard(base, today).askForDetails).toBe(true);
+  });
+
+  test("an established member's car is not, but the last 4 digits are still there", () => {
+    const card = buildScanCard({ ...base, isGuest: false }, today);
+    expect(card.askForDetails).toBe(false);
+    expect(card.phoneLast4).toBe("4567");
+  });
+
+  test("a member's newly saved car is checked like a guest's", () => {
+    const card = buildScanCard({ ...base, isGuest: false, isNewCar: true }, today);
+    expect(card).toMatchObject({ isNewCar: true, askForDetails: true });
   });
 });
 

@@ -44,6 +44,7 @@ test("member saves a car, checks in with two taps, guest cannot take the plate, 
   await guest.getByLabel("Phone number").fill(randomPhone());
   await guest.getByLabel("Plate number").fill(plate);
   await guest.getByRole("button", { name: "Get my pass" }).click();
+  await guest.getByRole("button", { name: "Yes, get my pass" }).click();
   await expect(guest.getByText("We can't check in this car here. Please see an attendant.")).toBeVisible({
     timeout: 45_000,
   });
@@ -53,10 +54,15 @@ test("member saves a car, checks in with two taps, guest cannot take the plate, 
   // Two taps: pick the car (already picked when there is one), then Check in
   await page.goto("/c/cp1");
   await page.getByRole("button", { name: "Check in" }).click();
-  await expect(page.getByText("VALID")).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByText("VALID", { exact: true })).toBeVisible({ timeout: 45_000 });
   await expect(page.getByText(/^PK-/)).toBeVisible();
 
-  // Checking the same car in again is blocked
+  // Staying for the second and third service: the pass is good all day, with no second check-in
+  await page.goto("/c/cp1");
+  await expect(page.getByText("Already checked in. Your pass is good all day.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Check in" })).toHaveCount(0);
+  await page.getByRole("link", { name: "Show my pass" }).click();
+  await expect(page.getByText("VALID", { exact: true })).toBeVisible({ timeout: 30_000 });
   await page.goto("/account");
   await expect(page.getByRole("link", { name: "Show my pass" })).toBeVisible();
 

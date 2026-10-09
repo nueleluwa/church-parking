@@ -1,3 +1,4 @@
+import { canAddVehicle } from "@/lib/rules/limits";
 import { db } from "./client";
 import type { Member } from "./types";
 
@@ -71,13 +72,20 @@ export async function listMemberVehicles(memberId: string): Promise<MemberVehicl
   return rows.map((r) => r.vehicles).sort((a, b) => a.plate.localeCompare(b.plate));
 }
 
-export type AddVehicleResult = "added" | "already_yours" | "taken" | "in_use";
+export type AddVehicleResult = "added" | "already_yours" | "taken" | "in_use" | "too_many";
 
 /**
  * Save a plate to a member (R-5 locks it to them). Refused if another member
  * has it, or if it has an open visit: first claim wins (R-4).
  */
 export async function addMemberVehicle(memberId: string, plate: string): Promise<AddVehicleResult> {
+  const saved = await db()
+    .from("member_vehicles")
+    .select("vehicle_id", { count: "exact", head: true })
+    .eq("member_id", memberId);
+  if (saved.error) fail(saved.error.message);
+  if (!canAddVehicle(saved.count ?? 0)) return "too_many";
+
   const existing = await db().from("vehicles").select("id").eq("plate", plate).maybeSingle();
   if (existing.error) fail(existing.error.message);
 
@@ -164,4 +172,19 @@ export async function openPassTokenForMember(memberId: string, today: string): P
     .maybeSingle();
   if (error) fail(error.message);
   return (data?.pass_token as string | undefined) ?? null;
+}
+
+/** Today's open passes for a member's cars, by vehicle, so a car already checked in can show its pass. */
+export async function openPassTokensByVehicle(
+  memberId: string,
+  today: string,
+): Promise<Record<string, string>> {
+  const { data, error } = await db()
+    .from("visits")
+    .select("vehicle_id, pass_token")
+    .eq("member_id", memberId)
+    .eq("status", "parked")
+    .eq("service_date", today);
+  if (error) fail(error.message);
+  return Object.fromEntries((data ?? []).map((v) => [v.vehicle_id as string, v.pass_token as string]));
 }

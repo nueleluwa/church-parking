@@ -1,5 +1,6 @@
 import { hash, verify } from "@node-rs/argon2";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
+import { clientIp } from "@/lib/client-ip";
 import {
   clearAttempts,
   claimStore,
@@ -38,8 +39,10 @@ const store: MemberAuthStore = {
   },
 };
 
-export async function clientIp(): Promise<string> {
-  return (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+/** A hashed key for this visitor's address, or null when we can't tell. */
+export async function ipKey(kind: string, secret: string): Promise<string | null> {
+  const ip = await clientIp();
+  return ip ? hashKey(kind, ip, secret) : null;
 }
 
 /** Check a phone number and PIN with the lockout rules (T-4). */
@@ -49,7 +52,7 @@ export async function checkMemberPin(phone: string, pin: string): Promise<PinRes
     phone,
     pin,
     phoneKey: hashKey("pin-phone", phone, secret),
-    ipKey: hashKey("pin-ip", await clientIp(), secret),
+    ipKey: await ipKey("pin-ip", secret),
     now: new Date(),
   });
 }

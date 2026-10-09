@@ -1,12 +1,14 @@
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { IconAlert, IconCheck, IconClock } from "@/components/icons";
-import { getPassByToken } from "@/lib/db";
+import { getPassByToken, getScanDetailByToken } from "@/lib/db";
 import { serverEnv } from "@/lib/env";
 import { rememberedPassToken } from "@/lib/pass-cookie";
 import { qrSvg } from "@/lib/qr";
-import { buildPassView, formatPlate, lagosDate, type PassState } from "@/lib/rules";
+import { buildPassView, buildScanCard, formatPlate, lagosDate, type PassState } from "@/lib/rules";
+import { currentStaff } from "@/lib/staff-auth";
 import { PassRefresher } from "./PassRefresher";
+import { StaffPass } from "./StaffPass";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Parking pass", robots: { index: false } };
@@ -42,6 +44,21 @@ export default async function PassPage({ params }: { params: Promise<{ token: st
   const { token } = await params;
   const pass = await getPassByToken(token);
   if (!pass) notFound();
+
+  // Signed-in staff see the full staff view: first name, masked phone and the release buttons.
+  if (await currentStaff()) {
+    const detail = await getScanDetailByToken(token);
+    if (detail) {
+      return (
+        <>
+          <AppHeader title="Parking team" />
+          <main className="mx-auto max-w-md space-y-4 px-4 py-6">
+            <StaffPass card={buildScanCard(detail, lagosDate(new Date()))} />
+          </main>
+        </>
+      );
+    }
+  }
 
   // Only the phone that made the pass sees the full pass (CI-6). Everyone
   // else sees the plate and status. Staff details arrive with staff sessions.
@@ -97,9 +114,10 @@ export default async function PassPage({ params }: { params: Promise<{ token: st
                 {view.areaName} · {view.serviceName}
               </p>
               {qr && (
-                <p className="mt-4 text-sm text-ink-soft">
-                  Tip: turn your screen brightness up so the attendant can scan it in the sun.
-                </p>
+                <div className="mt-4 space-y-2 text-sm text-ink-soft">
+                  <p>Tip: turn your screen brightness up so the attendant can scan it in the sun.</p>
+                  <p>Staying for more than one service? This pass stays valid all day.</p>
+                </div>
               )}
             </>
           )}

@@ -33,3 +33,16 @@ The app replaces a physical security check: the paper tally that stops a car lea
 - A pass from yesterday is rejected at the scanner.
 - The public pass view, opened without a staff session, contains no name or phone number.
 - PIN lockout starts after 5 failures and the daily lock after 15.
+
+## Member plates and new cars
+
+- A member can save at most 4 cars. This stops one account collecting other people's plates.
+- Saving a plate is not proof that the car is theirs, so a car saved in the last 7 days shows **NEW CAR** on the scanner. For a new car, and for every guest, the attendant asks the driver for their name and phone number and checks the last 4 digits on screen.
+- Attendants see the last 4 phone digits for every pass, members included.
+- A member who is locked out or has no data can still be registered by an attendant with **Register for the member**. The visit is the member's and the attendant is recorded.
+
+## Deployment requirements
+
+- **Client IP.** Rate limits read `x-vercel-forwarded-for`, then `x-real-ip`, then `x-forwarded-for`. On a self-hosted server the reverse proxy in front must set one of them itself and overwrite any value the client sends. With no address the IP limit is skipped, and the phone limits still apply.
+- **Logs.** Pass links (`/p/{token}`) hold a secret token. Turn off request-path logging for `/p/*` on the host, or redact the token, so rule 6 holds. Pass pages already send `Referrer-Policy: no-referrer` and `Cache-Control: no-store`.
+- **Production database.** Use a paid or kept-alive Supabase project: the free tier pauses after about a week without use.

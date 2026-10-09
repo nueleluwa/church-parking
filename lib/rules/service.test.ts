@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { lagosDate, pickService, type ServiceWindow } from "./service";
+import { hasServiceToday, lagosDate, pickService, servicesForCheckIn, type ServiceWindow } from "./service";
 
 const services: (ServiceWindow & { name: string })[] = [
   { id: 1, name: "Service 1", weekday: 0, starts_at: "07:30:00", ends_at: "09:30:00" },
@@ -44,5 +44,27 @@ describe("lagosDate", () => {
   test("rolls over at midnight Lagos time", () => {
     expect(lagosDate(new Date("2026-10-10T22:59:00Z"))).toBe("2026-10-10");
     expect(lagosDate(new Date("2026-10-10T23:00:00Z"))).toBe("2026-10-11");
+  });
+});
+
+describe("servicesForCheckIn", () => {
+  const names = (time: string) => servicesForCheckIn(sunday(time), services).map((s) => s.name);
+
+  test("offers every service that has not finished", () => {
+    expect(names("06:00")).toEqual(["Service 1", "Service 2", "Service 3"]);
+    expect(names("09:45")).toEqual(["Service 2", "Service 3"]);
+    expect(names("11:29")).toEqual(["Service 2", "Service 3"]);
+    expect(names("13:29")).toEqual(["Service 3"]);
+  });
+
+  test("offers nothing after the last service ends, and on a weekday", () => {
+    expect(names("13:30")).toEqual([]);
+    expect(names("13:45")).toEqual([]);
+    expect(servicesForCheckIn(new Date("2026-10-12T08:45:00+01:00"), services)).toEqual([]);
+  });
+
+  test("tells a finished Sunday from a day with no service", () => {
+    expect(hasServiceToday(sunday("13:45"), services)).toBe(true);
+    expect(hasServiceToday(new Date("2026-10-12T08:45:00+01:00"), services)).toBe(false);
   });
 });

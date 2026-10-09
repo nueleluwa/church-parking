@@ -36,7 +36,7 @@ export type PinResult =
  */
 export async function attemptMemberSignIn(
   store: MemberAuthStore,
-  input: { phone: string; pin: string; phoneKey: string; ipKey: string; now: Date },
+  input: { phone: string; pin: string; phoneKey: string; ipKey: string | null; now: Date },
 ): Promise<PinResult> {
   const member = await store.getMemberByPhone(input.phone);
 
@@ -47,7 +47,7 @@ export async function attemptMemberSignIn(
   const [recent, today, fromIp] = await Promise.all([
     store.countFailures(input.phoneKey, PIN_LIMITS.pause.windowMinutes),
     store.countFailures(input.phoneKey, PIN_LIMITS.daily.windowMinutes),
-    store.countFailures(input.ipKey, PIN_LIMITS.ip.windowMinutes),
+    input.ipKey ? store.countFailures(input.ipKey, PIN_LIMITS.ip.windowMinutes) : Promise.resolve(0),
   ]);
 
   if (today >= PIN_LIMITS.daily.max) {
@@ -67,7 +67,10 @@ export async function attemptMemberSignIn(
     return { status: "ok", memberId: member.id };
   }
 
-  await Promise.all([store.recordFailure(input.phoneKey), store.recordFailure(input.ipKey)]);
+  await Promise.all([
+    store.recordFailure(input.phoneKey),
+    input.ipKey ? store.recordFailure(input.ipKey) : Promise.resolve(),
+  ]);
   if (member && today + 1 >= PIN_LIMITS.daily.max) {
     await store.lockMember(member.id);
     return { status: "locked" };

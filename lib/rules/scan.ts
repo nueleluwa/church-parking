@@ -7,6 +7,8 @@ export type ScanDetail = {
   areaName: string;
   serviceName: string;
   isGuest: boolean;
+  /** A member's car saved within the last week: the attendant checks the driver as they would a guest. */
+  isNewCar: boolean;
   fullName: string;
   phone: string; // full number: stays on the server
   releasedAt: string | null;
@@ -23,6 +25,9 @@ export type ScanCard = {
   serviceName: string;
   reference: string;
   isGuest: boolean;
+  isNewCar: boolean;
+  /** True for guests and new cars: the attendant asks for name and phone number and checks them. */
+  askForDetails: boolean;
   firstName: string;
   phoneLast4: string;
   releasedAt: string | null;
@@ -47,6 +52,8 @@ export function buildScanCard(d: ScanDetail, today: string): ScanCard {
     serviceName: d.serviceName,
     reference: d.reference,
     isGuest: d.isGuest,
+    isNewCar: d.isNewCar,
+    askForDetails: d.isGuest || d.isNewCar,
     firstName: d.fullName.trim().split(/\s+/)[0] ?? "",
     phoneLast4: d.phone.slice(-4),
     releasedAt: d.releasedAt,

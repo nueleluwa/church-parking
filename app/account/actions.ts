@@ -13,15 +13,14 @@ import {
 import { serverEnv } from "@/lib/env";
 import {
   checkMemberPin,
-  clientIp,
   currentMember,
   endMemberSession,
   hashPin,
+  ipKey,
   PIN_MESSAGES,
   startMemberSession,
 } from "@/lib/member-auth";
 import { normalisePhone, normalisePlate, PIN_PATTERN } from "@/lib/rules";
-import { hashKey } from "@/lib/session";
 
 export type FormState = { error?: string; ok?: string };
 
@@ -49,13 +48,16 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
   }
 
   const phone = normalisePhone(parsed.data.phone);
-  if (!phone) return { error: "Please enter a Nigerian phone number, like 0803 123 4567." };
+  if (!phone) return { error: "Please check your phone number. Example: 0803 123 4567, or +44 7700 900123 from abroad." };
 
   // Slow down mass sign-ups from one place.
-  const ipKey = hashKey("signup-ip", await clientIp(), serverEnv().SESSION_SECRET);
-  const tries = await claimStore.countAttempts(ipKey, 60);
-  await claimStore.recordAttempt(ipKey);
-  if (tries >= 10) return { error: "Too many tries. Please wait a while, then try again." };
+  const signupKey = await ipKey("signup-ip", serverEnv().SESSION_SECRET);
+  if (signupKey) {
+    const tries = await claimStore.countAttempts(signupKey, 60);
+    await claimStore.recordAttempt(signupKey);
+    // Generous, because a whole congregation may sign up from the church wifi on the same morning.
+    if (tries >= 60) return { error: "Too many tries. Please wait a while, then try again." };
+  }
 
   const id = await createMember(parsed.data.name, phone, await hashPin(parsed.data.pin));
   if (id === "phone_taken") {
@@ -101,6 +103,8 @@ export async function addVehicle(_prev: FormState, formData: FormData): Promise<
       return { ok: "Car saved." };
     case "already_yours":
       return { error: "You have already saved this car." };
+    case "too_many":
+      return { error: "You can save up to 4 cars. Remove one first, or see the parking team." };
     default:
       return { error: "We cannot save this car. Please see the parking team." };
   }

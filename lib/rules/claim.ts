@@ -1,8 +1,12 @@
 import { makePassToken, makeReference } from "./tokens";
 
-/** Check-in rate limits (T-7). */
+/**
+ * Check-in rate limits (T-7). The IP limit is generous because a whole
+ * congregation may share the church wifi or one mobile network. The phone
+ * limit is what really slows a spammer.
+ */
 export const RATE_LIMITS = {
-  ip: { max: 20, windowMinutes: 10 },
+  ip: { max: 150, windowMinutes: 10 },
   phone: { max: 5, windowMinutes: 60 },
 } as const;
 
@@ -20,15 +24,25 @@ export type NewVisit = {
   checked_in_by?: string;
 };
 
-/** Everything claimGuestVisit needs from the database. lib/db provides it. */
+export type OpenVisit = {
+  member_id: string | null;
+  pass_token: string;
+  reference: string;
+  service_date: string;
+};
+
+/** Everything the claim rules need from the database. lib/db provides it. */
 export interface ClaimStore {
   countAttempts(key: string, windowMinutes: number): Promise<number>;
   recordAttempt(key: string): Promise<void>;
   findVehicleId(plate: string): Promise<string | null>;
   createVehicle(plate: string): Promise<string>;
   isMemberPlate(vehicleId: string): Promise<boolean>;
-  hasOpenVisit(vehicleId: string): Promise<boolean>;
   memberOwnsVehicle(memberId: string, vehicleId: string): Promise<boolean>;
+  memberIdForVehicle(vehicleId: string): Promise<string | null>;
+  /** Closes visits for this vehicle still open from an earlier day, as the midnight job would. */
+  closeStaleOpenVisits(vehicleId: string, today: string): Promise<void>;
+  findOpenVisit(vehicleId: string): Promise<OpenVisit | null>;
   createGuest(name: string, phone: string): Promise<string>;
   insertVisit(visit: NewVisit): Promise<"ok" | "open_visit_exists" | "reference_taken">;
   raiseAlert(kind: AlertKind, plate: string, detail: Record<string, unknown>): Promise<void>;
@@ -43,7 +57,7 @@ export type GuestClaimInput = {
   serviceDate: string;
   /** Set when an attendant registers the car by hand. Skips the public rate limits (OP-4). */
   staffId?: string;
-  ipKey: string; // hashed
+  ipKey: string; // hashed; empty when the address is unknown, which skips the IP limit
   phoneKey: string; // hashed
 };
 
@@ -64,11 +78,14 @@ export async function claimGuestVisit(
   input: GuestClaimInput,
 ): Promise<ClaimResult> {
   if (!input.staffId) {
-    const [ipCount, phoneCount] = await Promise.all([
-      store.countAttempts(input.ipKey, RATE_LIMITS.ip.windowMinutes),
+    const checks: Promise<number>[] = [
       store.countAttempts(input.phoneKey, RATE_LIMITS.phone.windowMinutes),
-    ]);
-    await Promise.all([store.recordAttempt(input.ipKey), store.recordAttempt(input.phoneKey)]);
+    ];
+    if (input.ipKey) checks.push(store.countAttempts(input.ipKey, RATE_LIMITS.ip.windowMinutes));
+    const [phoneCount, ipCount = 0] = await Promise.all(checks);
+
+    await store.recordAttempt(input.phoneKey);
+    if (input.ipKey) await store.recordAttempt(input.ipKey);
     if (ipCount >= RATE_LIMITS.ip.max || phoneCount >= RATE_LIMITS.phone.max) {
       return { status: "rate_limited" };
     }
@@ -78,7 +95,8 @@ export async function claimGuestVisit(
   let vehicleId = await store.findVehicleId(input.plate);
 
   if (vehicleId) {
-    if (await store.hasOpenVisit(vehicleId)) {
+    await store.closeStaleOpenVisits(vehicleId, input.serviceDate);
+    if (await store.findOpenVisit(vehicleId)) {
       await store.raiseAlert("plate_conflict", input.plate, alertDetail);
       return { status: "blocked", reason: "plate_conflict" };
     }
@@ -123,16 +141,20 @@ export type MemberClaimInput = {
   serviceId: number;
   areaId: number;
   serviceDate: string;
+  /** Set when an attendant registers the member's car for them. */
+  staffId?: string;
 };
 
 export type MemberClaimResult =
-  | { status: "ok"; token: string; reference: string }
+  | { status: "ok"; token: string; reference: string; existing: boolean }
   | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" };
 
 /**
- * A signed-in member checks a saved vehicle in (CI-4). One open visit per
- * vehicle still applies (R-2): a second check-in is blocked and alerts the
- * coordinator, and never shows the existing pass.
+ * A member's car checks in (CI-4). If the member is already checked in with
+ * this car today (staying for a second or third service), they get their own
+ * pass back, because the pass is good all day (R-3). Anyone else's open visit
+ * on the plate blocks the check-in and alerts the coordinator, and never
+ * shows that pass.
  */
 export async function claimMemberVisit(
   store: ClaimStore,
@@ -142,7 +164,13 @@ export async function claimMemberVisit(
     return { status: "blocked", reason: "not_your_vehicle" };
   }
   const alertDetail = { area_id: input.areaId, service_id: input.serviceId };
-  if (await store.hasOpenVisit(input.vehicleId)) {
+
+  await store.closeStaleOpenVisits(input.vehicleId, input.serviceDate);
+  const open = await store.findOpenVisit(input.vehicleId);
+  if (open) {
+    if (open.member_id === input.memberId && open.service_date === input.serviceDate) {
+      return { status: "ok", token: open.pass_token, reference: open.reference, existing: true };
+    }
     await store.raiseAlert("plate_conflict", input.plate, alertDetail);
     return { status: "blocked", reason: "plate_conflict" };
   }
@@ -156,13 +184,46 @@ export async function claimMemberVisit(
       service_id: input.serviceId,
       area_id: input.areaId,
       service_date: input.serviceDate,
+      ...(input.staffId ? { checked_in_by: input.staffId } : {}),
     };
     const outcome = await store.insertVisit(visit);
-    if (outcome === "ok") return { status: "ok", token: visit.pass_token, reference: visit.reference };
+    if (outcome === "ok") {
+      return { status: "ok", token: visit.pass_token, reference: visit.reference, existing: false };
+    }
     if (outcome === "open_visit_exists") {
       await store.raiseAlert("plate_conflict", input.plate, alertDetail);
       return { status: "blocked", reason: "plate_conflict" };
     }
   }
   throw new Error("Could not make a unique reference.");
+}
+
+export type StaffMemberClaimInput = {
+  plate: string;
+  serviceId: number;
+  areaId: number;
+  serviceDate: string;
+  staffId: string;
+};
+
+export type StaffMemberClaimResult =
+  | { status: "ok"; token: string; reference: string; existing: boolean }
+  | { status: "not_member" }
+  | { status: "blocked" };
+
+/**
+ * An attendant registers a car that belongs to a member, for example when the
+ * member is locked out, forgot their PIN or has no data. The visit is the
+ * member's own, and the staff member who did it is recorded.
+ */
+export async function claimVisitForMemberByStaff(
+  store: ClaimStore,
+  input: StaffMemberClaimInput,
+): Promise<StaffMemberClaimResult> {
+  const vehicleId = await store.findVehicleId(input.plate);
+  const memberId = vehicleId ? await store.memberIdForVehicle(vehicleId) : null;
+  if (!vehicleId || !memberId) return { status: "not_member" };
+
+  const result = await claimMemberVisit(store, { ...input, memberId, vehicleId });
+  return result.status === "ok" ? result : { status: "blocked" };
 }

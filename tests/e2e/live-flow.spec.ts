@@ -18,7 +18,8 @@ test("guest checks in, staff releases, second release is refused", async ({ page
   await page.getByLabel("Phone number").fill(phone);
   await page.getByLabel("Plate number").fill(plate);
   await page.getByRole("button", { name: "Get my pass" }).click();
-  await expect(page.getByText("VALID")).toBeVisible({ timeout: 45_000 });
+  await page.getByRole("button", { name: "Yes, get my pass" }).click();
+  await expect(page.getByText("VALID", { exact: true })).toBeVisible({ timeout: 45_000 });
   await expect(page.locator("svg").first()).toBeVisible();
   const passUrl = page.url();
   expect(passUrl).toMatch(/\/p\/[A-Za-z0-9_-]{22}$/);
@@ -33,13 +34,14 @@ test("guest checks in, staff releases, second release is refused", async ({ page
   await guest2.getByLabel("Phone number").fill(`080${Math.floor(10000000 + Math.random() * 89999999)}`);
   await guest2.getByLabel("Plate number").fill(plate);
   await guest2.getByRole("button", { name: "Get my pass" }).click();
+  await guest2.getByRole("button", { name: "Yes, get my pass" }).click();
   await expect(guest2.getByText("This car is already checked in. Please see an attendant.")).toBeVisible({ timeout: 30_000 });
   expect(guest2.url()).not.toContain("/p/");
 
   // Someone without the cookie sees only plate and status
   const stranger = await other.newPage();
   await stranger.goto(passUrl);
-  await expect(stranger.getByText("VALID")).toBeVisible();
+  await expect(stranger.getByText("VALID", { exact: true })).toBeVisible();
   await expect(stranger.locator("body")).not.toContainText("PK-");
   await other.close();
 

@@ -93,24 +93,33 @@ export function ResultCard({ card, method, onDone, doneLabel }: Props) {
         <p className="mt-1 text-ink-soft">Reference {card.reference}</p>
 
         <p className="mt-4 text-2xl font-bold">{card.firstName}</p>
-        {card.isGuest && (
-          <div className="mt-2 space-y-2">
+        <div className="mt-2 space-y-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="inline-block rounded-full border-2 border-edge bg-blush px-3 py-1 text-sm font-extrabold">
-              GUEST
+              {card.isGuest ? "GUEST" : "MEMBER"}
             </span>
-            <p>
-              Phone: <span className="font-semibold">{phone ?? `•••• ${card.phoneLast4}`}</span>
-            </p>
-            {!phone && (
-              <button onClick={show} disabled={pending} className="font-medium text-accent underline">
-                Show number
-              </button>
+            {card.isNewCar && (
+              <span className="inline-block rounded-full bg-danger px-3 py-1 text-sm font-extrabold text-white">
+                NEW CAR
+              </span>
             )}
-            <p className="text-sm text-ink-soft">
-              Ask the driver for their name and phone number and check them.
-            </p>
           </div>
-        )}
+          <p>
+            Phone: <span className="font-semibold">{phone ?? `•••• ${card.phoneLast4}`}</span>
+          </p>
+          {!phone && (
+            <button onClick={show} disabled={pending} className="font-medium text-accent underline">
+              Show number
+            </button>
+          )}
+          <p className={`text-sm ${card.askForDetails ? "font-semibold text-ink" : "text-ink-soft"}`}>
+            {card.askForDetails
+              ? card.isNewCar
+                ? "This car was only just saved to the account. Ask the driver for their name and phone number and check them."
+                : "Ask the driver for their name and phone number and check them."
+              : "Check that the plate matches the car."}
+          </p>
+        </div>
 
         {message && (
           <p role="alert" className="mt-4 rounded-2xl border-2 border-danger p-3 font-medium text-danger">

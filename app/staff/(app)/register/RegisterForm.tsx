@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { formatPlate } from "@/lib/rules/plates";
 import { registerCar, type RegisterState } from "../actions";
 
@@ -9,6 +10,15 @@ const field =
 
 export function RegisterForm({ areas }: { areas: { slug: string; name: string }[] }) {
   const [state, action, pending] = useActionState<RegisterState, FormData>(registerCar, {});
+  const formRef = useRef<HTMLFormElement>(null);
+  const [forMember, setForMember] = useState(false);
+
+  /** Submit again for the member: the flag is set first so it goes with this submit only. */
+  function registerForMember() {
+    flushSync(() => setForMember(true));
+    formRef.current?.requestSubmit();
+    setForMember(false);
+  }
 
   if (state.reference) {
     return (
@@ -24,10 +34,11 @@ export function RegisterForm({ areas }: { areas: { slug: string; name: string }[
   }
 
   return (
-    <form action={action} className="space-y-4">
+    <form ref={formRef} action={action} className="space-y-4">
+      <input type="hidden" name="forMember" value={forMember ? "yes" : ""} />
       <label className="block font-medium">
         Area
-        <select name="area" className={field}>
+        <select name="area" defaultValue={state.values?.area} className={field}>
           {areas.map((a) => (
             <option key={a.slug} value={a.slug}>{a.name}</option>
           ))}
@@ -35,15 +46,15 @@ export function RegisterForm({ areas }: { areas: { slug: string; name: string }[
       </label>
       <label className="block font-medium">
         Plate number
-        <input name="plate" required autoCapitalize="characters" autoComplete="off" className={`${field} uppercase`} />
+        <input name="plate" required defaultValue={state.values?.plate} autoCapitalize="characters" autoComplete="off" className={`${field} uppercase`} />
       </label>
       <label className="block font-medium">
         Phone number
-        <input name="phone" type="tel" inputMode="tel" required placeholder="0803 123 4567" className={field} />
+        <input name="phone" type="tel" inputMode="tel" defaultValue={state.values?.phone} placeholder="0803 123 4567" className={field} />
       </label>
       <label className="block font-medium">
         Name (if they want to give it)
-        <input name="name" maxLength={80} className={field} />
+        <input name="name" maxLength={80} defaultValue={state.values?.name} className={field} />
       </label>
       {state.error && (
         <p role="alert" className="rounded-xl border-2 border-danger bg-white p-3 font-medium text-danger">
@@ -56,6 +67,16 @@ export function RegisterForm({ areas }: { areas: { slug: string; name: string }[
       >
         {pending ? "Please wait..." : "Add car"}
       </button>
+      {state.memberPlate && (
+        <button
+          type="button"
+          onClick={registerForMember}
+          disabled={pending}
+          className="w-full rounded-full border-2 border-edge bg-white px-6 py-4 text-lg font-semibold disabled:opacity-60"
+        >
+          Register for the member
+        </button>
+      )}
     </form>
   );
 }

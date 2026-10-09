@@ -1,19 +1,27 @@
 "use server";
 
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { claimStore, getAreaBySlug, listActiveServices, listMemberVehicles } from "@/lib/db";
+import {
+  claimStore,
+  getAreaBySlug,
+  getPassByToken,
+  listActiveServices,
+  listMemberVehicles,
+  openPassTokensByVehicle,
+} from "@/lib/db";
 import { serverEnv } from "@/lib/env";
-import { currentMember } from "@/lib/member-auth";
-import { rememberPass } from "@/lib/pass-cookie";
+import { currentMember, ipKey } from "@/lib/member-auth";
+import { rememberedPassToken, rememberPass } from "@/lib/pass-cookie";
 import {
   claimGuestVisit,
   claimMemberVisit,
   lagosDate,
   normalisePhone,
   normalisePlate,
+  passState,
   pickService,
+  servicesForCheckIn,
 } from "@/lib/rules";
 import { hashKey } from "@/lib/session";
 
@@ -31,6 +39,8 @@ const MESSAGES = {
   plate_conflict: "This car is already checked in. Please see an attendant.",
   member_plate: "We can't check in this car here. Please see an attendant.",
   rate_limited: "Too many tries. Please wait a few minutes, or see an attendant.",
+  finished: "The services have finished for today. Please see an attendant.",
+  bad_service: "Please choose a service that has not finished.",
 } as const;
 
 export async function checkInAsGuest(_prev: CheckInState, formData: FormData): Promise<CheckInState> {
@@ -41,7 +51,9 @@ export async function checkInAsGuest(_prev: CheckInState, formData: FormData): P
   const { area: areaSlug, serviceId, name } = parsed.data;
 
   const phone = normalisePhone(parsed.data.phone);
-  if (!phone) return { error: "Please enter a Nigerian phone number, like 0803 123 4567." };
+  if (!phone) {
+    return { error: "Please check your phone number. Example: 0803 123 4567, or +44 7700 900123 from abroad." };
+  }
 
   const plate = normalisePlate(parsed.data.plate);
   if (plate.length < 4 || plate.length > 10) {
@@ -51,22 +63,33 @@ export async function checkInAsGuest(_prev: CheckInState, formData: FormData): P
   const area = await getAreaBySlug(areaSlug);
   if (!area) return { error: "This parking sign isn't working. Please see an attendant." };
 
-  const services = await listActiveServices();
-  if (!services.some((s) => s.id === serviceId)) {
-    return { error: "Please choose a service." };
+  const now = new Date();
+  const today = lagosDate(now);
+
+  // The same phone scanning again for the same car (staying for another service): show its pass.
+  const heldToken = await rememberedPassToken();
+  const held = heldToken ? await getPassByToken(heldToken) : null;
+  if (
+    held &&
+    held.plate === plate &&
+    passState({ status: held.status, serviceDate: held.service_date, today }) === "valid"
+  ) {
+    redirect(`/p/${heldToken}`);
   }
 
-  const secret = serverEnv().SESSION_SECRET;
-  const forwarded = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const open = servicesForCheckIn(now, await listActiveServices());
+  if (open.length === 0) return { error: MESSAGES.finished };
+  if (!open.some((s) => s.id === serviceId)) return { error: MESSAGES.bad_service };
 
+  const secret = serverEnv().SESSION_SECRET;
   const result = await claimGuestVisit(claimStore, {
     name,
     phone,
     plate,
     serviceId,
     areaId: area.id,
-    serviceDate: lagosDate(new Date()),
-    ipKey: hashKey("ip", forwarded, secret),
+    serviceDate: today,
+    ipKey: (await ipKey("ip", secret)) ?? "",
     phoneKey: hashKey("phone", phone, secret),
   });
 
@@ -83,7 +106,10 @@ const memberSchema = z.object({
   serviceId: z.coerce.number().int().positive().optional(),
 });
 
-/** Member check-in (CI-4): the member and their cars come from the session, never from the form. */
+/**
+ * Member check-in (CI-4): the member and their cars come from the session, never from the form.
+ * A car that is already checked in today (staying for more services) just shows its pass.
+ */
 export async function checkInMember(_prev: CheckInState, formData: FormData): Promise<CheckInState> {
   const member = await currentMember();
   if (!member) return { error: "Please sign in again." };
@@ -94,14 +120,24 @@ export async function checkInMember(_prev: CheckInState, formData: FormData): Pr
   const area = await getAreaBySlug(parsed.data.area);
   if (!area) return { error: "This parking sign isn't working. Please see an attendant." };
 
-  const services = await listActiveServices();
-  const service = parsed.data.serviceId
-    ? services.find((s) => s.id === parsed.data.serviceId)
-    : pickService(new Date(), services);
-  if (!service) return { error: "There is no service right now." };
-
   const vehicle = (await listMemberVehicles(member.id)).find((v) => v.id === parsed.data.vehicleId);
   if (!vehicle) return { error: "We cannot check in this car. Please see an attendant." };
+
+  const now = new Date();
+  const today = lagosDate(now);
+
+  const existing = (await openPassTokensByVehicle(member.id, today))[vehicle.id];
+  if (existing) {
+    await rememberPass(existing);
+    redirect(`/p/${existing}`);
+  }
+
+  const open = servicesForCheckIn(now, await listActiveServices());
+  if (open.length === 0) return { error: MESSAGES.finished };
+  const service = parsed.data.serviceId
+    ? open.find((s) => s.id === parsed.data.serviceId)
+    : (pickService(now, open) ?? open[0]);
+  if (!service) return { error: MESSAGES.bad_service };
 
   const result = await claimMemberVisit(claimStore, {
     memberId: member.id,
@@ -109,7 +145,7 @@ export async function checkInMember(_prev: CheckInState, formData: FormData): Pr
     plate: vehicle.plate,
     serviceId: service.id,
     areaId: area.id,
-    serviceDate: lagosDate(new Date()),
+    serviceDate: today,
   });
   if (result.status === "blocked") {
     return {

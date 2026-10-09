@@ -1,10 +1,19 @@
 export { normalisePlate, formatPlate } from "./plates";
 export { normalisePhone, maskPhone } from "./phone";
 export { makeReference, makePassToken } from "./tokens";
-export { pickService, lagosDate, TIME_ZONE, type ServiceWindow } from "./service";
+export {
+  pickService,
+  servicesForCheckIn,
+  hasServiceToday,
+  lagosDate,
+  TIME_ZONE,
+  type ServiceWindow,
+} from "./service";
+export { canAddVehicle, isNewCar, MAX_MEMBER_VEHICLES, NEW_CAR_DAYS } from "./limits";
 export {
   claimGuestVisit,
   claimMemberVisit,
+  claimVisitForMemberByStaff,
   RATE_LIMITS,
   type ClaimResult,
   type ClaimStore,

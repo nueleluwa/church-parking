@@ -65,3 +65,21 @@ export function pickService<T extends ServiceWindow>(now: Date, services: T[]): 
 
   return today.find((s) => toMinutes(s.starts_at) > minutes) ?? null;
 }
+
+/**
+ * The services a driver can check in for right now: today's services that
+ * have not finished yet. Empty after the last service ends, or on a day with
+ * no service.
+ */
+export function servicesForCheckIn<T extends ServiceWindow>(now: Date, services: T[]): T[] {
+  const { weekday, minutes } = lagosParts(now);
+  return services
+    .filter((s) => s.weekday === weekday && toMinutes(s.ends_at) > minutes)
+    .sort((a, b) => toMinutes(a.starts_at) - toMinutes(b.starts_at));
+}
+
+/** True if the service runs on today's weekday in Lagos, finished or not. */
+export function hasServiceToday<T extends ServiceWindow>(now: Date, services: T[]): boolean {
+  const { weekday } = lagosParts(now);
+  return services.some((s) => s.weekday === weekday);
+}

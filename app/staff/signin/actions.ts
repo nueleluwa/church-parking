@@ -1,10 +1,10 @@
 "use server";
 
 import { hash, verify } from "@node-rs/argon2";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { claimStore, getStaffByPhone } from "@/lib/db";
+import { ipKey as makeIpKey } from "@/lib/member-auth";
 import { serverEnv } from "@/lib/env";
 import { normalisePhone } from "@/lib/rules";
 import { hashKey } from "@/lib/session";
@@ -29,15 +29,17 @@ export async function signInStaff(_prev: SignInState, formData: FormData): Promi
 
   const phone = normalisePhone(parsed.data.phone);
   const secret = serverEnv().SESSION_SECRET;
-  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const phoneKey = hashKey("staff-phone", phone ?? parsed.data.phone, secret);
-  const ipKey = hashKey("staff-ip", ip, secret);
+  const ipKey = await makeIpKey("staff-ip", secret);
 
   const [phoneTries, ipTries] = await Promise.all([
     claimStore.countAttempts(phoneKey, LIMITS.windowMinutes),
-    claimStore.countAttempts(ipKey, LIMITS.windowMinutes),
+    ipKey ? claimStore.countAttempts(ipKey, LIMITS.windowMinutes) : Promise.resolve(0),
   ]);
-  await Promise.all([claimStore.recordAttempt(phoneKey), claimStore.recordAttempt(ipKey)]);
+  await Promise.all([
+    claimStore.recordAttempt(phoneKey),
+    ipKey ? claimStore.recordAttempt(ipKey) : Promise.resolve(),
+  ]);
   if (phoneTries >= LIMITS.phone || ipTries >= LIMITS.ip) {
     return { error: "Too many tries. Please wait 15 minutes, then try again." };
   }

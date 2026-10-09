@@ -1,6 +1,6 @@
 import type { ReleaseStore } from "@/lib/rules/release";
 import type { ScanDetail } from "@/lib/rules/scan";
-import { normalisePhone, normalisePlate } from "@/lib/rules";
+import { isNewCar, normalisePhone, normalisePlate } from "@/lib/rules";
 import { db } from "./client";
 import type { Staff } from "./types";
 
@@ -21,13 +21,15 @@ export async function getStaffById(id: string): Promise<Staff | null> {
 }
 
 const DETAIL_SELECT =
-  "id, status, reference, service_date, released_at, " +
+  "id, status, reference, service_date, released_at, vehicle_id, member_id, " +
   "vehicles(plate), areas(name), services(name), " +
   "members(full_name, phone), guests(full_name, phone), " +
   "releaser:staff!visits_released_by_fkey(full_name)";
 
 type DetailRow = {
   id: string;
+  vehicle_id: string;
+  member_id: string | null;
   status: ScanDetail["status"];
   reference: string;
   service_date: string;
@@ -51,11 +53,36 @@ function toDetail(row: DetailRow): ScanDetail {
     areaName: row.areas.name,
     serviceName: row.services.name,
     isGuest: row.members === null,
+    isNewCar: false, // filled in by withNewCarFlags
     fullName: person?.full_name ?? "",
     phone: person?.phone ?? "",
     releasedAt: row.released_at,
     releasedByName: row.releaser?.full_name ?? null,
   };
+}
+
+/** Marks member visits whose car was saved to the account within the last week. */
+async function withNewCarFlags(rows: DetailRow[]): Promise<ScanDetail[]> {
+  const details = rows.map(toDetail);
+  const memberRows = rows.filter((r) => r.member_id);
+  if (memberRows.length === 0) return details;
+
+  const { data, error } = await db()
+    .from("member_vehicles")
+    .select("member_id, vehicle_id, added_at")
+    .in("vehicle_id", memberRows.map((r) => r.vehicle_id));
+  if (error) fail(error.message);
+
+  const now = new Date();
+  const added = new Map(
+    (data ?? []).map((m) => [`${m.member_id}:${m.vehicle_id}`, m.added_at as string]),
+  );
+  return details.map((d, i) => ({
+    ...d,
+    isNewCar: rows[i].member_id
+      ? isNewCar(added.get(`${rows[i].member_id}:${rows[i].vehicle_id}`) ?? null, now)
+      : false,
+  }));
 }
 
 export async function getScanDetailByToken(token: string): Promise<ScanDetail | null> {
@@ -65,7 +92,8 @@ export async function getScanDetailByToken(token: string): Promise<ScanDetail | 
     .eq("pass_token", token)
     .maybeSingle();
   if (error) fail(error.message);
-  return data ? toDetail(data as unknown as DetailRow) : null;
+  if (!data) return null;
+  return (await withNewCarFlags([data as unknown as DetailRow]))[0];
 }
 
 /** Today's visits matching a plate, phone number or reference (EX-4). */
@@ -102,7 +130,8 @@ export async function searchTodaysVisits(query: string, today: string): Promise<
       const { data: vehicles } = await db()
         .from("vehicles")
         .select("id")
-        .like("plate", `%${plate}%`)
+        // 0/O and 1/I look alike on a plate, so each one matches either (_ is a single-character wildcard)
+        .like("plate", `%${plate.replace(/[0O1I]/g, "_")}%`)
         .limit(20);
       const ids = (vehicles ?? []).map((v) => v.id as string);
       if (ids.length === 0) return [];
@@ -111,7 +140,7 @@ export async function searchTodaysVisits(query: string, today: string): Promise<
   }
   const { data, error } = await request;
   if (error) fail(error.message);
-  return ((data ?? []) as unknown as DetailRow[]).map(toDetail);
+  return withNewCarFlags((data ?? []) as unknown as DetailRow[]);
 }
 
 /** The full phone number for one visit. Only used by "Show number", which logs it. */

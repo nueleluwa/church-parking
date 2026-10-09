@@ -1,4 +1,4 @@
-import type { ClaimStore } from "@/lib/rules/claim";
+import type { ClaimStore, OpenVisit } from "@/lib/rules/claim";
 import { db } from "./client";
 
 function fail(message: string): never {
@@ -51,14 +51,31 @@ export const claimStore: ClaimStore = {
     return (count ?? 0) > 0;
   },
 
-  async hasOpenVisit(vehicleId) {
-    const { count, error } = await db()
-      .from("visits")
-      .select("id", { count: "exact", head: true })
-      .eq("vehicle_id", vehicleId)
-      .eq("status", "parked");
+  async closeStaleOpenVisits(vehicleId, today) {
+    const { error } = await db().rpc("close_stale_visits", { p_vehicle: vehicleId, p_today: today });
     if (error) fail(error.message);
-    return (count ?? 0) > 0;
+  },
+
+  async findOpenVisit(vehicleId) {
+    const { data, error } = await db()
+      .from("visits")
+      .select("member_id, pass_token, reference, service_date")
+      .eq("vehicle_id", vehicleId)
+      .eq("status", "parked")
+      .maybeSingle();
+    if (error) fail(error.message);
+    return data as OpenVisit | null;
+  },
+
+  async memberIdForVehicle(vehicleId) {
+    const { data, error } = await db()
+      .from("member_vehicles")
+      .select("member_id")
+      .eq("vehicle_id", vehicleId)
+      .limit(1)
+      .maybeSingle();
+    if (error) fail(error.message);
+    return (data?.member_id as string | undefined) ?? null;
   },
 
   async memberOwnsVehicle(memberId, vehicleId) {
