@@ -1,9 +1,17 @@
-name: CI
+name: CI and deploy
 
+# Every push runs the checks. A push to main that passes them is then put live on the server.
+# "Run workflow" (on the Actions page) puts any commit that is already on main live again,
+# which is also how to go back to an earlier version.
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit to put live (full 40-character id). Leave empty for the latest on main."
+        required: false
 
 jobs:
   checks:
@@ -26,4 +34,49 @@ jobs:
           SESSION_SECRET: build-only-placeholder-secret-0123456789abcdef
           APP_URL: https://example.org
       # The browser tests (pnpm test:e2e) use a real Supabase test project and secrets,
-      # so they are run by hand or in a separate protected workflow, not on every push.
+      # so they are run by hand, not on every push.
+
+  deploy:
+    needs: checks
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    environment: production
+    # One deploy at a time; a second push waits for the first instead of cutting it short
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      SHA: ${{ inputs.sha || github.sha }}
+    steps:
+      - name: Check the commit id
+        run: |
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "Give the full 40-character commit id."; exit 1; }
+
+      - name: Set up the connection to the server
+        env:
+          KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Put this version live on the server
+        env:
+          HOST: ${{ secrets.VPS_HOST }}
+          USER_NAME: ${{ secrets.VPS_USER }}
+          PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+              -o ServerAliveInterval=30 -p "${PORT:-22}" "${USER_NAME}@${HOST}" "$SHA"
+
+      - name: Check the live site answers
+        if: ${{ vars.PUBLIC_URL != '' }}
+        run: |
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "${{ vars.PUBLIC_URL }}/staff/signin" || true)
+            [[ "$code" == "200" ]] && { echo "The live site answers (200)."; exit 0; }
+            echo "Attempt $i: got $code"; sleep 6
+          done
+          echo "The live site did not answer with 200."; exit 1

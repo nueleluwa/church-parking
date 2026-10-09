@@ -11,3 +11,8 @@ playwright-report/
 test-results/
 .DS_Store
 supabase/.temp/
+
+# Server keys and certificates must never be committed
+*.pem
+*.key
+deploy/secrets/
