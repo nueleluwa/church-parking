@@ -1,4 +1,4 @@
-import { PMark } from "@/components/PMark";
+import { AppHeader } from "@/components/AppHeader";
 
 const swatches = [
   { name: "page", cls: "bg-page" },
@@ -14,10 +14,7 @@ const swatches = [
 export default function DesignPage() {
   return (
     <>
-      <header className="flex items-center gap-3 bg-slate-green px-4 py-3 text-white">
-        <PMark className="bg-white !text-slate-green" />
-        <span className="text-lg font-semibold">Design tokens</span>
-      </header>
+      <AppHeader title="Design tokens" />
       <main className="mx-auto max-w-md space-y-6 px-4 py-6">
         <section className="rounded-card bg-sage p-4">
           <h2 className="mb-3 font-semibold">Colours</h2>
