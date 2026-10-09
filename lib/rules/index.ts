@@ -4,6 +4,8 @@ export { makeReference, makePassToken } from "./tokens";
 export {
   pickService,
   servicesForCheckIn,
+  servicesToday,
+  defaultDashboardService,
   hasServiceToday,
   lagosDate,
   TIME_ZONE,
@@ -30,3 +32,13 @@ export {
   type MemberAuthStore,
   type PinResult,
 } from "./member-auth";
+export { summariseVisits, type DashboardSummary, type AreaCounts, type VisitRow } from "./dashboard";
+export {
+  canCorrect,
+  checkReason,
+  CORRECTION_ACTIONS,
+  CORRECTION_MESSAGES,
+  type CorrectionAction,
+  type CorrectionResult,
+} from "./corrections";
+export { describeAlert } from "./alerts";

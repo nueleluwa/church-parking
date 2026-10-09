@@ -83,3 +83,26 @@ export function hasServiceToday<T extends ServiceWindow>(now: Date, services: T[
   const { weekday } = lagosParts(now);
   return services.some((s) => s.weekday === weekday);
 }
+
+/** Today's services (finished or not), in order. Used by the dashboard and the sweep. */
+export function servicesToday<T extends ServiceWindow>(now: Date, services: T[]): T[] {
+  const { weekday } = lagosParts(now);
+  return services
+    .filter((s) => s.weekday === weekday)
+    .sort((a, b) => toMinutes(a.starts_at) - toMinutes(b.starts_at));
+}
+
+/**
+ * The service the coordinator most likely wants: the one running now (or
+ * starting soon), otherwise the one that finished most recently, otherwise
+ * the first of the day.
+ */
+export function defaultDashboardService<T extends ServiceWindow>(now: Date, services: T[]): T | null {
+  const today = servicesToday(now, services);
+  if (today.length === 0) return null;
+  const { minutes } = lagosParts(now);
+  const current = pickService(now, today);
+  if (current) return current;
+  const finished = today.filter((s) => toMinutes(s.ends_at) <= minutes);
+  return finished.length ? finished[finished.length - 1] : today[0];
+}

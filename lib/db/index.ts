@@ -4,3 +4,4 @@ export { claimStore } from "./claim-store";
 export { getPassByToken, type PassRecord } from "./passes";
 export * from "./staff";
 export * from "./members";
+export * from "./operations";

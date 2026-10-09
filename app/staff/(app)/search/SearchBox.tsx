@@ -3,9 +3,10 @@
 import { useState, useTransition } from "react";
 import type { ScanCard } from "@/lib/rules/scan";
 import { searchPasses } from "../actions";
+import type { CorrectionContext } from "@/lib/correction-context";
 import { ResultCard } from "../ResultCard";
 
-export function SearchBox() {
+export function SearchBox({ corrections }: { corrections: CorrectionContext | null }) {
   const [query, setQuery] = useState("");
   const [cards, setCards] = useState<ScanCard[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +58,7 @@ export function SearchBox() {
         </p>
       )}
       {cards?.map((c) => (
-        <ResultCard key={c.visitId} card={c} method="search" onDone={clear} doneLabel="Done" />
+        <ResultCard key={c.visitId} card={c} method="search" onDone={clear} doneLabel="Done" corrections={corrections} />
       ))}
     </div>
   );

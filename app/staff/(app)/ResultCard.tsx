@@ -6,6 +6,8 @@ import { dangerButton, primaryButton, secondaryButton } from "@/components/ui";
 import { Spinner } from "@/components/Spinner";
 import { formatPlate } from "@/lib/rules/plates";
 import type { ScanCard } from "@/lib/rules/scan";
+import type { CorrectionContext } from "@/lib/correction-context";
+import { CorrectionPanel } from "./CorrectionPanel";
 import { doesNotMatch, releaseCar, revealPhone } from "./actions";
 
 const time = (iso: string | null) =>
@@ -22,9 +24,11 @@ type Props = {
   method: "scan" | "search";
   onDone: () => void;
   doneLabel: string;
+  /** Set for coordinators and admins: shows the corrections panel. */
+  corrections?: CorrectionContext | null;
 };
 
-export function ResultCard({ card, method, onDone, doneLabel }: Props) {
+export function ResultCard({ card, method, onDone, doneLabel, corrections }: Props) {
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [finished, setFinished] = useState<"released" | "held" | null>(null);
@@ -152,6 +156,8 @@ export function ResultCard({ card, method, onDone, doneLabel }: Props) {
             {doneLabel}
           </button>
         )}
+
+        {corrections && <CorrectionPanel visitId={card.visitId} context={corrections} />}
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { AppHeader } from "@/components/AppHeader";
 import { IconLogout } from "@/components/icons";
+import { canCorrect } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
 import { signOut } from "./actions";
 import { BottomNav } from "./BottomNav";
@@ -25,7 +26,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
         }
       />
       <main className="mx-auto max-w-md space-y-4 px-4 pb-28 pt-6">{children}</main>
-      <BottomNav />
+      <BottomNav coordinator={canCorrect(staff.role)} />
     </>
   );
 }

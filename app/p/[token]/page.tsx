@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { IconAlert, IconCheck, IconClock } from "@/components/icons";
+import { correctionContext } from "@/lib/correction-context";
 import { getPassByToken, getScanDetailByToken } from "@/lib/db";
 import { serverEnv } from "@/lib/env";
 import { rememberedPassToken } from "@/lib/pass-cookie";
@@ -46,14 +47,18 @@ export default async function PassPage({ params }: { params: Promise<{ token: st
   if (!pass) notFound();
 
   // Signed-in staff see the full staff view: first name, masked phone and the release buttons.
-  if (await currentStaff()) {
+  const staff = await currentStaff();
+  if (staff) {
     const detail = await getScanDetailByToken(token);
     if (detail) {
       return (
         <>
           <AppHeader title="Parking team" />
           <main className="mx-auto max-w-md space-y-4 px-4 py-6">
-            <StaffPass card={buildScanCard(detail, lagosDate(new Date()))} />
+            <StaffPass
+              card={buildScanCard(detail, lagosDate(new Date()))}
+              corrections={await correctionContext(staff)}
+            />
           </main>
         </>
       );

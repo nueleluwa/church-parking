@@ -5,11 +5,12 @@ import { IconAlert } from "@/components/icons";
 import { errorBox } from "@/components/ui";
 import type { ScanCard } from "@/lib/rules/scan";
 import { lookupPass } from "../actions";
+import type { CorrectionContext } from "@/lib/correction-context";
 import { ResultCard } from "../ResultCard";
 
 const REGION = "qr-region";
 
-export function Scanner() {
+export function Scanner({ corrections }: { corrections: CorrectionContext | null }) {
   const [card, setCard] = useState<ScanCard | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -70,7 +71,7 @@ export function Scanner() {
     setRun((n) => n + 1);
   }, []);
 
-  if (card) return <ResultCard card={card} method="scan" onDone={next} doneLabel="Scan next pass" />;
+  if (card) return <ResultCard card={card} method="scan" onDone={next} doneLabel="Scan next pass" corrections={corrections} />;
 
   return (
     <div className="space-y-3">
