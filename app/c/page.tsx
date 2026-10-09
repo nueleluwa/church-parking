@@ -1,7 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { IconChevronRight, IconPin } from "@/components/icons";
 import { PrivacyNotice } from "@/components/PrivacyNotice";
-import { SignScanner } from "@/components/SignScanner";
 import { TitleHeader } from "@/components/TitleHeader";
 import { listActiveAreas } from "@/lib/db";
 
@@ -11,10 +11,11 @@ export const dynamic = "force-dynamic";
 /**
  * "Where are you parking?": the general way in, for someone who opened the site without scanning a car park
  * sign. Choosing a car park goes to exactly the page its own QR sign opens (/c/<car park>), so there is one
- * check-in, however the driver arrives. The scanner is the second way, not the first.
+ * check-in, however the driver arrives. Scanning a sign is a separate page (/scan), so the two ways never mix.
  */
 export default async function ChooseCarParkPage({ searchParams }: { searchParams: Promise<{ scan?: string }> }) {
   const { scan } = await searchParams;
+  if (scan === "1") redirect("/scan"); // an older link to the scanner
   const areas = await listActiveAreas();
 
   return (
@@ -49,7 +50,6 @@ export default async function ChooseCarParkPage({ searchParams }: { searchParams
           </ul>
         )}
 
-        <SignScanner knownSlugs={areas.map((a) => a.slug)} startOpen={scan === "1"} />
         <PrivacyNotice />
       </main>
     </>

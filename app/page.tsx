@@ -3,7 +3,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { IconCar, IconScan, IconUser } from "@/components/icons";
 import { MemberNav } from "@/components/MemberNav";
 import { PMark } from "@/components/PMark";
-import { card, outlineButton, pageMain, redButton } from "@/components/ui";
+import { card, outlineButton, pageMain, quietButton, redButton } from "@/components/ui";
 import { openPassTokenForMember } from "@/lib/db";
 import { currentMember } from "@/lib/member-auth";
 import { lagosDate } from "@/lib/rules";
@@ -50,7 +50,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
           <Link href="/c" className={redButton}>
             Check in
           </Link>
-          <Link href="/c?scan=1" className={outlineButton}>
+          <Link href="/scan" className={outlineButton}>
             <IconScan className="h-5 w-5" />
             Scan a car park sign
           </Link>
@@ -68,18 +68,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
         </ol>
 
         {!member && (
-          <p className="pt-2 text-center">
-            Already a member?{" "}
-            <Link href="/account/signin" className="font-semibold text-accent underline">
-              Sign in
-            </Link>
-            <span className="px-2 text-ink-soft" aria-hidden="true">
-              ·
-            </span>
-            <Link href="/account/signup" className="font-semibold text-accent underline">
-              Create an account
-            </Link>
-          </p>
+          <section aria-label="Members" className="rounded-card bg-card p-4 shadow-sm">
+            <p className="text-center font-semibold">Already a member?</p>
+            <p className="mt-0.5 text-center text-sm text-ink-soft">Sign in to check in with two taps.</p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Link href="/account/signin" className={quietButton}>
+                Sign in
+              </Link>
+              <Link href="/account/signup" className={quietButton}>
+                Create an account
+              </Link>
+            </div>
+          </section>
         )}
       </main>
       {member && <MemberNav active="home" />}

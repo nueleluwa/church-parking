@@ -13,6 +13,10 @@ export const redButton = `${buttonBase} bg-accent text-white shadow-sm hover:bg-
 /** The quieter partner of redButton: white with a dark outline. */
 export const outlineButton = `${buttonBase} border-2 border-edge/70 bg-white text-ink hover:bg-page`;
 
+/** A smaller button for a pair of side-by-side choices: the same height, text centred, and room to wrap on a narrow phone. */
+export const quietButton =
+  "inline-flex min-h-12 w-full items-center justify-center rounded-full border-2 border-edge/70 bg-white px-3 py-2.5 text-center text-base font-semibold leading-tight text-ink transition hover:bg-page active:scale-[0.98] focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-edge";
+
 export const secondaryButton = `${buttonBase} border-2 border-edge bg-white text-ink hover:bg-page`;
 
 export const dangerButton = `${buttonBase} border-2 border-danger bg-white text-danger hover:bg-page`;
