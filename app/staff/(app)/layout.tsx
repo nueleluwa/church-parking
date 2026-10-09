@@ -12,14 +12,14 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   return (
     <>
       <AppHeader
-        title="Parking team"
+        title="Team"
         right={
           <form action={signOut}>
             <button
               aria-label={`Sign out ${staff.name.split(" ")[0]}`}
-              className="flex items-center gap-2 rounded-full border-2 border-white/40 px-3 py-1.5 text-sm font-medium hover:bg-white/15"
+              className="flex items-center gap-2 rounded-full border-2 border-white/40 p-2 text-sm font-medium hover:bg-white/15 sm:px-3 sm:py-1.5"
             >
-              <span className="max-w-20 truncate">{staff.name.split(" ")[0]}</span>
+              <span className="hidden max-w-20 truncate sm:inline">{staff.name.split(" ")[0]}</span>
               <IconLogout className="h-4 w-4" />
             </button>
           </form>

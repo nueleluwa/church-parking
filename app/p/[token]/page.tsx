@@ -53,7 +53,7 @@ export default async function PassPage({ params }: { params: Promise<{ token: st
     if (detail) {
       return (
         <>
-          <AppHeader title="Parking team" />
+          <AppHeader title="Team" />
           <main className="mx-auto max-w-md space-y-4 px-4 py-6">
             <StaffPass
               card={buildScanCard(detail, lagosDate(new Date()))}

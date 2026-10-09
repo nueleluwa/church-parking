@@ -9,7 +9,7 @@ export default async function StaffSignInPage() {
   if (await currentStaff()) redirect("/staff/scan");
   return (
     <>
-      <AppHeader title="Parking team" />
+      <AppHeader title="Team" />
       <main className="mx-auto max-w-md px-4 py-6">
         <div className="rounded-card bg-card p-6 shadow-sm">
           <h1 className="mb-4 text-2xl font-bold">Team sign-in</h1>
