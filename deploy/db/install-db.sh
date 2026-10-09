@@ -189,14 +189,24 @@ install -m 755 "$HERE/backup.sh" /usr/local/bin/church-backup
 install -d -o "$APP_USER" -g "$APP_USER" -m 700 /var/backups/church-parking
 sudo -u "$APP_USER" env PATH="$PATH" bash "$HERE/migrate.sh"
 
+step "Starting data: the three car parks and the three Sunday services (nothing else)"
+sudo -u "$APP_USER" env PATH="$PATH" bash -c 'cd / && psql "$(grep -E "^DATABASE_URL=" "$1" | cut -d= -f2-)" -X -q -v ON_ERROR_STOP=1 -f "$2"' _ "$ENV_FILE" "$HERE/seed-production.sql"
+
 step "Nightly backup at 02:15"
 printf '15 2 * * * %s /usr/local/bin/church-backup nightly >>/var/backups/church-parking/backup.log 2>&1\n' "$APP_USER" >/etc/cron.d/church-parking-backup
 chmod 644 /etc/cron.d/church-parking-backup
 
 step "Check: ask the database interface for the car parks, the way the app does"
 SERVICE_KEY=$(get_env SUPABASE_SERVICE_ROLE_KEY)
+# PostgREST needs a moment to notice the new tables, so ask for up to 30 seconds
+OK=0
+for _ in $(seq 1 15); do
+  if curl -fsS --max-time 10 -H "apikey: $SERVICE_KEY" -H "Authorization: Bearer $SERVICE_KEY" "http://127.0.0.1:$PROXY_PORT/rest/v1/areas?select=slug,name&order=sort" 2>/dev/null | grep -q cp1; then OK=1; break; fi
+  sleep 2
+done
 curl -fsS --max-time 10 -H "apikey: $SERVICE_KEY" -H "Authorization: Bearer $SERVICE_KEY" \
   "http://127.0.0.1:$PROXY_PORT/rest/v1/areas?select=slug,name&order=sort" && echo
+[[ $OK -eq 1 ]] || { echo "The database interface did not answer correctly." >&2; exit 1; }
 # And the public (anonymous) role must see nothing at all
 CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://127.0.0.1:$PROXY_PORT/rest/v1/areas?select=slug")
 echo "Without the key the request is refused (expected 401): $CODE"

@@ -13,6 +13,7 @@ APP_DIR=/srv/church-parking
 ENV_FILE="$APP_DIR/shared/.env.production.local"
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 MIGRATIONS="$HERE/../../supabase/migrations"
+cd / # a folder every user can read, so nothing below depends on where this was started
 WITH_BACKUP=0; [[ "${1:-}" == "--with-backup" ]] && WITH_BACKUP=1
 
 DATABASE_URL=$(grep -E '^DATABASE_URL=' "$ENV_FILE" | head -1 | cut -d= -f2-)
