@@ -41,6 +41,7 @@ export async function createStaff(role: "attendant" | "coordinator") {
     .single();
   expect(error).toBeNull();
   return {
+    id: data!.id as string,
     phone,
     password,
     remove: async () => {

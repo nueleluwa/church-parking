@@ -6,12 +6,12 @@ const staff = { id: "s1", role: "attendant" as const };
 const today = "2026-10-11";
 
 /** Mimics the database: release() only succeeds for the first caller. */
-function fakeStore(over: { status?: "parked" | "released"; service_date?: string } = {}) {
+function fakeStore(over: { status?: "parked" | "released"; service_date?: string; held?: boolean } = {}) {
   let status = over.status ?? "parked";
   const releases: string[] = [];
   const store: ReleaseStore = {
     async getVisitState() {
-      return { status, service_date: over.service_date ?? today };
+      return { status, service_date: over.service_date ?? today, held: over.held ?? false };
     },
     async release(_visitId, staffId) {
       await Promise.resolve(); // let a second caller interleave
@@ -25,6 +25,13 @@ function fakeStore(over: { status?: "parked" | "released"; service_date?: string
 }
 
 describe("releaseVisit", () => {
+  test("a car on hold (Does not match) cannot be released", async () => {
+    const { store, releases } = fakeStore({ held: true });
+    const r = await releaseVisit(store, staff, { visitId: "v1", method: "scan", today });
+    expect(r).toEqual({ ok: false, reason: "held" });
+    expect(releases).toEqual([]);
+  });
+
   test("a signed-in attendant releases a parked car", async () => {
     const { store, releases } = fakeStore();
     expect(await releaseVisit(store, staff, { visitId: "v1", method: "scan", today })).toEqual({ ok: true });

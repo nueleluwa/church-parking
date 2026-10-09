@@ -5,3 +5,4 @@ export { getPassByToken, type PassRecord } from "./passes";
 export * from "./staff";
 export * from "./members";
 export * from "./operations";
+export * from "./admin";

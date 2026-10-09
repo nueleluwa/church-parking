@@ -21,7 +21,7 @@ export async function getStaffById(id: string): Promise<Staff | null> {
 }
 
 const DETAIL_SELECT =
-  "id, status, reference, service_date, released_at, checked_in_at, vehicle_id, member_id, " +
+  "id, status, reference, service_date, released_at, checked_in_at, held_at, vehicle_id, member_id, " +
   "vehicles(plate, make, colour), areas(name), services(name), " +
   "members(full_name, phone), guests(full_name, phone), " +
   "releaser:staff!visits_released_by_fkey(full_name)";
@@ -34,6 +34,7 @@ type DetailRow = {
   reference: string;
   service_date: string;
   released_at: string | null;
+  held_at: string | null;
   checked_in_at: string;
   vehicles: { plate: string; make: string | null; colour: string | null };
   areas: { name: string };
@@ -61,6 +62,7 @@ function toDetail(row: DetailRow): ScanDetail {
     fullName: person?.full_name ?? "",
     phone: person?.phone ?? "",
     releasedAt: row.released_at,
+    held: row.held_at !== null,
     releasedByName: row.releaser?.full_name ?? null,
   };
 }
@@ -172,30 +174,43 @@ export async function logAudit(
 }
 
 /** "Does not match": hold the car and alert the coordinator (EX-5). */
-export async function raiseNoMatch(staffId: string, visitId: string, plate: string): Promise<void> {
-  const { error } = await db()
+export async function raiseNoMatch(staffId: string, visitId: string, plate: string): Promise<"ok" | "not_found" | "bad_state"> {
+  const { data, error } = await db().rpc("hold_visit", { p_visit: visitId, p_staff: staffId });
+  if (error) fail(error.message);
+  if (data !== "ok") return data as "not_found" | "bad_state";
+  const alert = await db()
     .from("alerts")
     .insert({ kind: "no_match", visit_id: visitId, plate, detail: { staff_id: staffId } });
+  if (alert.error) fail(alert.error.message);
+  return "ok";
+}
+
+/** A coordinator clears a hold. The reason is required and audited. */
+export async function clearHold(visitId: string, staffId: string, reason: string): Promise<"ok" | "not_found" | "bad_state" | "bad_input"> {
+  const { data, error } = await db().rpc("clear_hold", { p_visit: visitId, p_staff: staffId, p_reason: reason });
   if (error) fail(error.message);
-  await logAudit(staffId, visitId, "no_match");
+  return data as "ok" | "not_found" | "bad_state" | "bad_input";
 }
 
 export const releaseStore: ReleaseStore = {
   async getVisitState(visitId) {
     const { data, error } = await db()
       .from("visits")
-      .select("status, service_date")
+      .select("status, service_date, held_at")
       .eq("id", visitId)
       .maybeSingle();
     if (error) fail(error.message);
-    return data as { status: "parked" | "released" | "missed"; service_date: string } | null;
+    if (!data) return null;
+    const row = data as { status: "parked" | "released" | "missed"; service_date: string; held_at: string | null };
+    return { status: row.status, service_date: row.service_date, held: row.held_at !== null };
   },
 
-  async release(visitId, staffId, method) {
+  async release(visitId, staffId, method, today) {
     const { data, error } = await db().rpc("release_visit", {
       p_visit: visitId,
       p_staff: staffId,
       p_method: method,
+      p_today: today,
     });
     if (error) fail(error.message);
     return data !== null;

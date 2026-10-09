@@ -21,11 +21,17 @@ const SCREENS: Record<string, { title: string; back: string }> = {
   "/staff/sweep": { title: "Sweep", back: "/staff" },
   "/admin": { title: "Admin", back: "/staff" },
   "/admin/areas": { title: "Car Parks", back: "/admin" },
+  "/admin/services": { title: "Services", back: "/admin" },
+  "/admin/staff": { title: "Staff Accounts", back: "/admin" },
+  "/admin/members": { title: "Members", back: "/admin" },
+  "/admin/reports": { title: "Reports", back: "/admin" },
+  "/admin/signs": { title: "QR Signs", back: "/admin" },
 };
 
 export function StaffHeader({ initials }: { initials: string }) {
   const path = usePathname();
-  const screen = SCREENS[path.replace(/\/$/, "")];
+  const clean = path.replace(/\/$/, "");
+  const screen = SCREENS[clean] ?? (clean.startsWith("/admin/signs/") ? { title: "Print Sign", back: "/admin/signs" } : undefined);
 
   const avatar = (
     <Link

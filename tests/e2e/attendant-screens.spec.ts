@@ -189,8 +189,69 @@ test("Does not match holds the car, tells the coordinator, and never releases it
       .eq("vehicles.plate", plate)
       .single();
     expect(visit?.status).toBe("parked");
+
+    // The hold sticks: another attendant sees On hold and cannot release it
+    const other = await (await browser.newContext()).newPage();
+    const second = await createStaff("attendant");
+    const lead = await createStaff("coordinator");
+    try {
+      await staffSignIn(other, second.phone, second.password);
+      await lookUp(other, "By plate", plate, "Vehicle plate number");
+      await expect(other.getByRole("heading", { name: "On hold" })).toBeVisible({ timeout: 60_000 });
+      await expect(other.getByRole("button", { name: "Release car" })).toHaveCount(0);
+      await expect(other.getByText("Only a coordinator can clear a hold.")).toBeVisible();
+
+      // A coordinator clears it with a reason, then the car can be released
+      const boss = await (await browser.newContext()).newPage();
+      await staffSignIn(boss, lead.phone, lead.password);
+      await lookUp(boss, "By plate", plate, "Vehicle plate number");
+      await expect(boss.getByRole("heading", { name: "On hold" })).toBeVisible({ timeout: 60_000 });
+      await boss.getByRole("button", { name: "Clear hold" }).click();
+      await expect(boss.getByText("Please write a reason")).toBeVisible({ timeout: 30_000 });
+      await boss.getByLabel("Why is the hold being cleared?").fill("Driver proved the car is theirs");
+      await boss.getByRole("button", { name: "Clear hold" }).click();
+      await expect(boss.getByText("Hold cleared.")).toBeVisible({ timeout: 30_000 });
+      await lookUp(other, "By plate", plate, "Vehicle plate number");
+      await expect(other.getByRole("heading", { name: "Ready for exit" })).toBeVisible({ timeout: 60_000 });
+      await other.getByRole("button", { name: "Release car" }).click();
+      await expect(other.getByRole("heading", { name: "Car released" })).toBeVisible({ timeout: 60_000 });
+
+      const { data: audit } = await db.from("audit_events").select("action, reason").eq("action", "clear_hold").order("id", { ascending: false }).limit(1).single();
+      expect(audit?.reason).toBe("Driver proved the car is theirs");
+    } finally {
+      await second.remove();
+      await lead.remove();
+    }
   } finally {
     await attendant.remove();
+  }
+});
+
+test("two releases of one visit at the same moment, against the real database: exactly one wins", async ({ browser }) => {
+  const db = adminClient();
+  const plate = randomPlate("PR");
+  await guestCheckIn(browser, plate);
+  const a = await createStaff("attendant");
+  const b = await createStaff("attendant");
+  try {
+    const { data: visit } = await db.from("visits").select("id, service_date, vehicles!inner(plate)").eq("vehicles.plate", plate).single();
+    const call = (staff: string) =>
+      db.rpc("release_visit", { p_visit: visit!.id, p_staff: staff, p_method: "scan", p_today: visit!.service_date });
+    const results = await Promise.all([call(a.id), call(b.id), call(a.id), call(b.id)]);
+    const winners = results.filter((r) => r.data !== null);
+    expect(winners).toHaveLength(1);
+    const { count } = await db.from("audit_events").select("id", { count: "exact", head: true }).eq("visit_id", visit!.id).eq("action", "release");
+    expect(count).toBe(1);
+
+    // A pass from another day cannot be released even by calling the function directly
+    const other = randomPlate("PS");
+    await guestCheckIn(browser, other);
+    const { data: v2 } = await db.from("visits").select("id, vehicles!inner(plate)").eq("vehicles.plate", other).single();
+    const old = await db.rpc("release_visit", { p_visit: v2!.id, p_staff: a.id, p_method: "scan", p_today: "2020-01-01" });
+    expect(old.data).toBeNull();
+  } finally {
+    await a.remove();
+    await b.remove();
   }
 });
 

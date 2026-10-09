@@ -14,6 +14,7 @@ import { describeVehicle } from "@/lib/rules/vehicle";
 import type { ScanCard } from "@/lib/rules/scan";
 import { CorrectionPanel } from "./CorrectionPanel";
 import { doesNotMatch, releaseCar, revealPhone } from "./actions";
+import { clearHoldAction } from "./ops-actions";
 
 const time = (iso: string | null) => (iso ? formatLagosTime(iso) : "");
 
@@ -36,6 +37,8 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
   const [message, setMessage] = useState<string | null>(null);
   const [finished, setFinished] = useState<"released" | "held" | null>(null);
   const [phone, setPhone] = useState<string | null>(null);
+  const [clearReason, setClearReason] = useState("");
+  const [cleared, setCleared] = useState(false);
 
   const problem =
     card.state === "already_released"
@@ -48,7 +51,13 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
         ? { chip: "OLD PASS", title: "Old pass", reason: "OLD PASS. This pass is from an earlier day. Do not release." }
         : card.state === "closed"
           ? { chip: "CLOSED", title: "Visit closed", reason: "This visit is closed. Do not release." }
-          : null;
+          : card.state === "held"
+            ? {
+                chip: "ON HOLD",
+                title: "On hold",
+                reason: "Do not release this car. Stay with it and call the coordinator.",
+              }
+            : null;
 
   function buzz(pattern: number | number[]) {
     if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(pattern);
@@ -75,6 +84,15 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
       } else setMessage(r.message);
     });
   }
+  function clear() {
+    start(async () => {
+      const r = await clearHoldAction(card.visitId, clearReason);
+      if (r.ok) {
+        setCleared(true);
+        setMessage(null);
+      } else setMessage(r.message);
+    });
+  }
   function show() {
     start(async () => {
       const r = await revealPhone(card.visitId);
@@ -94,7 +112,7 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
     finished === "released"
       ? "Vehicle has been released."
       : finished === "held"
-        ? "Do not release this vehicle. The coordinator has been told."
+        ? "Do not release this vehicle. Stay with it and call the coordinator."
         : (problem?.reason ?? "Confirm the details, then release the car.");
 
   const details = describeVehicle({ make: card.make, colour: card.colour });
@@ -103,7 +121,9 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
       ? "Released"
       : card.state === "ready"
         ? "Valid"
-        : card.state === "already_released"
+        : card.state === "held"
+          ? "On hold"
+          : card.state === "already_released"
           ? "Released"
           : card.state === "expired"
             ? "Expired"
@@ -213,6 +233,34 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
             Does not match
           </button>
           <button onClick={onDone} disabled={pending} className={outlineButton}>
+            {doneLabel}
+          </button>
+        </div>
+      ) : card.state === "held" ? (
+        <div className="space-y-3">
+          {cleared ? (
+            <p role="status" className="rounded-2xl border-2 border-success bg-success-soft p-3 font-medium">
+              Hold cleared. Look the car up again to release it.
+            </p>
+          ) : corrections ? (
+            <div className="space-y-2 rounded-card bg-card p-4 shadow-sm">
+              <label className="block font-medium">
+                Why is the hold being cleared?
+                <input
+                  value={clearReason}
+                  onChange={(e) => setClearReason(e.target.value)}
+                  className="mt-1 w-full rounded-2xl border-2 border-edge/30 bg-white px-4 py-3"
+                  maxLength={200}
+                />
+              </label>
+              <button onClick={clear} disabled={pending} className={redButton}>
+                Clear hold
+              </button>
+            </div>
+          ) : (
+            <p className="rounded-2xl bg-card p-3 text-ink-soft shadow-sm">Only a coordinator can clear a hold.</p>
+          )}
+          <button onClick={onDone} className={outlineButton}>
             {doneLabel}
           </button>
         </div>

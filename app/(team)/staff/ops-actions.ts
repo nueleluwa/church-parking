@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { correctVisit, resolveAlert, sweepVisit } from "@/lib/db";
+import { clearHold, correctVisit, resolveAlert, sweepVisit } from "@/lib/db";
 import {
   canCorrect,
   checkReason,
@@ -39,6 +39,19 @@ export async function sweepAction(visitId: string, gone: boolean, serviceId: num
     ok: false,
     message: result === "bad_state" ? "This car was already released or closed." : "We cannot find this car.",
   };
+}
+
+/** A coordinator clears a Does not match hold. A reason is required. */
+export async function clearHoldAction(visitId: string, reason: string): Promise<OpsResult> {
+  const staff = await coordinator();
+  if (!staff) return { ok: false, message: "Only a coordinator can clear a hold." };
+  if (!z.string().uuid().safeParse(visitId).success) return { ok: false, message: "Please try again." };
+  const checked = checkReason(reason);
+  if (!checked.ok) return { ok: false, message: checked.message };
+  const result = await clearHold(visitId, staff.id, checked.reason);
+  if (result === "ok") return { ok: true, message: "Hold cleared. The car can be released." };
+  if (result === "bad_state") return { ok: false, message: "This car is not on hold." };
+  return { ok: false, message: "We cannot find this car." };
 }
 
 const correctionSchema = z.object({

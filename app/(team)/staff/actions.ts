@@ -59,6 +59,7 @@ const RELEASE_MESSAGES = {
   not_found: "We can't find this pass.",
   already_released: "This car was already released.",
   expired: "This pass is from an earlier day.",
+  held: "This car is on hold. Ask the coordinator.",
 } as const;
 
 export type ActionResult = { ok: true } | { ok: false; message: string };
@@ -73,7 +74,9 @@ export async function releaseCar(visitId: string, method: "scan" | "search"): Pr
 export async function doesNotMatch(visitId: string, plate: string): Promise<ActionResult> {
   const staff = await currentStaff();
   if (!staff || !uuid.safeParse(visitId).success) return { ok: false, message: "Please sign in again." };
-  await raiseNoMatch(staff.id, visitId, normalisePlate(plate));
+  const result = await raiseNoMatch(staff.id, visitId, normalisePlate(plate));
+  if (result === "not_found") return { ok: false, message: "We can't find this pass." };
+  if (result === "bad_state") return { ok: false, message: "This car was already released or closed." };
   return { ok: true };
 }
 

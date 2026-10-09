@@ -16,9 +16,11 @@ export type ScanDetail = {
   phone: string; // full number: stays on the server
   releasedAt: string | null;
   releasedByName: string | null;
+  /** A coordinator has not yet cleared a Does not match hold. */
+  held?: boolean;
 };
 
-export type ScanState = "ready" | "already_released" | "expired" | "closed";
+export type ScanState = "ready" | "held" | "already_released" | "expired" | "closed";
 
 export type ScanCard = {
   visitId: string;
@@ -51,6 +53,7 @@ export function buildScanCard(d: ScanDetail, today: string, now: Date = new Date
   if (d.status === "released") state = "already_released";
   else if (d.status === "missed") state = "closed";
   else if (d.serviceDate !== today) state = "expired";
+  else if (d.held) state = "held";
 
   return {
     visitId: d.visitId,

@@ -87,4 +87,7 @@ describe("tokenFromScan", () => {
     expect(tokenFromScan("hello")).toBeNull();
     expect(tokenFromScan("")).toBeNull();
   });
+  test("a car on hold shows as held, not ready", () => {
+    expect(buildScanCard({ ...base, held: true }, "2026-10-11").state).toBe("held");
+  });
 });

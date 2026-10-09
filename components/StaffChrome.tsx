@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { BottomNav } from "@/app/(team)/staff/BottomNav";
+import { SideNav } from "@/components/SideNav";
 import { StaffHeader } from "@/components/StaffHeader";
 import { hasRole } from "@/lib/rules";
 import type { StaffSession } from "@/lib/staff-auth";
@@ -19,11 +20,27 @@ export function initialsOf(name: string): string {
  * stays in place while the screen inside changes.
  */
 export function StaffChrome({ staff, children }: { staff: StaffSession; children: ReactNode }) {
+  const coordinator = hasRole(staff.role, "coordinator");
+  const admin = hasRole(staff.role, "admin");
+  const roleName = admin ? "Parking Admin" : coordinator ? "Coordinator" : "Attendant";
   return (
     <>
-      <StaffHeader initials={initialsOf(staff.name)} />
-      <main className="mx-auto max-w-md space-y-4 px-4 pb-28 pt-5">{children}</main>
-      <BottomNav coordinator={hasRole(staff.role, "coordinator")} admin={hasRole(staff.role, "admin")} />
+      {coordinator && <SideNav admin={admin} name={staff.name} role={roleName} initials={initialsOf(staff.name)} />}
+      <div className={coordinator ? "lg:pl-64 print:pl-0" : ""}>
+        <div className="print:hidden">
+          <StaffHeader initials={initialsOf(staff.name)} />
+        </div>
+        <main
+          className={`mx-auto space-y-4 px-4 pb-28 pt-5 print:max-w-none print:p-0 ${
+            coordinator ? "max-w-md lg:max-w-5xl lg:pb-10" : "max-w-md"
+          }`}
+        >
+          {children}
+        </main>
+      </div>
+      <div className="lg:hidden print:hidden">
+        <BottomNav coordinator={coordinator} admin={admin} />
+      </div>
     </>
   );
 }
