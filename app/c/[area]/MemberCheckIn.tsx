@@ -197,6 +197,14 @@ export function MemberCheckIn({
             {state.error && !state.blocked && (
               <p role="alert" className={errorBox}>
                 {state.error}
+                {state.signInAgain && (
+                  <>
+                    {" "}
+                    <Link href={`/account/signin?next=${encodeURIComponent(`/c/${areaSlug}`)}`} className="font-bold underline">
+                      Sign in
+                    </Link>
+                  </>
+                )}
               </p>
             )}
 

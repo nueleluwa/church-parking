@@ -26,7 +26,7 @@ import {
 import { hashKey } from "@/lib/session";
 
 /** `blocked` means the car was refused (already checked in, or a member's car): shown as a card, not a form error. */
-export type CheckInState = { error?: string; blocked?: boolean };
+export type CheckInState = { error?: string; blocked?: boolean; signInAgain?: boolean };
 
 const schema = z.object({
   area: z.string().min(1).max(40),
@@ -120,7 +120,8 @@ const memberSchema = z.object({
  */
 export async function checkInMember(_prev: CheckInState, formData: FormData): Promise<CheckInState> {
   const member = await currentMember();
-  if (!member) return { error: "Please sign in again." };
+  // Their sign-in has ended (or they signed out in another tab): say so, and let the page offer a way back to this same check-in
+  if (!member) return { error: "Your sign-in has ended. Please sign in again to check in.", signInAgain: true };
 
   const parsed = memberSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please choose your car." };

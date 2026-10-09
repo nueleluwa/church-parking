@@ -79,3 +79,33 @@ test("a different car is not mistaken for a retry", async ({ page }) => {
   const { count } = await db.from("visits").select("id, vehicles!inner(plate)", { count: "exact", head: true }).in("vehicles.plate", [plateA, plateB]);
   expect(count).toBe(2);
 });
+
+test("a member whose sign-in ends before they tap Check in gets a link back to the same check-in", async ({ page }) => {
+  const { memberSignUp } = await import("./helpers");
+  const plate = randomPlate("SE");
+  const phone = await memberSignUp(page, "4821");
+  await expect(page).toHaveURL(/\/account\?welcome=1$/, { timeout: 60_000 });
+  await page.getByLabel("Plate number").fill(plate);
+  await page.getByRole("button", { name: "Save car" }).click();
+  await expect(page.getByText("Car saved.")).toBeVisible({ timeout: 30_000 });
+
+  // At the car park sign, ready to check in...
+  await page.goto("/c/cp1");
+  await expect(page.getByRole("button", { name: "Check in" })).toBeVisible({ timeout: 60_000 });
+
+  // ...but the sign-in has ended (here: the cookie is gone) before the button is tapped
+  await page.context().clearCookies();
+  await page.getByRole("button", { name: "Check in" }).click();
+  const alert = page.getByRole("alert").filter({ hasText: "Your sign-in has ended" });
+  await expect(alert).toBeVisible({ timeout: 30_000 });
+
+  // The link signs them in again and brings them back to the same car park's check-in, with their car ready
+  await alert.getByRole("link", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/account\/signin\?next=%2Fc%2Fcp1$/, { timeout: 60_000 });
+  await page.getByLabel("Phone number").fill(phone);
+  await page.getByLabel("PIN (4 numbers)", { exact: true }).fill("4821");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/c\/cp1$/, { timeout: 60_000 });
+  await page.getByRole("button", { name: "Check in" }).click();
+  await expect(page.getByText("VALID", { exact: true })).toBeVisible({ timeout: 60_000 });
+});
