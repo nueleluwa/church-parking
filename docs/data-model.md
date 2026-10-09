@@ -129,3 +129,10 @@ create table audit_events (
 - **Releasing a car:** `update visits set status='released', ... where id=$1 and status='parked' returning *`. If no row comes back, someone else already released it (EX-7).
 - **Retention job (R-11):** runs daily. Deletes guest visits older than 24 months, then guests with no visits left.
 - **Midnight job (R-8):** marks every visit still `parked` from earlier dates as `missed`, with release method `midnight`.
+
+## Added after the first draft
+
+- `visits.held_at`, `visits.held_by`: a visit put on hold by **Does not match**. A held visit cannot be released until a coordinator clears it with a reason (D-18).
+- `visits.check_in_key` (unique where set): the one-time key of a check-in attempt, so a repeat of the same attempt returns the same pass (D-26). Only counts as a repeat for 30 minutes.
+- Check-in is done by the database functions `claim_guest_visit` and `claim_member_visit` (D-21), not by several separate queries.
+- `ops.applied_migrations`: on the church's own server, the list of database changes already applied (D-23).

@@ -454,3 +454,23 @@ Limits of this test: the server ran on the same computer as the 15 browsers, and
 **Found along the way.** The accessibility scan found that the shared fact-row component nested its definition list too deeply for screen readers. That affected the attendant result card, the owner's pass, the member confirmation and the new visit details. It is fixed once in the component, and the scan now covers those screens. The full run also showed the sign-up limit (60 an hour per address) tripping when one computer creates dozens of test members, so the test helper now clears that one limit's records. Whether 60 an hour is enough for a congregation signing up from church wifi on one morning is worth a decision before the pilot.
 
 **Results of this round.** 190 unit tests pass. Full browser suite: 87 of 88 passed in the last complete run; the one failure was the sign-up limit above, fixed in the test helper and re-checked together with the other sign-up and password tests (17 of 17 passed). The full suite was not run again end to end after that one-line helper fix. Lint, typecheck and the production build are clean. The performance runs (`pnpm test:perf`) passed.
+
+---
+
+## T. Workflow review follow-up (QR check-in and checkout)
+
+The owner's workflow review found defects that were fixed and decisions that were made (D-24 to D-28):
+
+| Gap found | Fix |
+|---|---|
+| A guest's second car overwrote the first car's pass cookie, so the first QR was lost | A phone keeps up to six passes (D-25) |
+| A member on another phone saw a pass link with no QR | A signed-in member owns their own pass on any phone (D-25) |
+| A check-in whose answer was lost looked like a second car: error plus a false alert to the coordinator | One-time key per attempt (D-26) |
+| No general entry for someone who opens the site without scanning a sign | Home page: Check in, then the car park list; camera second (D-24) |
+| The team sign-in was on the public home page; the team had no app of its own | Link removed; team app at `/staff`; search engines told to keep out (D-24) |
+| Attendants could not see or correct a car checked in at the wrong car park | Attendant says where they stand, warning on a mismatch, one-tap audited move (D-27) |
+| A member whose sign-in ended mid check-in saw plain text only | A sign-in link that returns to the same check-in |
+| A deploy could land during a service | Deploy hold with a scheduled catch-up (D-28) |
+
+**Decided not to build:** self-service recovery of a guest's pass (attendant lookup only), and driver self-correction of the car park after check-in (attendant or team lead only).
+**Still to do by people:** the real-phone checklist in `docs/field-test.md`, and the unexplained refreshes, which need the exact screen and moment to reproduce.
