@@ -10,42 +10,65 @@ export const RATE_LIMITS = {
   phone: { max: 5, windowMinutes: 60 },
 } as const;
 
-export type AlertKind = "plate_conflict" | "member_plate_claim";
+/** A ready-made reference and pass token. The database tries each in turn if one is already taken. */
+export type Candidate = { reference: string; token: string };
 
-export type NewVisit = {
-  reference: string;
-  pass_token: string;
-  vehicle_id: string;
-  guest_id?: string;
-  member_id?: string;
-  service_id: number;
-  area_id: number;
-  service_date: string;
-  checked_in_by?: string;
+/** What the database answers when a guest claims a plate. It never carries anyone else's pass or details. */
+export type GuestClaimAnswer =
+  | { status: "ok"; token: string; reference: string }
+  | { status: "blocked"; reason: "plate_conflict" | "member_plate" }
+  | { status: "rate_limited" }
+  | { status: "error" };
+
+export type MemberClaimAnswer =
+  | { status: "ok"; token: string; reference: string; existing: boolean }
+  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" }
+  | { status: "error" };
+
+export type GuestClaimArgs = {
+  plate: string;
+  name: string;
+  phone: string;
+  serviceId: number;
+  areaId: number;
+  serviceDate: string;
+  staffId: string | null;
+  candidates: Candidate[];
+  /** Null for an attendant registering by hand, which skips the public rate limits (OP-4). */
+  limits: {
+    phoneKey: string;
+    phoneMax: number;
+    phoneMinutes: number;
+    ipKey: string | null;
+    ipMax: number;
+    ipMinutes: number;
+  } | null;
 };
 
-export type OpenVisit = {
-  member_id: string | null;
-  pass_token: string;
-  reference: string;
-  service_date: string;
+export type MemberClaimArgs = {
+  memberId: string;
+  vehicleId: string;
+  plate: string;
+  serviceId: number;
+  areaId: number;
+  serviceDate: string;
+  staffId: string | null;
+  candidates: Candidate[];
 };
 
-/** Everything the claim rules need from the database. lib/db provides it. */
+/**
+ * Everything the claim rules need from the database. lib/db provides it. The two `claim` calls
+ * do the whole check-in in ONE database transaction (the SQL functions claim_guest_visit and
+ * claim_member_visit), so the rules R-2 (one open visit per vehicle), R-4 (first claim wins) and
+ * R-5 (member plates are locked) are applied by the database itself, even for two phones at once.
+ */
 export interface ClaimStore {
   countAttempts(key: string, windowMinutes: number): Promise<number>;
   recordAttempt(key: string): Promise<void>;
   findVehicleId(plate: string): Promise<string | null>;
-  createVehicle(plate: string): Promise<string>;
-  isMemberPlate(vehicleId: string): Promise<boolean>;
-  memberOwnsVehicle(memberId: string, vehicleId: string): Promise<boolean>;
   memberIdForVehicle(vehicleId: string): Promise<string | null>;
-  /** Closes visits for this vehicle still open from an earlier day, as the midnight job would. */
-  closeStaleOpenVisits(vehicleId: string, today: string): Promise<void>;
-  findOpenVisit(vehicleId: string): Promise<OpenVisit | null>;
-  createGuest(name: string, phone: string): Promise<string>;
-  insertVisit(visit: NewVisit): Promise<"ok" | "open_visit_exists" | "reference_taken">;
-  raiseAlert(kind: AlertKind, plate: string, detail: Record<string, unknown>): Promise<void>;
+  claimGuest(args: GuestClaimArgs): Promise<GuestClaimAnswer>;
+  claimMember(args: MemberClaimArgs): Promise<MemberClaimAnswer>;
 }
 
 export type GuestClaimInput = {
@@ -68,71 +91,37 @@ export type ClaimResult =
 
 const MAX_REFERENCE_TRIES = 5;
 
+const candidates = (): Candidate[] =>
+  Array.from({ length: MAX_REFERENCE_TRIES }, () => ({ reference: makeReference(), token: makePassToken() }));
+
 /**
  * A guest claims a plate for one visit. Applies rate limits, R-2/R-4 (first
- * claim wins) and R-5 (member plates are locked). A blocked or limited
- * result never carries a pass token or any detail of the existing visit.
+ * claim wins) and R-5 (member plates are locked), all in one database call. A blocked or
+ * limited result never carries a pass token or any detail of the existing visit.
  */
-export async function claimGuestVisit(
-  store: ClaimStore,
-  input: GuestClaimInput,
-): Promise<ClaimResult> {
-  if (!input.staffId) {
-    const checks: Promise<number>[] = [
-      store.countAttempts(input.phoneKey, RATE_LIMITS.phone.windowMinutes),
-    ];
-    if (input.ipKey) checks.push(store.countAttempts(input.ipKey, RATE_LIMITS.ip.windowMinutes));
-    const [phoneCount, ipCount = 0] = await Promise.all(checks);
-
-    await Promise.all([store.recordAttempt(input.phoneKey), input.ipKey ? store.recordAttempt(input.ipKey) : null]);
-    if (ipCount >= RATE_LIMITS.ip.max || phoneCount >= RATE_LIMITS.phone.max) {
-      return { status: "rate_limited" };
-    }
-  }
-
-  const alertDetail = { area_id: input.areaId, service_id: input.serviceId };
-  let vehicleId = await store.findVehicleId(input.plate);
-
-  if (vehicleId) {
-    await store.closeStaleOpenVisits(vehicleId, input.serviceDate);
-    // Two independent reads, asked together; the open visit is still judged first
-    const [open, isMember] = await Promise.all([store.findOpenVisit(vehicleId), store.isMemberPlate(vehicleId)]);
-    if (open) {
-      await store.raiseAlert("plate_conflict", input.plate, alertDetail);
-      return { status: "blocked", reason: "plate_conflict" };
-    }
-    if (isMember) {
-      await store.raiseAlert("member_plate_claim", input.plate, alertDetail);
-      return { status: "blocked", reason: "member_plate" };
-    }
-  } else {
-    vehicleId = await store.createVehicle(input.plate);
-  }
-
-  const guestId = await store.createGuest(input.name, input.phone);
-
-  for (let i = 0; i < MAX_REFERENCE_TRIES; i++) {
-    const visit: NewVisit = {
-      reference: makeReference(),
-      pass_token: makePassToken(),
-      vehicle_id: vehicleId,
-      guest_id: guestId,
-      service_id: input.serviceId,
-      area_id: input.areaId,
-      service_date: input.serviceDate,
-      ...(input.staffId ? { checked_in_by: input.staffId } : {}),
-    };
-    const outcome = await store.insertVisit(visit);
-    if (outcome === "ok") {
-      return { status: "ok", token: visit.pass_token, reference: visit.reference };
-    }
-    if (outcome === "open_visit_exists") {
-      // Someone else claimed this plate a moment ago. The database decides.
-      await store.raiseAlert("plate_conflict", input.plate, alertDetail);
-      return { status: "blocked", reason: "plate_conflict" };
-    }
-  }
-  throw new Error("Could not make a unique reference.");
+export async function claimGuestVisit(store: ClaimStore, input: GuestClaimInput): Promise<ClaimResult> {
+  const answer = await store.claimGuest({
+    plate: input.plate,
+    name: input.name,
+    phone: input.phone,
+    serviceId: input.serviceId,
+    areaId: input.areaId,
+    serviceDate: input.serviceDate,
+    staffId: input.staffId ?? null,
+    candidates: candidates(),
+    limits: input.staffId
+      ? null
+      : {
+          phoneKey: input.phoneKey,
+          phoneMax: RATE_LIMITS.phone.max,
+          phoneMinutes: RATE_LIMITS.phone.windowMinutes,
+          ipKey: input.ipKey || null,
+          ipMax: RATE_LIMITS.ip.max,
+          ipMinutes: RATE_LIMITS.ip.windowMinutes,
+        },
+  });
+  if (answer.status === "error") throw new Error("Could not make a unique reference.");
+  return answer;
 }
 
 export type MemberClaimInput = {
@@ -151,52 +140,24 @@ export type MemberClaimResult =
   | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" };
 
 /**
- * A member's car checks in (CI-4). If the member is already checked in with
- * this car today (staying for a second or third service), they get their own
- * pass back, because the pass is good all day (R-3). Anyone else's open visit
- * on the plate blocks the check-in and alerts the coordinator, and never
- * shows that pass.
+ * A member's car checks in (CI-4), in one database call. If the member is already checked in
+ * with this car today (staying for a second or third service), they get their own pass back,
+ * because the pass is good all day (R-3). Anyone else's open visit on the plate blocks the
+ * check-in and alerts the coordinator, and never shows that pass.
  */
-export async function claimMemberVisit(
-  store: ClaimStore,
-  input: MemberClaimInput,
-): Promise<MemberClaimResult> {
-  if (!(await store.memberOwnsVehicle(input.memberId, input.vehicleId))) {
-    return { status: "blocked", reason: "not_your_vehicle" };
-  }
-  const alertDetail = { area_id: input.areaId, service_id: input.serviceId };
-
-  await store.closeStaleOpenVisits(input.vehicleId, input.serviceDate);
-  const open = await store.findOpenVisit(input.vehicleId);
-  if (open) {
-    if (open.member_id === input.memberId && open.service_date === input.serviceDate) {
-      return { status: "ok", token: open.pass_token, reference: open.reference, existing: true };
-    }
-    await store.raiseAlert("plate_conflict", input.plate, alertDetail);
-    return { status: "blocked", reason: "plate_conflict" };
-  }
-
-  for (let i = 0; i < MAX_REFERENCE_TRIES; i++) {
-    const visit: NewVisit = {
-      reference: makeReference(),
-      pass_token: makePassToken(),
-      vehicle_id: input.vehicleId,
-      member_id: input.memberId,
-      service_id: input.serviceId,
-      area_id: input.areaId,
-      service_date: input.serviceDate,
-      ...(input.staffId ? { checked_in_by: input.staffId } : {}),
-    };
-    const outcome = await store.insertVisit(visit);
-    if (outcome === "ok") {
-      return { status: "ok", token: visit.pass_token, reference: visit.reference, existing: false };
-    }
-    if (outcome === "open_visit_exists") {
-      await store.raiseAlert("plate_conflict", input.plate, alertDetail);
-      return { status: "blocked", reason: "plate_conflict" };
-    }
-  }
-  throw new Error("Could not make a unique reference.");
+export async function claimMemberVisit(store: ClaimStore, input: MemberClaimInput): Promise<MemberClaimResult> {
+  const answer = await store.claimMember({
+    memberId: input.memberId,
+    vehicleId: input.vehicleId,
+    plate: input.plate,
+    serviceId: input.serviceId,
+    areaId: input.areaId,
+    serviceDate: input.serviceDate,
+    staffId: input.staffId ?? null,
+    candidates: candidates(),
+  });
+  if (answer.status === "error") throw new Error("Could not make a unique reference.");
+  return answer;
 }
 
 export type StaffMemberClaimInput = {

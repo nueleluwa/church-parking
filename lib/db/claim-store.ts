@@ -1,12 +1,9 @@
-import type { ClaimStore, OpenVisit } from "@/lib/rules/claim";
+import type { ClaimStore, GuestClaimAnswer, MemberClaimAnswer } from "@/lib/rules/claim";
 import { db } from "./client";
 
 function fail(message: string): never {
   throw new Error(`Database error: ${message}`);
 }
-
-/** Postgres unique violation. The index name tells us which rule was hit. */
-const UNIQUE_VIOLATION = "23505";
 
 export const claimStore: ClaimStore = {
   async countAttempts(key, windowMinutes) {
@@ -31,42 +28,6 @@ export const claimStore: ClaimStore = {
     return data?.id ?? null;
   },
 
-  async createVehicle(plate) {
-    const { data, error } = await db().from("vehicles").insert({ plate }).select("id").single();
-    if (error?.code === UNIQUE_VIOLATION) {
-      // Another request created it a moment ago.
-      const existing = await this.findVehicleId(plate);
-      if (existing) return existing;
-    }
-    if (error || !data) fail(error?.message ?? "no vehicle");
-    return data.id;
-  },
-
-  async isMemberPlate(vehicleId) {
-    const { count, error } = await db()
-      .from("member_vehicles")
-      .select("member_id", { count: "exact", head: true })
-      .eq("vehicle_id", vehicleId);
-    if (error) fail(error.message);
-    return (count ?? 0) > 0;
-  },
-
-  async closeStaleOpenVisits(vehicleId, today) {
-    const { error } = await db().rpc("close_stale_visits", { p_vehicle: vehicleId, p_today: today });
-    if (error) fail(error.message);
-  },
-
-  async findOpenVisit(vehicleId) {
-    const { data, error } = await db()
-      .from("visits")
-      .select("member_id, pass_token, reference, service_date")
-      .eq("vehicle_id", vehicleId)
-      .eq("status", "parked")
-      .maybeSingle();
-    if (error) fail(error.message);
-    return data as OpenVisit | null;
-  },
-
   async memberIdForVehicle(vehicleId) {
     const { data, error } = await db()
       .from("member_vehicles")
@@ -78,39 +39,41 @@ export const claimStore: ClaimStore = {
     return (data?.member_id as string | undefined) ?? null;
   },
 
-  async memberOwnsVehicle(memberId, vehicleId) {
-    const { count, error } = await db()
-      .from("member_vehicles")
-      .select("member_id", { count: "exact", head: true })
-      .eq("member_id", memberId)
-      .eq("vehicle_id", vehicleId);
+  /** The whole guest check-in in one database call (see supabase/migrations/20261010010000_claim_functions.sql). */
+  async claimGuest(a) {
+    const { data, error } = await db().rpc("claim_guest_visit", {
+      p_plate: a.plate,
+      p_name: a.name,
+      p_phone: a.phone,
+      p_service: a.serviceId,
+      p_area: a.areaId,
+      p_date: a.serviceDate,
+      p_staff: a.staffId,
+      p_candidates: a.candidates,
+      p_phone_key: a.limits?.phoneKey ?? null,
+      p_phone_max: a.limits?.phoneMax ?? 0,
+      p_phone_mins: a.limits?.phoneMinutes ?? 0,
+      p_ip_key: a.limits?.ipKey ?? null,
+      p_ip_max: a.limits?.ipMax ?? 0,
+      p_ip_mins: a.limits?.ipMinutes ?? 0,
+    });
     if (error) fail(error.message);
-    return (count ?? 0) > 0;
+    return data as GuestClaimAnswer;
   },
 
-  async createGuest(name, phone) {
-    const { data, error } = await db()
-      .from("guests")
-      .insert({ full_name: name, phone })
-      .select("id")
-      .single();
-    if (error || !data) fail(error?.message ?? "no guest");
-    return data.id;
-  },
-
-  async insertVisit(visit) {
-    const { error } = await db().from("visits").insert(visit);
-    if (!error) return "ok";
-    if (error.code === UNIQUE_VIOLATION) {
-      return error.message.includes("one_open_visit_per_vehicle")
-        ? "open_visit_exists"
-        : "reference_taken";
-    }
-    return fail(error.message);
-  },
-
-  async raiseAlert(kind, plate, detail) {
-    const { error } = await db().from("alerts").insert({ kind, plate, detail });
+  /** The whole member check-in in one database call. */
+  async claimMember(a) {
+    const { data, error } = await db().rpc("claim_member_visit", {
+      p_member: a.memberId,
+      p_vehicle: a.vehicleId,
+      p_plate: a.plate,
+      p_service: a.serviceId,
+      p_area: a.areaId,
+      p_date: a.serviceDate,
+      p_staff: a.staffId,
+      p_candidates: a.candidates,
+    });
     if (error) fail(error.message);
+    return data as MemberClaimAnswer;
   },
 };

@@ -9,9 +9,11 @@
     "start": "next start",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:perf": "next build && playwright test -c playwright.perf.config.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "db:reset": "supabase db reset --linked",
+    "db:purge-test-staff": "node --env-file=.env.local scripts/purge-test-staff.ts",
     "db:seed-admin": "node --env-file=.env.local scripts/seed-admin.ts",
     "dev:test-service": "node --env-file=.env.local scripts/test-service.ts"
   },
