@@ -16,6 +16,7 @@ export type NewVisit = {
   service_id: number;
   area_id: number;
   service_date: string;
+  checked_in_by?: string;
 };
 
 /** Everything claimGuestVisit needs from the database. lib/db provides it. */
@@ -38,6 +39,8 @@ export type GuestClaimInput = {
   serviceId: number;
   areaId: number;
   serviceDate: string;
+  /** Set when an attendant registers the car by hand. Skips the public rate limits (OP-4). */
+  staffId?: string;
   ipKey: string; // hashed
   phoneKey: string; // hashed
 };
@@ -58,13 +61,15 @@ export async function claimGuestVisit(
   store: ClaimStore,
   input: GuestClaimInput,
 ): Promise<ClaimResult> {
-  const [ipCount, phoneCount] = await Promise.all([
-    store.countAttempts(input.ipKey, RATE_LIMITS.ip.windowMinutes),
-    store.countAttempts(input.phoneKey, RATE_LIMITS.phone.windowMinutes),
-  ]);
-  await Promise.all([store.recordAttempt(input.ipKey), store.recordAttempt(input.phoneKey)]);
-  if (ipCount >= RATE_LIMITS.ip.max || phoneCount >= RATE_LIMITS.phone.max) {
-    return { status: "rate_limited" };
+  if (!input.staffId) {
+    const [ipCount, phoneCount] = await Promise.all([
+      store.countAttempts(input.ipKey, RATE_LIMITS.ip.windowMinutes),
+      store.countAttempts(input.phoneKey, RATE_LIMITS.phone.windowMinutes),
+    ]);
+    await Promise.all([store.recordAttempt(input.ipKey), store.recordAttempt(input.phoneKey)]);
+    if (ipCount >= RATE_LIMITS.ip.max || phoneCount >= RATE_LIMITS.phone.max) {
+      return { status: "rate_limited" };
+    }
   }
 
   const alertDetail = { area_id: input.areaId, service_id: input.serviceId };
@@ -94,6 +99,7 @@ export async function claimGuestVisit(
       service_id: input.serviceId,
       area_id: input.areaId,
       service_date: input.serviceDate,
+      ...(input.staffId ? { checked_in_by: input.staffId } : {}),
     };
     const outcome = await store.insertVisit(visit);
     if (outcome === "ok") {

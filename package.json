@@ -25,6 +25,7 @@
   "dependencies": {
     "@node-rs/argon2": "^2.2.2",
     "@supabase/supabase-js": "^2.117.3",
+    "html5-qrcode": "^2.3.8",
     "next": "^16.4.0",
     "qrcode": "^1.5.4",
     "react": "^19.3.0",

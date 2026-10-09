@@ -4,3 +4,6 @@ export { makeReference, makePassToken } from "./tokens";
 export { pickService, lagosDate, TIME_ZONE, type ServiceWindow } from "./service";
 export { claimGuestVisit, RATE_LIMITS, type ClaimResult, type ClaimStore } from "./claim";
 export { buildPassView, passState, type PassView, type PassState } from "./pass-view";
+export { releaseVisit, type ReleaseResult, type ReleaseStore } from "./release";
+export { buildScanCard, tokenFromScan, type ScanCard, type ScanDetail } from "./scan";
+export { hasRole, type StaffContext, type StaffRole } from "./roles";
