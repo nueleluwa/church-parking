@@ -12,6 +12,7 @@ import { serverEnv } from "@/lib/env";
 import { formatLagosDate, formatLagosTime } from "@/lib/format";
 import { currentMember } from "@/lib/member-auth";
 import { rememberedPassTokens } from "@/lib/pass-cookie";
+import { stationContext } from "@/lib/station";
 import { qrSvg } from "@/lib/qr";
 import { buildPassView, buildScanCard, describeVehicle, lagosDate, ownsPass, passTone, type PassState } from "@/lib/rules";
 import { currentStaff } from "@/lib/staff-auth";
@@ -63,7 +64,7 @@ export default async function PassPage({
   // Signed-in staff see the full staff view: first name, masked phone and the release buttons.
   const staff = await currentStaff();
   if (staff) {
-    const detail = await getScanDetailByToken(token);
+    const [detail, carParks] = await Promise.all([getScanDetailByToken(token), stationContext()]);
     if (detail) {
       return (
         <>
@@ -72,6 +73,8 @@ export default async function PassPage({
             <StaffPass
               card={buildScanCard(detail, lagosDate(new Date()))}
               corrections={await correctionContext(staff)}
+              areas={carParks.areas}
+              station={carParks.station}
             />
           </main>
         </>

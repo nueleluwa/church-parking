@@ -6,14 +6,15 @@ import { IconAlert, IconCalendar, IconCheck, IconClock, IconFlag, IconPin, IconT
 import { Plate } from "@/components/Plate";
 import { Spinner } from "@/components/Spinner";
 import { StatusBadge } from "@/components/StatusBadge";
-import { outlineButton, primaryButton, redButton } from "@/components/ui";
+import { field, outlineButton, primaryButton, redButton } from "@/components/ui";
 import { VehicleImage } from "@/components/VehicleImage";
 import type { CorrectionContext } from "@/lib/correction-context";
 import { formatDuration, formatLagosDate, formatLagosTime } from "@/lib/format";
 import { describeVehicle } from "@/lib/rules/vehicle";
-import type { ScanCard } from "@/lib/rules/scan";
+import { atOtherCarPark, type ScanCard } from "@/lib/rules/scan";
+import type { CarParkOption } from "@/lib/rules/station";
 import { CorrectionPanel } from "./CorrectionPanel";
-import { doesNotMatch, releaseCar, revealPhone } from "./actions";
+import { doesNotMatch, moveToCarPark, releaseCar, revealPhone } from "./actions";
 import { clearHoldAction } from "./ops-actions";
 
 const time = (iso: string | null) => (iso ? formatLagosTime(iso) : "");
@@ -25,6 +26,9 @@ type Props = {
   doneLabel: string;
   /** Set for coordinators and admins: shows the corrections panel. */
   corrections?: CorrectionContext | null;
+  /** The open car parks, and the one this attendant says they are standing at. */
+  areas?: CarParkOption[];
+  station?: string | null;
 };
 
 /**
@@ -32,11 +36,17 @@ type Props = {
  * red and a reason), then the car, then the facts to check, then the actions. Only the first
  * name and the last 4 phone digits are ever shown (R-9).
  */
-export function ResultCard({ card, method, onDone, doneLabel, corrections }: Props) {
+export function ResultCard({ card, method, onDone, doneLabel, corrections, areas = [], station = null }: Props) {
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [finished, setFinished] = useState<"released" | "held" | null>(null);
   const [phone, setPhone] = useState<string | null>(null);
+  // The car park can be corrected here, so what is shown follows the correction
+  const [movedTo, setMovedTo] = useState<{ name: string; slug: string } | null>(null);
+  const [moveChoice, setMoveChoice] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+  const areaName = movedTo?.name ?? card.areaName;
+  const areaSlug = movedTo?.slug ?? card.areaSlug;
   const [clearReason, setClearReason] = useState("");
   const [cleared, setCleared] = useState(false);
 
@@ -93,6 +103,21 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
       } else setMessage(r.message);
     });
   }
+  function move(areaId: number) {
+    start(async () => {
+      const r = await moveToCarPark(card.visitId, areaId);
+      if (r.ok) {
+        buzz(80);
+        setMovedTo({ name: r.areaName, slug: r.areaSlug });
+        setMoveChoice("");
+        setMessage(null);
+        setNotice(`Car park changed to ${r.areaName}.`);
+      } else {
+        setNotice(null);
+        setMessage(r.message);
+      }
+    });
+  }
   function show() {
     start(async () => {
       const r = await revealPhone(card.visitId);
@@ -116,6 +141,9 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
         : (problem?.reason ?? "Confirm the details, then release the car.");
 
   const details = describeVehicle({ make: card.make, colour: card.colour });
+  const parked = (card.state === "ready" || card.state === "held") && !finished;
+  const stationArea = areas.find((a) => a.slug === station) ?? null;
+  const mismatch = parked && stationArea !== null && atOtherCarPark(areaSlug, station);
   const status =
     finished === "released"
       ? "Released"
@@ -149,6 +177,26 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
         )}
       </section>
 
+      {mismatch && stationArea && (
+        <section
+          aria-label="This car checked in at a different car park"
+          data-testid="car-park-mismatch"
+          className="rounded-card border-2 border-warning-edge bg-warning-soft p-4 text-warning-ink"
+        >
+          <p className="flex items-start gap-2 font-bold">
+            <IconAlert className="mt-0.5 h-5 w-5 shrink-0" />
+            This car checked in at {areaName}, but you are at {stationArea.name}.
+          </p>
+          <p className="mt-1 text-sm">
+            Ask the driver where they parked. If they scanned the wrong sign, move the car to {stationArea.name}. If anything else
+            is not right, tap Does not match.
+          </p>
+          <button onClick={() => move(stationArea.id)} disabled={pending} className={`${outlineButton} mt-3`}>
+            Move to {stationArea.name}
+          </button>
+        </section>
+      )}
+
       <section className="rounded-card bg-card p-4 shadow-sm">
         <div className="flex items-center gap-3">
           <VehicleImage size="md" />
@@ -178,7 +226,7 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
             <span className="block">{card.serviceName}</span>
           </FactRow>
           <FactRow icon={<IconPin className="h-5 w-5" />} label="Parking area">
-            <span data-area>{card.areaName}</span>
+            <span data-area>{areaName}</span>
           </FactRow>
           {card.checkedInAt && (
             <FactRow icon={<IconCalendar className="h-5 w-5" />} label="Checked in">
@@ -201,6 +249,30 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
           </FactRow>
         </FactList>
 
+        {parked && areas.length > 1 && (
+          <details className="mt-3 rounded-2xl border-2 border-edge/15 p-3">
+            <summary className="cursor-pointer font-semibold">Wrong car park?</summary>
+            <div className="mt-3 space-y-3">
+              <label className="block font-medium">
+                Move this car to
+                <select value={moveChoice} onChange={(e) => setMoveChoice(e.target.value)} className={field}>
+                  <option value="">Choose a car park</option>
+                  {areas
+                    .filter((a) => a.slug !== areaSlug)
+                    .map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <button onClick={() => moveChoice && move(Number(moveChoice))} disabled={pending || !moveChoice} className={outlineButton}>
+                Move car
+              </button>
+            </div>
+          </details>
+        )}
+
         {card.state === "ready" && !finished && (
           <p className={`mt-3 text-sm ${card.askForDetails ? "font-semibold text-ink" : "text-ink-soft"}`}>
             {card.askForDetails
@@ -211,6 +283,12 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
           </p>
         )}
       </section>
+
+      {notice && (
+        <p role="status" className="rounded-2xl border-2 border-success bg-success-soft p-3 font-medium">
+          {notice}
+        </p>
+      )}
 
       {message && (
         <p role="alert" className="rounded-2xl border-2 border-danger bg-white p-3 font-medium text-danger">

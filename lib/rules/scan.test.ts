@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildScanCard, tokenFromScan, type ScanDetail } from "./scan";
+import { atOtherCarPark, buildScanCard, tokenFromScan, type ScanDetail } from "./scan";
 
 const base: ScanDetail = {
   visitId: "v1",
@@ -8,6 +8,8 @@ const base: ScanDetail = {
   serviceDate: "2026-10-11",
   plate: "PHC234AB",
   areaName: "Car Park 1",
+  areaId: 1,
+  areaSlug: "cp1",
   serviceName: "Service 1",
   isGuest: true,
   isNewCar: false,
@@ -89,5 +91,22 @@ describe("tokenFromScan", () => {
   });
   test("a car on hold shows as held, not ready", () => {
     expect(buildScanCard({ ...base, held: true }, "2026-10-11").state).toBe("held");
+  });
+});
+
+describe("atOtherCarPark", () => {
+  test("a car from the car park the attendant stands at is fine", () => {
+    expect(atOtherCarPark("cp1", "cp1")).toBe(false);
+  });
+  test("a car from another car park is flagged", () => {
+    expect(atOtherCarPark("cp1", "cp2")).toBe(true);
+  });
+  test("when the attendant has not said where they stand, nothing is flagged", () => {
+    expect(atOtherCarPark("cp1", null)).toBe(false);
+  });
+  test("the scan card carries the car park's id and address", () => {
+    const card = buildScanCard(base, "2026-10-11");
+    expect(card.areaId).toBe(1);
+    expect(card.areaSlug).toBe("cp1");
   });
 });

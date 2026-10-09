@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { IconSearch } from "@/components/icons";
 import { field, outlineButton, redButton } from "@/components/ui";
 import type { CorrectionContext } from "@/lib/correction-context";
+import type { CarParkOption } from "@/lib/rules/station";
 import type { ScanCard } from "@/lib/rules/scan";
 import { searchPasses } from "../actions";
 import { ResultCard } from "../ResultCard";
@@ -18,7 +19,15 @@ const MODES: { mode: Mode; tab: string; label: string; placeholder: string }[] =
 ];
 
 /** Manual lookup (EX-4): find today's car by plate, phone number or pass reference. */
-export function SearchBox({ corrections }: { corrections: CorrectionContext | null }) {
+export function SearchBox({
+  corrections,
+  areas,
+  station,
+}: {
+  corrections: CorrectionContext | null;
+  areas: CarParkOption[];
+  station: string | null;
+}) {
   const [mode, setMode] = useState<Mode>("plate");
   const [query, setQuery] = useState("");
   const [cards, setCards] = useState<ScanCard[] | null>(null);
@@ -121,7 +130,7 @@ export function SearchBox({ corrections }: { corrections: CorrectionContext | nu
         </div>
       )}
       {cards?.map((c) => (
-        <ResultCard key={c.visitId} card={c} method="search" onDone={clear} doneLabel="Done" corrections={corrections} />
+        <ResultCard key={c.visitId} card={c} method="search" onDone={clear} doneLabel="Done" corrections={corrections} areas={areas} station={station} />
       ))}
     </div>
   );

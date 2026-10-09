@@ -4,9 +4,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
   claimStore,
+  correctVisit,
   getAreaBySlug,
   getScanDetailByToken,
   getVisitPhone,
+  listActiveAreas,
   listActiveServices,
   logAudit,
   raiseNoMatch,
@@ -69,6 +71,37 @@ export async function releaseCar(visitId: string, method: "scan" | "search"): Pr
   if (!uuid.safeParse(visitId).success) return { ok: false, message: "We can't find this pass." };
   const result = await releaseVisit(releaseStore, staff, { visitId, method, today: today() });
   return result.ok ? { ok: true } : { ok: false, message: RELEASE_MESSAGES[result.reason] };
+}
+
+export type MoveResult = { ok: true; areaName: string; areaSlug: string } | { ok: false; message: string };
+
+/**
+ * The car is parked in a different car park from the one on its pass (the driver scanned the wrong sign).
+ * Any attendant or team lead may put it right while the car is still here. It is a correction like the
+ * coordinator's, so it is audited with who did it, and the reason is written for them.
+ */
+export async function moveToCarPark(visitId: string, areaId: number): Promise<MoveResult> {
+  const staff = await currentStaff();
+  if (!staff) return { ok: false, message: "Please sign in again." };
+  if (!uuid.safeParse(visitId).success || !Number.isInteger(areaId)) return { ok: false, message: "Please try again." };
+
+  const [area, state] = await Promise.all([
+    listActiveAreas().then((all) => all.find((a) => a.id === areaId)),
+    releaseStore.getVisitState(visitId),
+  ]);
+  if (!area) return { ok: false, message: "We can't find that car park." };
+  if (!state) return { ok: false, message: "We can't find this pass." };
+  if (state.status !== "parked") return { ok: false, message: "This car has already left, so its car park cannot be changed." };
+
+  const result = await correctVisit({
+    visitId,
+    staffId: staff.id,
+    action: "change_area",
+    reason: `Corrected at the exit: the car is parked in ${area.name}`,
+    areaId: area.id,
+  });
+  if (result !== "ok") return { ok: false, message: "We could not change the car park. Please try again." };
+  return { ok: true, areaName: area.name, areaSlug: area.slug };
 }
 
 export async function doesNotMatch(visitId: string, plate: string): Promise<ActionResult> {

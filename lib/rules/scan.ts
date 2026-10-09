@@ -8,6 +8,8 @@ export type ScanDetail = {
   colour?: string | null;
   checkedInAt?: string;
   areaName: string;
+  areaId: number;
+  areaSlug: string;
   serviceName: string;
   isGuest: boolean;
   /** A member's car saved within the last week: the attendant checks the driver as they would a guest. */
@@ -32,6 +34,8 @@ export type ScanCard = {
   /** Whole minutes since check-in (or until the car was released). */
   minutesParked: number | null;
   areaName: string;
+  areaId: number;
+  areaSlug: string;
   serviceName: string;
   reference: string;
   isGuest: boolean;
@@ -66,6 +70,8 @@ export function buildScanCard(d: ScanDetail, today: string, now: Date = new Date
       ? Math.max(0, Math.round(((d.releasedAt ? new Date(d.releasedAt) : now).getTime() - new Date(d.checkedInAt).getTime()) / 60_000))
       : null,
     areaName: d.areaName,
+    areaId: d.areaId,
+    areaSlug: d.areaSlug,
     serviceName: d.serviceName,
     reference: d.reference,
     isGuest: d.isGuest,
@@ -76,6 +82,15 @@ export function buildScanCard(d: ScanDetail, today: string, now: Date = new Date
     releasedAt: d.releasedAt,
     releasedByName: d.releasedByName,
   };
+}
+
+/**
+ * There is one exit for each car park, so an attendant stands at one car park. A car that checked in somewhere
+ * else is not wrong in itself (a driver may have scanned the wrong sign), but it is worth a second look.
+ * Only when the attendant has said where they stand.
+ */
+export function atOtherCarPark(carParkSlug: string, stationSlug: string | null): boolean {
+  return stationSlug !== null && carParkSlug !== stationSlug;
 }
 
 /** Reads a pass token out of a scanned QR code, which holds /p/{token} or the bare token. */

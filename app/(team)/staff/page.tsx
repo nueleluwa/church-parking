@@ -5,6 +5,8 @@ import { SyncStatus } from "@/components/SyncStatus";
 import { listActiveServices } from "@/lib/db";
 import { hasRole, serviceStandings } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
+import { stationContext } from "@/lib/station";
+import { StationPicker } from "./StationPicker";
 
 export const metadata = { title: "Attendant home" };
 export const dynamic = "force-dynamic";
@@ -15,6 +17,7 @@ const hhmm = (t: string) => t.slice(0, 5);
 export default async function StaffHome() {
   const staff = await requireStaff("attendant");
   const standings = serviceStandings(new Date(), await listActiveServices());
+  const { areas, station } = await stationContext();
   const shown =
     standings.find((s) => s.standing === "active") ??
     standings.find((s) => s.standing === "next") ??
@@ -38,6 +41,8 @@ export default async function StaffHome() {
         </span>
         <IconChevronRight className="h-5 w-5 shrink-0 text-ink-soft" />
       </Link>
+
+      <StationPicker areas={areas} station={station} variant="card" />
 
       <div className="grid grid-cols-2 gap-3">
         <Link

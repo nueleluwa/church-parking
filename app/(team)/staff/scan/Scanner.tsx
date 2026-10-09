@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { IconAlert, IconKeyboard } from "@/components/icons";
 import { outlineButton, redButton } from "@/components/ui";
 import type { CorrectionContext } from "@/lib/correction-context";
+import type { CarParkOption } from "@/lib/rules/station";
 import type { ScanCard } from "@/lib/rules/scan";
 import { lookupPass } from "../actions";
 import { ResultCard } from "../ResultCard";
@@ -60,7 +61,15 @@ function InvalidPass({ reason, onAgain }: { reason: string; onAgain: () => void 
   );
 }
 
-export function Scanner({ corrections }: { corrections: CorrectionContext | null }) {
+export function Scanner({
+  corrections,
+  areas,
+  station,
+}: {
+  corrections: CorrectionContext | null;
+  areas: CarParkOption[];
+  station: string | null;
+}) {
   const [card, setCard] = useState<ScanCard | null>(null);
   const [invalid, setInvalid] = useState<string | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -124,7 +133,7 @@ export function Scanner({ corrections }: { corrections: CorrectionContext | null
     setRun((n) => n + 1);
   }, []);
 
-  if (card) return <ResultCard card={card} method="scan" onDone={next} doneLabel="Scan next pass" corrections={corrections} />;
+  if (card) return <ResultCard card={card} method="scan" onDone={next} doneLabel="Scan next pass" corrections={corrections} areas={areas} station={station} />;
   if (invalid) return <InvalidPass reason={invalid} onAgain={next} />;
 
   return (

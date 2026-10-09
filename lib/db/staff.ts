@@ -22,7 +22,7 @@ export async function getStaffById(id: string): Promise<Staff | null> {
 
 const DETAIL_SELECT =
   "id, status, reference, service_date, released_at, checked_in_at, held_at, vehicle_id, member_id, " +
-  "vehicles(plate, make, colour), areas(name), services(name), " +
+  "vehicles(plate, make, colour), areas(id, name, slug), services(name), " +
   "members(full_name, phone), guests(full_name, phone), " +
   "releaser:staff!visits_released_by_fkey(full_name)";
 
@@ -37,7 +37,7 @@ type DetailRow = {
   held_at: string | null;
   checked_in_at: string;
   vehicles: { plate: string; make: string | null; colour: string | null };
-  areas: { name: string };
+  areas: { id: number; name: string; slug: string };
   services: { name: string };
   members: { full_name: string; phone: string } | null;
   guests: { full_name: string; phone: string } | null;
@@ -56,6 +56,8 @@ function toDetail(row: DetailRow): ScanDetail {
     colour: row.vehicles.colour,
     checkedInAt: row.checked_in_at,
     areaName: row.areas.name,
+    areaId: row.areas.id,
+    areaSlug: row.areas.slug,
     serviceName: row.services.name,
     isGuest: row.members === null,
     isNewCar: false, // filled in by withNewCarFlags
