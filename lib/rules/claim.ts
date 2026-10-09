@@ -15,7 +15,7 @@ export type Candidate = { reference: string; token: string };
 
 /** What the database answers when a guest claims a plate. It never carries anyone else's pass or details. */
 export type GuestClaimAnswer =
-  | { status: "ok"; token: string; reference: string }
+  | { status: "ok"; token: string; reference: string; existing?: boolean }
   | { status: "blocked"; reason: "plate_conflict" | "member_plate" }
   | { status: "rate_limited" }
   | { status: "error" };
@@ -34,6 +34,8 @@ export type GuestClaimArgs = {
   serviceDate: string;
   staffId: string | null;
   candidates: Candidate[];
+  /** The one-time key of this attempt: a repeat of the same attempt gets the same pass back. */
+  checkInKey: string | null;
   /** Null for an attendant registering by hand, which skips the public rate limits (OP-4). */
   limits: {
     phoneKey: string;
@@ -54,6 +56,7 @@ export type MemberClaimArgs = {
   serviceDate: string;
   staffId: string | null;
   candidates: Candidate[];
+  checkInKey: string | null;
 };
 
 /**
@@ -82,10 +85,12 @@ export type GuestClaimInput = {
   staffId?: string;
   ipKey: string; // hashed; empty when the address is unknown, which skips the IP limit
   phoneKey: string; // hashed
+  /** A one-time key from the form. Trying again with the same key returns the pass already made. */
+  checkInKey?: string;
 };
 
 export type ClaimResult =
-  | { status: "ok"; token: string; reference: string }
+  | { status: "ok"; token: string; reference: string; existing?: boolean }
   | { status: "blocked"; reason: "plate_conflict" | "member_plate" }
   | { status: "rate_limited" };
 
@@ -109,6 +114,7 @@ export async function claimGuestVisit(store: ClaimStore, input: GuestClaimInput)
     serviceDate: input.serviceDate,
     staffId: input.staffId ?? null,
     candidates: candidates(),
+    checkInKey: input.checkInKey ?? null,
     limits: input.staffId
       ? null
       : {
@@ -133,6 +139,7 @@ export type MemberClaimInput = {
   serviceDate: string;
   /** Set when an attendant registers the member's car for them. */
   staffId?: string;
+  checkInKey?: string;
 };
 
 export type MemberClaimResult =
@@ -155,6 +162,7 @@ export async function claimMemberVisit(store: ClaimStore, input: MemberClaimInpu
     serviceDate: input.serviceDate,
     staffId: input.staffId ?? null,
     candidates: candidates(),
+    checkInKey: input.checkInKey ?? null,
   });
   if (answer.status === "error") throw new Error("Could not make a unique reference.");
   return answer;

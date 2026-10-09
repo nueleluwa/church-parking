@@ -56,6 +56,7 @@ export const claimStore: ClaimStore = {
       p_ip_key: a.limits?.ipKey ?? null,
       p_ip_max: a.limits?.ipMax ?? 0,
       p_ip_mins: a.limits?.ipMinutes ?? 0,
+      p_key: a.checkInKey,
     });
     if (error) fail(error.message);
     return data as GuestClaimAnswer;
@@ -72,6 +73,7 @@ export const claimStore: ClaimStore = {
       p_date: a.serviceDate,
       p_staff: a.staffId,
       p_candidates: a.candidates,
+      p_key: a.checkInKey,
     });
     if (error) fail(error.message);
     return data as MemberClaimAnswer;

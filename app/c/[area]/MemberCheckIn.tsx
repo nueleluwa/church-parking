@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState } from "react";
+import { keyForAttempt } from "@/lib/check-in-key";
 import { BlockedCard } from "@/components/BlockedCard";
 import { FactList, FactRow } from "@/components/FactRow";
 import { IconCheck, IconClock, IconLock, IconPin, IconPlus } from "@/components/icons";
@@ -52,6 +53,12 @@ export function MemberCheckIn({
   const [step, setStep] = useState<"choose" | "confirm">(free.length === 1 ? "confirm" : "choose");
   const [changingService, setChangingService] = useState(false);
   const [dismissed, setDismissed] = useState<CheckInState | null>(null);
+  // A one-time key for this attempt, filled in the moment the form is sent, so a retry after a dropped signal
+  // gets the same pass back instead of an error
+  const keyRef = useRef<HTMLInputElement>(null);
+  function stampKey() {
+    if (keyRef.current) keyRef.current.value = vehicleId ? keyForAttempt(`member:${areaSlug}`, vehicleId) : "";
+  }
   const { values, bind } = useFields({ serviceId: String(defaultServiceId) });
 
   const chosen = free.find((v) => v.id === vehicleId);
@@ -136,9 +143,10 @@ export function MemberCheckIn({
         )}
 
         {confirming && chosen && !(state.blocked && dismissed !== state) && (
-          <form action={action} className="space-y-5">
+          <form action={action} onSubmitCapture={stampKey} className="space-y-5">
             <input type="hidden" name="area" value={areaSlug} />
             <input type="hidden" name="vehicleId" value={chosen.id} />
+            <input type="hidden" name="key" defaultValue="" ref={keyRef} />
             <input type="hidden" name="serviceId" value={service?.id ?? ""} />
 
             <div className="flex flex-col items-center text-center">

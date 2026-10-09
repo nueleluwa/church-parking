@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { adminClient, createStaff, live, randomPhone } from "./helpers";
 
@@ -276,5 +276,89 @@ test.describe("member check-in in one call", () => {
     } finally {
       await staff.remove();
     }
+  });
+});
+
+test.describe("repeating a check-in safely (the one-time key)", () => {
+  const visitsFor = async (p: string) =>
+    (await db.from("visits").select("id, vehicles!inner(plate)", { count: "exact", head: true }).eq("vehicles.plate", p)).count ?? 0;
+
+  test("the same key again gives back the same pass: one visit, no alert", async () => {
+    const p = plate();
+    const key = randomUUID();
+    const { data: first } = await guestClaim(p, { p_key: key });
+    expect(first.status).toBe("ok");
+    const { data: again } = await guestClaim(p, { p_key: key, p_phone: `+234${randomPhone().slice(1)}` });
+    expect(again).toMatchObject({ status: "ok", token: first.token, reference: first.reference, existing: true });
+    expect(await visitsFor(p)).toBe(1);
+    expect(await alertsFor(p, "plate_conflict")).toBe(0);
+  });
+
+  test("the same attempt arriving five times at once: one visit, every copy gets the pass, no alert", async () => {
+    const p = plate();
+    const key = randomUUID();
+    const results = await Promise.all(Array.from({ length: 5 }, () => guestClaim(p, { p_key: key })));
+    const answers = results.map((r) => r.data as { status: string; token: string });
+    expect(answers.every((a) => a.status === "ok")).toBe(true);
+    expect(new Set(answers.map((a) => a.token)).size).toBe(1);
+    expect(await visitsFor(p)).toBe(1);
+    expect(await alertsFor(p, "plate_conflict")).toBe(0);
+  });
+
+  test("a different key for the same car is a different attempt: refused and reported, exactly as before", async () => {
+    const p = plate();
+    await guestClaim(p, { p_key: randomUUID() });
+    const { data } = await guestClaim(p, { p_key: randomUUID() });
+    expect(data).toEqual({ status: "blocked", reason: "plate_conflict" });
+    expect(await alertsFor(p, "plate_conflict")).toBe(1);
+  });
+
+  test("no key at all behaves as before", async () => {
+    const p = plate();
+    await guestClaim(p);
+    expect((await guestClaim(p)).data).toEqual({ status: "blocked", reason: "plate_conflict" });
+  });
+
+  test("a key is only a retry for 30 minutes: later it cannot get in the way of a new visit", async () => {
+    const p = plate();
+    const key = randomUUID();
+    const { data: first } = await guestClaim(p, { p_key: key });
+    await db
+      .from("visits")
+      .update({ status: "released", released_at: new Date().toISOString(), checked_in_at: new Date(Date.now() - 2 * 3_600_000).toISOString() })
+      .eq("pass_token", first.token);
+    const { data: later } = await guestClaim(p, { p_key: key });
+    expect(later.status).toBe("ok");
+    expect(later.token).not.toBe(first.token);
+    expect(later.existing).toBeUndefined();
+    expect(await visitsFor(p)).toBe(2);
+  });
+
+  test("a retry is not counted against the phone's rate limit", async () => {
+    const limitKey = `claim-test-retry:${randomBytes(6).toString("hex")}`;
+    rateKeys.push(limitKey);
+    const key = randomUUID();
+    const p = plate();
+    const limited = { p_phone_key: limitKey, p_phone_max: 1, p_phone_mins: 60, p_key: key };
+    expect((await guestClaim(p, limited)).data.status).toBe("ok");
+    expect((await guestClaim(p, limited)).data).toMatchObject({ status: "ok", existing: true });
+    expect((await db.from("rate_events").select("id", { count: "exact", head: true }).eq("key", limitKey)).count).toBe(1);
+  });
+
+  test("members: the same key gives back the same pass, and another member's key is not a retry", async () => {
+    const p = plate();
+    const m = await makeMember(p);
+    const key = randomUUID();
+    const { data: first } = await memberClaim(m, p, { p_key: key });
+    const { data: again } = await memberClaim(m, p, { p_key: key });
+    expect(again).toMatchObject({ status: "ok", token: first.token, existing: true });
+    expect(await visitsFor(p)).toBe(1);
+    expect(await alertsFor(p, "plate_conflict")).toBe(0);
+
+    // The same key from a different member never returns this member's pass
+    const q = plate();
+    const other = await makeMember(q);
+    const { data: stolen } = await memberClaim(other, q, { p_key: key });
+    expect(stolen.token).not.toBe(first.token);
   });
 });

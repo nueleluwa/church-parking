@@ -34,6 +34,8 @@ const schema = z.object({
   name: z.string().trim().min(2, "Please enter your name.").max(80),
   phone: z.string().trim().min(1, "Please enter your phone number."),
   plate: z.string().trim().min(1, "Please enter your plate number."),
+  // The one-time key of this attempt (empty if the page had not finished starting up)
+  key: z.union([z.literal(""), z.string().uuid()]).optional(),
 });
 
 const MESSAGES = {
@@ -49,7 +51,7 @@ export async function checkInAsGuest(_prev: CheckInState, formData: FormData): P
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please check your details." };
   }
-  const { area: areaSlug, serviceId, name } = parsed.data;
+  const { area: areaSlug, serviceId, name, key } = parsed.data;
 
   const phone = normalisePhone(parsed.data.phone);
   if (!phone) {
@@ -95,6 +97,7 @@ export async function checkInAsGuest(_prev: CheckInState, formData: FormData): P
     serviceDate: today,
     ipKey: ip ?? "",
     phoneKey: hashKey("phone", phone, secret),
+    checkInKey: key || undefined,
   });
 
   if (result.status === "blocked") return { error: MESSAGES[result.reason], blocked: true };
@@ -108,6 +111,7 @@ const memberSchema = z.object({
   area: z.string().min(1).max(40),
   vehicleId: z.string().uuid("Please choose your car."),
   serviceId: z.coerce.number().int().positive().optional(),
+  key: z.union([z.literal(""), z.string().uuid()]).optional(),
 });
 
 /**
@@ -156,6 +160,7 @@ export async function checkInMember(_prev: CheckInState, formData: FormData): Pr
     serviceId: service.id,
     areaId: area.id,
     serviceDate: today,
+    checkInKey: parsed.data.key || undefined,
   });
   if (result.status === "blocked") {
     return {

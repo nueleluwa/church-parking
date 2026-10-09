@@ -76,6 +76,18 @@ describe("claimGuestVisit", () => {
     });
   });
 
+  test("the retry key goes to the database, so a repeat of the same attempt gets the same pass", async () => {
+    await claimGuestVisit(store, { ...guest, checkInKey: "6f1c0e52-2d52-4a53-9a39-6f6a1c0b8c11" });
+    expect(store.guestCalls[0].checkInKey).toBe("6f1c0e52-2d52-4a53-9a39-6f6a1c0b8c11");
+    await claimGuestVisit(store, guest);
+    expect(store.guestCalls[1].checkInKey).toBeNull();
+  });
+
+  test("an answer for a retry is passed on as the same pass", async () => {
+    store.guestAnswer = { status: "ok", token: "T", reference: "PK-AAAA", existing: true };
+    expect(await claimGuestVisit(store, guest)).toMatchObject({ status: "ok", token: "T", existing: true });
+  });
+
   test("an unknown IP address is not counted at all", async () => {
     await claimGuestVisit(store, { ...guest, ipKey: "" });
     expect(store.guestCalls[0].limits?.ipKey).toBeNull();
@@ -130,6 +142,11 @@ describe("claimMemberVisit", () => {
     expect(store.memberCalls).toHaveLength(1);
     expect(store.memberCalls[0]).toMatchObject({ memberId: "m1", vehicleId: "v1", staffId: null });
     expect(store.memberCalls[0].candidates.length).toBeGreaterThanOrEqual(3);
+  });
+
+  test("the retry key is passed to the database for members too", async () => {
+    await claimMemberVisit(store, { ...member, checkInKey: "6f1c0e52-2d52-4a53-9a39-6f6a1c0b8c11" });
+    expect(store.memberCalls[0].checkInKey).toBe("6f1c0e52-2d52-4a53-9a39-6f6a1c0b8c11");
   });
 
   test("the member's own earlier pass is passed back as existing", async () => {

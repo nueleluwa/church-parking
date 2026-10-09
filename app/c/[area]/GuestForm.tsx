@@ -6,6 +6,8 @@ import { Plate } from "@/components/Plate";
 import { Spinner } from "@/components/Spinner";
 import { errorBox, field, outlineButton, redButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
+import { keyForAttempt } from "@/lib/check-in-key";
+import { normalisePlate } from "@/lib/rules/plates";
 import { checkInAsGuest, type CheckInState } from "./actions";
 
 type Props = {
@@ -29,6 +31,13 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
   const showConfirm = confirmedAt === state;
   const [dismissed, setDismissed] = useState<CheckInState | null>(null);
   const [changingService, setChangingService] = useState(false);
+  // A one-time key for this attempt, filled in the moment the form is sent, so a retry after a dropped signal
+  // gets the same pass back instead of an error
+  const keyRef = useRef<HTMLInputElement>(null);
+  function stampKey() {
+    const plate = normalisePlate(values.plate);
+    if (keyRef.current) keyRef.current.value = plate.length >= 4 ? keyForAttempt(`guest:${areaSlug}`, plate) : "";
+  }
   const showBlocked = Boolean(state.blocked) && dismissed !== state;
 
   function review() {
@@ -36,8 +45,9 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
   }
 
   return (
-    <form ref={formRef} action={action} className="space-y-4">
+    <form ref={formRef} action={action} onSubmitCapture={stampKey} className="space-y-4">
       <input type="hidden" name="area" value={areaSlug} />
+      <input type="hidden" name="key" defaultValue="" ref={keyRef} />
 
       {showBlocked && <BlockedCard message={state.error ?? ""} onBack={() => setDismissed(state)} />}
 
