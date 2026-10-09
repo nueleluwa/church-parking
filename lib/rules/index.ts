@@ -50,3 +50,4 @@ export { checkVehicleDetails, describeVehicle, MAKE_MAX, COLOUR_MAX, type Vehicl
 export * from "./reports";
 export * from "./analytics";
 export * from "./pass-tokens";
+export * from "./sign-scan";

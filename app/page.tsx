@@ -32,7 +32,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
         <div className={`${card} text-center`}>
           <PMark className="mx-auto h-16 w-16 rounded-2xl text-4xl" />
           <h1 className="mt-4 text-2xl font-bold">
-            {member ? `Welcome back, ${member.full_name.split(" ")[0]}` : "Welcome to CCI Parking"}
+            {member ? `Welcome back, ${member.full_name.split(" ")[0]}` : "Welcome to Church Parking"}
           </h1>
           <p className="mt-2 text-ink-soft">
             {member
@@ -44,6 +44,16 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
               Show my pass
             </Link>
           )}
+        </div>
+
+        <div className="space-y-3">
+          <Link href="/c" className={redButton}>
+            Check in
+          </Link>
+          <Link href="/c?scan=1" className={outlineButton}>
+            <IconScan className="h-5 w-5" />
+            Scan a car park sign
+          </Link>
         </div>
 
         <ol className="space-y-3">
@@ -58,19 +68,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
         </ol>
 
         {!member && (
-          <div className="space-y-3 pt-2">
-            <Link href="/account/signin" className={redButton}>
-              Member sign-in
+          <p className="pt-2 text-center">
+            Already a member?{" "}
+            <Link href="/account/signin" className="font-semibold text-accent underline">
+              Sign in
             </Link>
-            <Link href="/account/signup" className={outlineButton}>
-              Create a member account
+            <span className="px-2 text-ink-soft" aria-hidden="true">
+              ·
+            </span>
+            <Link href="/account/signup" className="font-semibold text-accent underline">
+              Create an account
             </Link>
-            <p className="pt-2 text-center">
-              <Link href="/staff/signin" className="font-medium text-accent underline">
-                Parking team sign-in
-              </Link>
-            </p>
-          </div>
+          </p>
         )}
       </main>
       {member && <MemberNav active="home" />}

@@ -14,7 +14,7 @@ export function AppHeader({ title = "Parking", right, wide = false }: { title?: 
       <div
         className={`relative mx-auto flex max-w-md items-center justify-center gap-2.5 ${wide ? "lg:max-w-5xl" : ""} ${right ? "pr-11 min-[400px]:pr-0" : ""}`}
       >
-        <Link href="/" aria-label="CCI Parking home" className="flex shrink-0 items-center">
+        <Link href="/" aria-label="Church Parking home" className="flex shrink-0 items-center">
           <Image src="/cci-logo.svg" alt="CCI" width={105} height={30} unoptimized priority />
         </Link>
         <span aria-hidden="true" className="h-7 w-px bg-white/40" />

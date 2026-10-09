@@ -27,7 +27,10 @@ export const RENAME_MESSAGES: Record<Exclude<RenameResult, "ok">, string> = {
  * It is never changed afterwards, so printed signs keep working when a car park is renamed.
  * If the address is already taken, a number is added ("church-gate-2").
  */
-export function makeAreaSlug(name: string, taken: string[]): string {
+export const RESERVED_SLUGS = ["general"];
+
+export function makeAreaSlug(name: string, takenSlugs: string[]): string {
+  const taken = [...takenSlugs, ...RESERVED_SLUGS];
   const base =
     name
       .toLowerCase()

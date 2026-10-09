@@ -37,6 +37,16 @@ export default async function SignsPage() {
           </li>
         ))}
       </ul>
+      <section aria-label="The general sign" className="rounded-card bg-card p-4 shadow-sm">
+        <h2 className="text-lg font-bold">General sign</h2>
+        <p className="mt-1 text-sm text-ink-soft">
+          One QR code for the whole church. Drivers scan it, then choose their car park. Put it where people arrive, such as the
+          gate or the church door. The signs above are still quicker, because the car park is already chosen.
+        </p>
+        <Link href="/admin/signs/general" className={`${outlineButton} mt-3`}>
+          Open the general sign to print
+        </Link>
+      </section>
       <Link href="/admin" className={outlineButton}>
         Back to Admin
       </Link>

@@ -17,7 +17,7 @@ async function scan(page: Page, path: string) {
 
 test("public and member screens have no automatically detectable accessibility problems", async ({ page, browser }) => {
   const passUrl = await guestCheckIn(browser, randomPlate("AX"));
-  for (const path of ["/", "/c/cp1", "/account/signin", "/account/signup", "/staff/signin", new URL(passUrl).pathname]) {
+  for (const path of ["/", "/c", "/c/cp1", "/account/signin", "/account/signup", "/staff/signin", new URL(passUrl).pathname]) {
     await scan(page, path);
   }
   await page.goto("/c/cp1");

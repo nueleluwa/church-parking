@@ -47,7 +47,7 @@ export default async function MorePage() {
         </li>
       </ul>
 
-      <p className="pt-2 text-center text-xs text-ink-soft">CCI Parking · Parking Management · v{pkg.version}</p>
+      <p className="pt-2 text-center text-xs text-ink-soft">Church Parking · Parking Management · v{pkg.version}</p>
     </>
   );
 }

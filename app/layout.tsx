@@ -6,11 +6,11 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: { default: "CCI Parking", template: "%s | CCI Parking" },
+  title: { default: "Church Parking", template: "%s | Church Parking" },
   description: "Check in your car and get your parking pass.",
-  applicationName: "CCI Parking",
+  applicationName: "Church Parking",
   icons: { apple: "/apple-touch-icon.png" },
-  appleWebApp: { capable: true, title: "CCI Parking", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Church Parking", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {

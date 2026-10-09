@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "CCI Parking",
-    short_name: "CCI Parking",
+    name: "Church Parking",
+    short_name: "Church Parking",
     description: "Check in your car and get your parking pass.",
     start_url: "/",
     display: "standalone",

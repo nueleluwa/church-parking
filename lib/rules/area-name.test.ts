@@ -39,6 +39,9 @@ describe("makeAreaSlug", () => {
     expect(makeAreaSlug("Roadside", ["road", "roadside"])).toBe("roadside-2");
     expect(makeAreaSlug("Roadside", ["roadside", "roadside-2"])).toBe("roadside-3");
   });
+  test("an address kept for the general sign is never given to a car park", () => {
+    expect(makeAreaSlug("General", [])).toBe("general-2");
+  });
   test("a name with no usable letters still gets an address", () => {
     expect(makeAreaSlug("!!!", [])).toBe("park");
   });

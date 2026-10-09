@@ -280,7 +280,7 @@ test.describe("moving between pages never makes the header or tab bar disappear"
 
   test("public pages: the header is always on screen while moving around", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Welcome to CCI Parking" })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole("heading", { name: "Welcome to Church Parking" })).toBeVisible({ timeout: 60_000 });
     await watchForGaps(page);
 
     await page.getByRole("link", { name: "Member sign-in" }).click();

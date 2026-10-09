@@ -35,7 +35,7 @@ export function StaffHeader({ initials, wide = false }: { initials: string; wide
   const path = usePathname();
   const clean = path.replace(/\/$/, "");
   const screen = SCREENS[clean] ?? (clean.startsWith("/admin/signs/")
-      ? { title: "Print Sign", back: "/admin/signs" }
+      ? { title: clean === "/admin/signs/general" ? "General Sign" : "Print Sign", back: "/admin/signs" }
       : clean.startsWith("/admin/visits/")
         ? { title: "Visit Details", back: "/admin/vehicles" }
         : undefined);
