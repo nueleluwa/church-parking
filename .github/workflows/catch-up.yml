@@ -1,0 +1,63 @@
+name: Catch-up deploy
+
+# A push that arrives while a service is on is held by the server (see deploy/church-deploy.sh).
+# Every 30 minutes this checks whether the latest good version of main is live, and deploys it if it is not
+# and no service is on. When nothing is waiting it does nothing and takes a few seconds.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  catch-up:
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Find the latest version of main that passed its checks
+        id: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          good=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?branch=main&head_sha=$sha&status=completed" \
+                   --jq '[.workflow_runs[] | select(.conclusion == "success")] | length')
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "good=$good" >> "$GITHUB_OUTPUT"
+          echo "Latest main is $sha; runs that passed: $good"
+
+      - name: Set up the connection to the server
+        if: ${{ steps.head.outputs.good != '0' }}
+        env:
+          KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Put it live if it is not live yet and no service is on
+        if: ${{ steps.head.outputs.good != '0' }}
+        env:
+          HOST: ${{ secrets.VPS_HOST }}
+          USER_NAME: ${{ secrets.VPS_USER }}
+          PORT: ${{ secrets.VPS_PORT }}
+          SHA: ${{ steps.head.outputs.sha }}
+        run: |
+          set +e
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+              -o ServerAliveInterval=30 -p "${PORT:-22}" "${USER_NAME}@${HOST}" "$SHA if-newer"
+          code=$?
+          set -e
+          if [ "$code" -eq 79 ]; then
+            echo "::notice title=Still held::A service is on. Will try again."
+            exit 0
+          fi
+          exit "$code"

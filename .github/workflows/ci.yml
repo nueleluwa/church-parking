@@ -62,17 +62,29 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
 
+      # While a service is on the server refuses to deploy (exit 79). That is not a failure: the version waits,
+      # and the "Catch-up deploy" job puts it live after the window closes.
       - name: Put this version live on the server
+        id: deploy
         env:
           HOST: ${{ secrets.VPS_HOST }}
           USER_NAME: ${{ secrets.VPS_USER }}
           PORT: ${{ secrets.VPS_PORT }}
         run: |
+          set +e
           ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
               -o ServerAliveInterval=30 -p "${PORT:-22}" "${USER_NAME}@${HOST}" "$SHA"
+          code=$?
+          set -e
+          if [ "$code" -eq 79 ]; then
+            echo "held=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Deploy held::A service is on, so this version will go live by itself when it ends."
+            exit 0
+          fi
+          exit "$code"
 
       - name: Check the live site answers
-        if: ${{ vars.PUBLIC_URL != '' }}
+        if: ${{ vars.PUBLIC_URL != '' && steps.deploy.outputs.held != 'true' }}
         run: |
           for i in $(seq 1 20); do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "${{ vars.PUBLIC_URL }}/staff/signin" || true)

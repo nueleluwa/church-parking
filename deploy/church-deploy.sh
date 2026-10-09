@@ -9,8 +9,16 @@
 #   - only one deploy runs at a time,
 #   - the new version answers before it is left running, otherwise the previous version is put back.
 #
-# Use from GitHub:  ssh deploy@server <40-character commit id>
-# By hand:          sudo -iu deploy church-deploy <40-character commit id>
+# No deploy while people are parking: it is held (exit 79) while any active service is on, from 30 minutes
+# before it starts until 30 minutes after it ends (Lagos time, read from the Services in the database). A
+# scheduled GitHub job tries again until the window closes. "force" overrides the hold.
+#
+# Use from GitHub:  ssh deploy@server <40-character commit id> [force | if-newer]
+# By hand:          sudo -iu deploy church-deploy <40-character commit id> [force | if-newer]
+#   if-newer: do nothing at all when that commit is already live (used by the scheduled catch-up job)
+#
+# Exit codes: 0 done (or already live), 64 bad commit id, 65 commit not on main, 66 server not set up,
+#             75 another deploy is running, 79 held because a service is on, 1 the new version did not start.
 set -euo pipefail
 
 # Our own Node (installed by provision.sh), whatever other versions the server has for other sites
@@ -22,8 +30,14 @@ BRANCH=main
 KEEP_RELEASES=4
 PORT=$(node -p "require('$APP_DIR/shared/ports.json').app")
 
-SHA="${1:-${SSH_ORIGINAL_COMMAND:-}}"
-SHA="${SHA%% *}"
+ARGS="${1:-${SSH_ORIGINAL_COMMAND:-}}"
+[[ -n "${2:-}" ]] && ARGS="$ARGS $2"
+read -r SHA MODE _ <<<"$ARGS"
+MODE="${MODE:-}"
+if [[ -n "$MODE" && "$MODE" != "force" && "$MODE" != "if-newer" ]]; then
+  echo "Unknown option: $MODE (use force or if-newer)." >&2
+  exit 64
+fi
 if [[ ! "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
   echo "Give the full 40-character commit id to deploy." >&2
   exit 64
@@ -39,6 +53,30 @@ if ! flock -n 9; then
 fi
 
 [[ -f "$APP_DIR/shared/.env.production.local" ]] || { echo "Missing $APP_DIR/shared/.env.production.local" >&2; exit 66; }
+
+if [[ "$MODE" == "if-newer" && -f "$APP_DIR/shared/deployed-sha" && "$(cat "$APP_DIR/shared/deployed-sha")" == "$SHA" ]]; then
+  echo "Version ${SHA:0:7} is already live. Nothing to do."
+  exit 0
+fi
+
+# Hold the deploy while a service is on, so nobody loses their place mid check-in or at the exit
+service_window_open() {
+  local url n
+  url=$(grep -E '^DATABASE_URL=' "$APP_DIR/shared/.env.production.local" | head -1 | cut -d= -f2-)
+  [[ -n "$url" ]] || return 1
+  n=$(psql "$url" -Atqc "select count(*) from services
+        where active
+          and weekday = extract(dow from (now() at time zone 'Africa/Lagos'))::int
+          and (now() at time zone 'Africa/Lagos')::time between (starts_at - interval '30 minutes') and (ends_at + interval '30 minutes')" 2>/dev/null) || {
+    echo "Could not read the service times; carrying on." >&2
+    return 1
+  }
+  [[ "${n:-0}" -gt 0 ]]
+}
+if [[ "$MODE" != "force" ]] && service_window_open; then
+  echo "A service is on (or about to start, or has just ended). Not deploying now: this version will go live by itself when the window closes."
+  exit 79
+fi
 
 # Keep a local copy of the repository and bring it up to date
 if [[ ! -d "$APP_DIR/repo" ]]; then
