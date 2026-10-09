@@ -1,5 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// Load .env.local so the dev server and the live-flow test see the same settings.
+try {
+  process.loadEnvFile(".env.local");
+} catch {
+  // No .env.local: the live-flow test is skipped.
+}
+
 const port = 3457;
 
 export default defineConfig({
