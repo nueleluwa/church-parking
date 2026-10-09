@@ -141,6 +141,7 @@ export async function getMemberPhone(id: string): Promise<string | null> {
 // ---------- Reports (AD-4) ----------
 
 type VisitJoin = {
+  id: string;
   service_date: string;
   service_id: number;
   area_id: number;
@@ -167,7 +168,7 @@ export async function listReportVisits(from: string, to: string): Promise<Report
     const { data, error } = await db()
       .from("visits")
       .select(
-        "service_date, service_id, area_id, status, release_method, reference, checked_in_at, released_at, guest_id, " +
+        "id, service_date, service_id, area_id, status, release_method, reference, checked_in_at, released_at, guest_id, " +
           "vehicles(plate), services(name), areas(name), staff:released_by(full_name)",
       )
       .gte("service_date", from)
@@ -179,6 +180,7 @@ export async function listReportVisits(from: string, to: string): Promise<Report
     const rows = (data ?? []) as unknown as VisitJoin[];
     for (const r of rows) {
       out.push({
+        id: r.id,
         serviceDate: r.service_date,
         serviceId: r.service_id,
         serviceName: r.services.name,

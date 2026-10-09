@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { FactRow } from "@/components/FactRow";
+import { FactList, FactRow } from "@/components/FactRow";
 import { IconAlert, IconCalendar, IconCheck, IconClock, IconFlag, IconPin, IconTimer, IconUser } from "@/components/icons";
 import { Plate } from "@/components/Plate";
 import { Spinner } from "@/components/Spinner";
@@ -158,7 +158,7 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
           </div>
         </div>
 
-        <dl className="mt-2 divide-y divide-edge/15">
+        <FactList className="mt-2 divide-y divide-edge/15">
           <FactRow icon={<IconUser className="h-5 w-5" />} label="Driver">
             <span className="inline-flex flex-wrap items-center gap-2 @[15rem]:justify-end">
               <span className="font-bold">{card.firstName}</span>
@@ -199,7 +199,7 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
           <FactRow icon={<IconClock className="h-5 w-5" />} label="Reference">
             <span className="block whitespace-nowrap">{card.reference}</span>
           </FactRow>
-        </dl>
+        </FactList>
 
         {card.state === "ready" && !finished && (
           <p className={`mt-3 text-sm ${card.askForDetails ? "font-semibold text-ink" : "text-ink-soft"}`}>

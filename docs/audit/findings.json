@@ -318,7 +318,7 @@
       "verification_test": "axe clean; manual TalkBack and VoiceOver notes",
       "priority": "P2",
       "status": "partly-fixed",
-      "status_note": "partly fixed: axe scan added and passing; keyboard, screen-reader and sunlight checks still manual"
+      "status_note": "axe scan covers every screen including the result card, owner pass and new admin screens, and passes. A real structural problem in the fact list was found and fixed. Keyboard, screen reader and sunlight checks still manual."
     },
     {
       "id": "DAT-01",
@@ -392,8 +392,8 @@
       "dependencies": "none",
       "verification_test": "Timed e2e on staging",
       "priority": "P2",
-      "status": "partly-fixed",
-      "status_note": "partly fixed: see WF-01"
+      "status": "fixed",
+      "status_note": "claim_guest_visit and claim_member_visit: a check-in is one database call (D-21). Median tap-to-pass 2.9 s to 1.4 s."
     },
     {
       "id": "PERF-03",
@@ -411,7 +411,8 @@
       "dependencies": "OPS-01",
       "verification_test": "k6 run and throttled-3G trace",
       "priority": "P2",
-      "status": "open"
+      "status": "partly-fixed",
+      "status_note": "Measured: 300 check-ins in 99 s with 0 failures, median 2.0 s, board caught up in 1.2 s; check-in page usable in 1.88 s on Lighthouse 3G, 3.0 s on DevTools Fast 3G, 10.4 s on Slow 3G. Repeat on staging; real-device and real-network tests still to do."
     },
     {
       "id": "OPS-01",
@@ -448,7 +449,8 @@
       "dependencies": "none",
       "verification_test": "Suite under 8 minutes",
       "priority": "P2",
-      "status": "open"
+      "status": "partly-fixed",
+      "status_note": "Test staff accounts are now removed after every run; the sign-up limit no longer trips a full run. The suite is still about 21 minutes and uses the shared dev database."
     },
     {
       "id": "UX-01",
@@ -503,8 +505,8 @@
       "dependencies": "none",
       "verification_test": "Existing claim tests; timed e2e",
       "priority": "P2",
-      "status": "partly-fixed",
-      "status_note": "partly fixed: independent reads now run together in both check-in actions; a single SQL claim function was not built"
+      "status": "fixed",
+      "status_note": "see PERF-02"
     },
     {
       "id": "WF-02",
@@ -635,6 +637,62 @@
       "dependencies": "usability test",
       "verification_test": "Usability test",
       "priority": "P3",
+      "status": "open"
+    },
+    {
+      "id": "UX-04",
+      "title": "Analytics, Vehicles, Visit details and Settings screens from the dashboard design",
+      "category": "ux",
+      "severity": "info",
+      "confidence": "high",
+      "component": "admin",
+      "requirement": "AD-5",
+      "description": "Built from real records and tested (D-22).",
+      "evidence": "tests/e2e/dashboard-suite.spec.ts",
+      "reproduction": "n/a",
+      "impact": "n/a",
+      "remediation": "n/a",
+      "dependencies": "none",
+      "verification_test": "dashboard-suite.spec.ts",
+      "priority": "P3",
+      "status": "fixed",
+      "status_note": "built"
+    },
+    {
+      "id": "OPS-03",
+      "title": "Test staff clutter in the dev database",
+      "category": "testing",
+      "severity": "low",
+      "confidence": "high",
+      "component": "tests/e2e",
+      "requirement": "",
+      "description": "Tests left hundreds of switched-off staff accounts.",
+      "evidence": "197 + 13 removed",
+      "reproduction": "n/a",
+      "impact": "A long Staff Accounts list.",
+      "remediation": "purgeTestStaff in teardown and pnpm db:purge-test-staff",
+      "dependencies": "none",
+      "verification_test": "staff list holds only real accounts after a run",
+      "priority": "P3",
+      "status": "fixed",
+      "status_note": "fixed"
+    },
+    {
+      "id": "SEC-10",
+      "title": "Sign-up limit of 60 an hour per address may be low for church wifi",
+      "category": "security",
+      "severity": "low",
+      "confidence": "low",
+      "component": "app/account/actions.ts",
+      "requirement": "T-7",
+      "description": "A congregation signing up from one wifi on one morning could reach the limit.",
+      "evidence": "code comment calls it generous; a full test run reached it",
+      "reproduction": "61 sign-ups from one address in an hour",
+      "impact": "Some members told to try later.",
+      "remediation": "Decide a value, such as 150 an hour like check-ins.",
+      "dependencies": "owner decision",
+      "verification_test": "auth-limits spec",
+      "priority": "P2",
       "status": "open"
     }
   ],

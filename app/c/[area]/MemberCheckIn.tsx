@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { BlockedCard } from "@/components/BlockedCard";
-import { FactRow } from "@/components/FactRow";
+import { FactList, FactRow } from "@/components/FactRow";
 import { IconCheck, IconClock, IconLock, IconPin, IconPlus } from "@/components/icons";
 import { Plate } from "@/components/Plate";
 import { PrivacyNotice } from "@/components/PrivacyNotice";
@@ -149,7 +149,7 @@ export function MemberCheckIn({
               )}
             </div>
 
-            <dl className="divide-y divide-accent/15 rounded-card bg-blush px-4">
+            <FactList className="divide-y divide-accent/15 rounded-card bg-blush px-4">
               <FactRow icon={<IconClock className="h-5 w-5" />} label="Service">
                 <span className="block">{service?.name}</span>
                 <span className="block whitespace-nowrap text-sm font-medium text-ink-soft">{service?.time}</span>
@@ -184,7 +184,7 @@ export function MemberCheckIn({
                   <span>Selected from the QR sign</span>
                 </span>
               </FactRow>
-            </dl>
+            </FactList>
 
             {state.error && !state.blocked && (
               <p role="alert" className={errorBox}>

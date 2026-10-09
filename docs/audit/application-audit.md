@@ -408,3 +408,49 @@ FUN-06 camera scanner on real phones over https; PERF-03 load and 3G tests; SEC-
 - `pnpm test:e2e`: 65 passed, 0 failed (the earlier layout failures were real and fixed: the narrow-phone History row and a test that counted the hidden desktop menu).
 
 **Pilot recommendation after remediation:** still NO-GO until the scanner is proven on real phones over https and the app is deployed, with a production database and backups. The functional MVP gaps listed in section D are closed.
+
+
+---
+
+## S. Second remediation round: performance measured, and the rest built
+
+**Single database call for check-in (PERF-02, WF-01: fixed).** `claim_guest_visit` and `claim_member_visit` (D-21) do a whole check-in in one transaction. Sixteen tests run against the real functions, including six phones claiming one plate at once (exactly one wins), reference and token collisions, rate limits, stale visits, and member rules.
+
+Like-for-like before and after (30 check-ins, 5 phones at a time, production build, hosted dev database):
+
+| Measure | Before | After |
+|---|---|---|
+| Tap Get my pass to pass shown, median | 2 942 ms | 1 370 ms |
+| Same, 95th percentile | 3 951 ms | 1 409 ms |
+| Whole journey from scanning, median | 4 185 ms | 2 161 ms |
+
+**Slow 3G (PERF-03: measured).** `pnpm test:perf` loads `/c/cp1` from an empty cache on a production build with the network throttled (median of 3 runs). "Usable" means the page is on screen and has started up (the guest form opens when tapped).
+
+| Profile | Page visible | Usable | Downloaded |
+|---|---|---|---|
+| 3G, Lighthouse style (1.6 Mbps, 150 ms) | 1.05 s | **1.88 s** | 242 KB |
+| Fast 3G, DevTools (1.6 Mbps, 562 ms) | 2.0 s | 3.0 s | 242 KB |
+| Slow 3G, DevTools (400 Kbps, 2 000 ms) | 5.5 s | 10.4 s | 242 KB |
+
+The spec's "under 2 seconds on 3G" is met on the Lighthouse 3G profile, but only just, and not on the harsher DevTools presets. About 175 KB of the 242 KB is JavaScript, mostly React and Next.js, plus a 49 KB font. Trimming more needs a lighter check-in page, which was not attempted.
+
+**300 check-ins (PERF-03: measured).** `pnpm test:perf` runs 300 real guest check-ins in real browsers, 15 at a time, each with its own address and phone number, while a coordinator watches the live board:
+
+| Measure | Result |
+|---|---|
+| Check-ins that failed | 0 of 300 |
+| Time for all 300 | 99 seconds (the spec needs 300 in 20 minutes, so this is about 12 times faster) |
+| Tap Get my pass to pass shown: median / 95th / slowest | 2.0 s / 2.8 s / 3.6 s |
+| Whole journey from scanning: median / 95th | 4.2 s / 6.4 s |
+| Live board showed all 300 after the last pass | 1.2 s (target 5 s) |
+| Rows in the database | 300 |
+
+Limits of this test: the server ran on the same computer as the 15 browsers, and the database is the hosted dev project reached over the internet. A real deployment next to its database will behave differently, so repeat it on staging.
+
+**Dashboard design items (built, D-22).** Analytics, Vehicles, Visit details and Settings now exist and are tested, including a plain-words description and a data table behind every chart. Nothing in them lists a driver's name or full phone number.
+
+**Test staff clutter (fixed).** 210 old test accounts were removed from the dev database, and the test suite now removes its own staff accounts after every run (`pnpm db:purge-test-staff` does it by hand).
+
+**Found along the way.** The accessibility scan found that the shared fact-row component nested its definition list too deeply for screen readers. That affected the attendant result card, the owner's pass, the member confirmation and the new visit details. It is fixed once in the component, and the scan now covers those screens. The full run also showed the sign-up limit (60 an hour per address) tripping when one computer creates dozens of test members, so the test helper now clears that one limit's records. Whether 60 an hour is enough for a congregation signing up from church wifi on one morning is worth a decision before the pilot.
+
+**Results of this round.** 190 unit tests pass. Full browser suite: 87 of 88 passed in the last complete run; the one failure was the sign-up limit above, fixed in the test helper and re-checked together with the other sign-up and password tests (17 of 17 passed). The full suite was not run again end to end after that one-line helper fix. Lint, typecheck and the production build are clean. The performance runs (`pnpm test:perf`) passed.

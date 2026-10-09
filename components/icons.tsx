@@ -220,3 +220,10 @@ export const IconEyeOff = (p: IconProps) => (
     <path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.8 9.8 0 0 0 4.4-1M9.9 9.9a3 3 0 0 0 4.2 4.2" />
   </Icon>
 );
+
+export const IconTrend = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 3v18h18" />
+    <path d="M7 15l4-4 3 3 5-6" />
+  </Icon>
+);

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
-import { FactRow } from "@/components/FactRow";
+import { FactList, FactRow } from "@/components/FactRow";
 import { IconAlert, IconCalendar, IconCheck, IconClock, IconPin } from "@/components/icons";
 import { MemberNav } from "@/components/MemberNav";
 import { Plate } from "@/components/Plate";
@@ -153,7 +153,7 @@ export default async function PassPage({
         </section>
 
         {view.kind === "owner" && (
-          <dl className="divide-y divide-edge/15 rounded-card bg-card px-5 shadow-sm">
+          <FactList className="divide-y divide-edge/15 rounded-card bg-card px-5 shadow-sm">
             <FactRow icon={<IconClock className="h-5 w-5" />} label="Service">
               <span className="block">{view.serviceName}</span>
             </FactRow>
@@ -168,7 +168,7 @@ export default async function PassPage({
                 </span>
               </FactRow>
             )}
-          </dl>
+          </FactList>
         )}
 
         {qr && (

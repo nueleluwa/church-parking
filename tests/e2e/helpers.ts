@@ -51,6 +51,9 @@ export async function createStaff(role: "attendant" | "coordinator") {
 }
 
 export async function memberSignUp(page: Page, pin = "4821", next = "") {
+  // A full test run signs up dozens of members from this one computer, which would trip the
+  // sign-up limit (60 an hour per address). Clear only that limit's records in the dev database.
+  if (live) await adminClient().from("rate_events").delete().like("key", "signup-ip:%");
   const phone = randomPhone();
   await page.goto(`/account/signup${next}`);
   await page.getByLabel("Your name").fill("Stability Member");

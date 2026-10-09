@@ -90,3 +90,13 @@ Each entry records what was decided and why. To change a decision, add a new ent
 
 ## D-20 Guest data is deleted after 24 months by a daily job
 **Decision:** `delete_expired_guest_data` runs daily at 23:45 UTC. It deletes released or closed guest visits older than 24 months, then guests and plates nothing refers to. Open visits are never deleted. Audit rows stay but lose their link to the deleted visit.
+
+## D-21 A check-in is one database call
+**Decision:** a guest or member check-in runs in one database function (`claim_guest_visit`, `claim_member_visit`) that does the rate limit, finds or creates the vehicle, closes an old open visit, refuses a plate that is already checked in or belongs to a member, and creates the visit, all in one transaction. The app hands it a few ready-made reference and pass-token pairs in case one is taken. The rules R-2, R-4 and R-5 are unchanged; they are now applied by the database itself.
+**Why:** the old way took about ten separate trips to the database. In a like-for-like run (30 check-ins, 5 phones at a time) the time from tapping **Get my pass** to the pass showing fell from a median of 2.9 s to 1.4 s. A refused check-in leaves no stray guest or vehicle behind.
+
+## D-22 Analytics, Vehicles, Visit details and Settings are built from the dashboard design
+**Decision:** following the dashboard suite design, the admin has Analytics (check-ins by time of day, car park usage, visit outcomes, peak times, which car park fills first), Vehicles (search by plate, member or guest, visits, latest visit), Visit details (facts, masked driver, a timeline of everything that happened) and Settings (the rules in force, and an activity log). Everything is counted from the visit and audit records. This is AD-5 (trends), brought forward.
+**Which car park "fills first":** there are no fixed space counts (D-05), so it is the car park by which half of its day's cars had arrived. An earlier time means it fills first.
+**Settings is read-only:** the rules are set in code and recorded here, so the screen shows them and says to ask the developer to change one.
+**Vehicles and Visit details never list names or phone numbers.** Visit details shows the first name and last four digits; the full number needs **Show number**, which is logged (R-9).

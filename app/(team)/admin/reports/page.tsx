@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { IconDownload } from "@/components/icons";
 import { StatusBadge } from "@/components/StatusBadge";
 import { field, outlineButton, primaryButton } from "@/components/ui";
@@ -138,7 +139,11 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
               <tbody className="divide-y divide-edge/15">
                 {recent.map((v) => (
                   <tr key={v.reference + v.serviceDate}>
-                    <td className="whitespace-nowrap py-2 pr-3 font-bold">{formatPlate(v.plate)}</td>
+                    <td className="whitespace-nowrap py-2 pr-3 font-bold">
+                      <Link href={`/admin/visits/${v.id}`} className="underline" aria-label={`Visit details for ${formatPlate(v.plate)}`}>
+                        {formatPlate(v.plate)}
+                      </Link>
+                    </td>
                     <td className="py-2 pr-3">{v.serviceName}</td>
                     <td className="py-2 pr-3">{v.areaName}</td>
                     <td className="whitespace-nowrap py-2 pr-3">{formatLagosTime(v.checkedInAt)}</td>

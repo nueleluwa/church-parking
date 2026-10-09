@@ -85,6 +85,16 @@ export default async function ServicesPage() {
         ))}
       </ul>
 
+      <section aria-label="Service selection rules" className="rounded-card bg-blush p-4 lg:max-w-xl">
+        <h2 className="text-lg font-bold">Service selection rules</h2>
+        <ol className="mt-2 list-decimal space-y-1 pl-5">
+          <li>Pick the next service that starts within 30 minutes.</li>
+          <li>Otherwise pick the service in progress.</li>
+          <li>Otherwise pick the next service that day.</li>
+        </ol>
+        <p className="mt-2 text-sm text-ink-soft">Time zone: Africa/Lagos. This is how drivers are put into a service.</p>
+      </section>
+
       <section className="rounded-card bg-card p-4 shadow-sm lg:max-w-xl">
         <h2 className="text-lg font-bold">Add a service</h2>
         <div className="mt-3">

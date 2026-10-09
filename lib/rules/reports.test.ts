@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { buildReport, csvCell, parseRange, visitsToCsv, type ReportVisit } from "./reports";
 
 const visit = (over: Partial<ReportVisit> = {}): ReportVisit => ({
+  id: "v1",
   serviceDate: "2026-10-04",
   serviceId: 1,
   serviceName: "Service 1",

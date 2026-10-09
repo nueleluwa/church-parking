@@ -1,5 +1,6 @@
 /** One visit as the reports see it. No names or phone numbers: reports never need them. */
 export type ReportVisit = {
+  id: string;
   serviceDate: string;
   serviceId: number;
   serviceName: string;

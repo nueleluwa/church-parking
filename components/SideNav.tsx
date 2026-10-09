@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import {
   IconAlert,
+  IconCalendar,
   IconCar,
   IconCheck,
   IconGrid,
@@ -12,6 +13,8 @@ import {
   IconQr,
   IconReport,
   IconScan,
+  IconSettings,
+  IconTrend,
   IconUsers,
 } from "./icons";
 
@@ -21,12 +24,15 @@ const ITEMS: Item[] = [
   { href: "/admin", label: "Dashboard", icon: <IconGrid />, admin: true, match: (p) => p === "/admin" },
   { href: "/staff/dashboard", label: "Live Parking", icon: <IconAlert />, match: (p) => p === "/staff/dashboard" },
   { href: "/staff/sweep", label: "Sweep", icon: <IconCheck />, match: (p) => p === "/staff/sweep" },
+  { href: "/admin/analytics", label: "Analytics", icon: <IconTrend />, admin: true, match: (p) => p.startsWith("/admin/analytics") },
   { href: "/admin/reports", label: "Reports", icon: <IconReport />, admin: true, match: (p) => p.startsWith("/admin/reports") },
-  { href: "/admin/services", label: "Services", icon: <IconPin />, admin: true, match: (p) => p.startsWith("/admin/services") },
+  { href: "/admin/vehicles", label: "Vehicles", icon: <IconCar />, admin: true, match: (p) => p.startsWith("/admin/vehicles") || p.startsWith("/admin/visits") },
+  { href: "/admin/services", label: "Services", icon: <IconCalendar />, admin: true, match: (p) => p.startsWith("/admin/services") },
   { href: "/admin/signs", label: "QR Signs", icon: <IconQr />, admin: true, match: (p) => p.startsWith("/admin/signs") },
   { href: "/admin/staff", label: "Staff Accounts", icon: <IconUsers />, admin: true, match: (p) => p.startsWith("/admin/staff") },
   { href: "/admin/members", label: "Members", icon: <IconUsers />, admin: true, match: (p) => p.startsWith("/admin/members") },
-  { href: "/admin/areas", label: "Car Parks", icon: <IconCar />, admin: true, match: (p) => p.startsWith("/admin/areas") },
+  { href: "/admin/areas", label: "Car Parks", icon: <IconPin />, admin: true, match: (p) => p.startsWith("/admin/areas") },
+  { href: "/admin/settings", label: "Settings", icon: <IconSettings />, admin: true, match: (p) => p.startsWith("/admin/settings") },
   {
     href: "/staff",
     label: "Attendant tools",
