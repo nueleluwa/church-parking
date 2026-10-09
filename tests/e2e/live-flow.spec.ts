@@ -30,7 +30,7 @@ test("guest checks in, staff releases, second release is refused", async ({ page
   const guest2 = await other.newPage();
   await guest2.goto(new URL("/c/cp2", passUrl).toString());
   await guest2.getByLabel("Your name").fill("Someone Else");
-  await guest2.getByLabel("Phone number").fill("08031112223");
+  await guest2.getByLabel("Phone number").fill(`080${Math.floor(10000000 + Math.random() * 89999999)}`);
   await guest2.getByLabel("Plate number").fill(plate);
   await guest2.getByRole("button", { name: "Get my pass" }).click();
   await expect(guest2.getByText("This car is already checked in. Please see an attendant.")).toBeVisible({ timeout: 30_000 });

@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { errorBox, field, primaryButton, secondaryButton } from "@/components/ui";
 import { addVehicle, changePin, deleteAccount, type FormState } from "./actions";
 
-const okBox = "rounded-xl border-2 border-edge bg-select p-3 font-medium";
+const okBox = "rounded-xl border-2 border-edge bg-blush p-3 font-medium";
 
 function Messages({ state }: { state: FormState }) {
   return (

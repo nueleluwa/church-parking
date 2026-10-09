@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { IconAlert } from "@/components/icons";
+import { errorBox } from "@/components/ui";
 import type { ScanCard } from "@/lib/rules/scan";
 import { lookupPass } from "../actions";
 import { ResultCard } from "../ResultCard";
@@ -34,9 +36,11 @@ export function Scanner() {
             busy.current = true;
             const result = await lookupPass(text);
             if ("card" in result) {
+              navigator.vibrate?.(60);
               setError(null);
               setCard(result.card);
             } else {
+              navigator.vibrate?.([120, 80, 120]);
               setError(result.error);
               setTimeout(() => (busy.current = false), 1500);
             }
@@ -49,7 +53,7 @@ export function Scanner() {
         };
         if (cancelled) await stop();
       } catch {
-        setCameraError("We can't use the camera. Allow camera access, or use Find car instead.");
+        setCameraError("We cannot use the camera. Allow camera access, or use Find car instead.");
       }
     })();
 
@@ -70,16 +74,14 @@ export function Scanner() {
 
   return (
     <div className="space-y-3">
-      <div id={REGION} className="overflow-hidden rounded-card bg-slate-green-dark" />
-      <p className="text-center font-medium">Point the camera at the driver&apos;s QR code.</p>
-      {error && (
-        <p role="alert" className="rounded-xl border-2 border-danger bg-white p-3 text-center font-medium text-danger">
-          {error}
-        </p>
-      )}
-      {cameraError && (
-        <p role="alert" className="rounded-xl border-2 border-danger bg-white p-3 text-center font-medium text-danger">
-          {cameraError}
+      <div className="rounded-card border-4 border-edge bg-night-soft p-2">
+        <div id={REGION} className="overflow-hidden rounded-2xl" />
+      </div>
+      <p className="text-center text-lg font-medium">Point the camera at the driver&apos;s QR code.</p>
+      {(error || cameraError) && (
+        <p role="alert" className={`${errorBox} flex items-center gap-2`}>
+          <IconAlert className="h-5 w-5 shrink-0" />
+          {error ?? cameraError}
         </p>
       )}
     </div>

@@ -28,7 +28,7 @@ export default async function MemberSignInPage({
           New here?{" "}
           <Link
             href={`/account/signup${safeNext ? `?next=${encodeURIComponent(safeNext)}` : ""}`}
-            className="font-semibold text-brand underline"
+            className="font-semibold text-accent underline"
           >
             Create an account
           </Link>

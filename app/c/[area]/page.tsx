@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
+import { IconCar } from "@/components/icons";
 import { getAreaBySlug, getPassByToken, listActiveServices, listMemberVehicles } from "@/lib/db";
 import { currentMember } from "@/lib/member-auth";
 import { rememberedPassToken } from "@/lib/pass-cookie";
@@ -45,14 +46,17 @@ export default async function CheckInPage({ params }: { params: Promise<{ area: 
       <main className="mx-auto max-w-md space-y-4 px-4 py-6">
         <div className="rounded-card bg-card p-6 shadow-sm">
           <p className="text-sm font-medium text-ink-soft">You are parking in</p>
-          <h1 className="text-3xl font-bold">{area.name}</h1>
+          <h1 className="flex items-center gap-3 text-3xl font-bold">
+            <IconCar className="h-8 w-8 text-accent" />
+            {area.name}
+          </h1>
 
           {hasLivePass ? (
             <div className="mt-5 space-y-3">
               <p>You already have a pass on this phone.</p>
               <Link
                 href={`/p/${token}`}
-                className="block rounded-full bg-brand px-6 py-4 text-center text-lg font-semibold text-white hover:bg-brand-dark"
+                className="block rounded-full bg-action px-6 py-4 text-center text-lg font-semibold text-white hover:bg-action-dark"
               >
                 Show my pass
               </Link>
@@ -64,7 +68,7 @@ export default async function CheckInPage({ params }: { params: Promise<{ area: 
               {vehicles.length === 0 ? (
                 <div className="space-y-3">
                   <p>You have no saved cars yet. Save your car once, then check in with two taps.</p>
-                  <Link href="/account" className="block rounded-full bg-brand px-6 py-4 text-center text-lg font-semibold text-white hover:bg-brand-dark">
+                  <Link href="/account" className="block rounded-full bg-action px-6 py-4 text-center text-lg font-semibold text-white hover:bg-action-dark">
                     Save my car
                   </Link>
                 </div>
@@ -77,7 +81,7 @@ export default async function CheckInPage({ params }: { params: Promise<{ area: 
                 />
               )}
               <p className="mt-4 text-center">
-                <Link href="/account" className="font-medium text-brand underline">
+                <Link href="/account" className="font-medium text-accent underline">
                   My account
                 </Link>
               </p>

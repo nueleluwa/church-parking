@@ -40,3 +40,8 @@ Each entry records what was decided and why. To change a decision, add a new ent
 **Decision:** development uses a free hosted Supabase project, linked through the Supabase CLI. Migrations and seed data go up with `supabase db push` and `supabase db reset --linked`. If the church hosts the app on its own server instead of Vercel, the server runs it with PM2 (`pnpm build`, then `pm2 start "pnpm start" --name church-parking`).
 **Why:** the user prefers not to use Docker. Local Supabase needs Docker, and PM2 can't replace it: PM2 keeps Node apps running, it doesn't run a database. Two separate jobs, two tools.
 **Rule:** keep production and development in separate Supabase projects. Never run `db reset --linked` against production.
+
+## D-10 Church red and near-black palette, replacing the sage green direction
+**Decision:** the colour scheme follows the church's brand: church red (`#B3121B`) as the accent, near-black (`#141414`) for the header, staff tab bar and main buttons, a warm off-white page, white cards, and a pale red tint for the selected state. This replaces the sage-green and soft-yellow direction taken from the style reference (the layout, rounded cards and "P" mark stay).
+**Why:** the church asked for red as the accent colour, and the logo's white lettering reads best on a dark background.
+**Rules:** main buttons are black, never red, so **Release car** can't be mistaken for a warning. Red is for accents, links, focus and warnings, including **Does not match**. The selected state always has a dark border and a tick, since the tint alone is too faint in sunlight. VALID passes use a solid black banner with white text. `tests/unit/contrast.test.ts` checks every text and background pair against WCAG AA (4.5:1).

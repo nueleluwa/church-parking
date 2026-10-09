@@ -1,14 +1,16 @@
 import { AppHeader } from "@/components/AppHeader";
+import { IconCheck } from "@/components/icons";
+import { dangerButton, primaryButton, secondaryButton } from "@/components/ui";
 
 const swatches = [
   { name: "page", cls: "bg-page" },
-  { name: "sage", cls: "bg-sage" },
-  { name: "sage-dark", cls: "bg-sage-dark" },
-  { name: "slate-green", cls: "bg-slate-green" },
-  { name: "brand", cls: "bg-brand" },
-  { name: "select", cls: "bg-select" },
-  { name: "ink", cls: "bg-ink" },
-  { name: "danger", cls: "bg-danger" },
+  { name: "panel", cls: "bg-panel" },
+  { name: "night", cls: "bg-night" },
+  { name: "action", cls: "bg-action" },
+  { name: "accent", cls: "bg-accent" },
+  { name: "blush", cls: "bg-blush" },
+  { name: "ink-soft", cls: "bg-ink-soft" },
+  { name: "card", cls: "bg-card" },
 ];
 
 export default function DesignPage() {
@@ -16,7 +18,7 @@ export default function DesignPage() {
     <>
       <AppHeader title="Design tokens" />
       <main className="mx-auto max-w-md space-y-6 px-4 py-6">
-        <section className="rounded-card bg-sage p-4">
+        <section className="rounded-card bg-panel p-4">
           <h2 className="mb-3 font-semibold">Colours</h2>
           <ul className="grid grid-cols-4 gap-3">
             {swatches.map((s) => (
@@ -30,27 +32,31 @@ export default function DesignPage() {
 
         <section className="rounded-card bg-card p-5 shadow-sm">
           <h2 className="font-semibold">Card</h2>
-          <p className="mt-1 text-ink-soft">White, rounded, on a sage background.</p>
+          <p className="mt-1 text-ink-soft">White, rounded, on a warm off-white page.</p>
         </section>
 
         <section className="space-y-3">
           <h2 className="font-semibold">Selected state</h2>
           <div className="flex gap-3">
-            <button className="flex-1 rounded-xl border-2 border-transparent bg-card px-4 py-3 font-medium">
+            <button className="flex-1 rounded-2xl border-2 border-transparent bg-card px-4 py-3 font-medium">
               Not selected
             </button>
             <button
               aria-pressed="true"
-              className="flex-1 rounded-xl border-2 border-edge bg-select px-4 py-3 font-semibold text-ink"
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-edge bg-blush px-4 py-3 font-semibold text-ink"
             >
+              <IconCheck className="h-5 w-5" />
               Selected
             </button>
           </div>
         </section>
 
-        <button className="w-full rounded-full bg-brand px-6 py-4 text-lg font-semibold text-white hover:bg-brand-dark">
-          Get my pass
-        </button>
+        <section className="space-y-3">
+          <h2 className="font-semibold">Buttons</h2>
+          <button className={primaryButton}>Get my pass</button>
+          <button className={secondaryButton}>Create account</button>
+          <button className={dangerButton}>Does not match</button>
+        </section>
       </main>
     </>
   );

@@ -3,30 +3,31 @@
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  /* Surfaces */
-  --color-page: #eaf0e4;
-  --color-sage: #d3d6c4;
-  --color-sage-dark: #bcc1a9;
+  /* Surfaces: warm off-white page, white cards, stone panels */
+  --color-page: #f6f3ef;
+  --color-panel: #e6e1da;
+  --color-panel-dark: #cfc8bf;
   --color-card: #ffffff;
 
-  /* Dark slate-green header / sidebar */
-  --color-slate-green: #3f5654;
-  --color-slate-green-dark: #2d3f3d;
+  /* Near-black for the header, tab bar and scanner frame. The logo's white lettering reads best on it. */
+  --color-night: #141414;
+  --color-night-soft: #262626;
 
-  /* Main button */
-  --color-brand: #2f6b55;
-  --color-brand-dark: #245443;
+  /* Main buttons are black, so the safe action never looks like a warning. */
+  --color-action: #141414;
+  --color-action-dark: #3a3a3a;
 
-  /* Selected state: always pair with ink text and a dark border */
-  --color-select: #f4f57a;
+  /* Church red: accents, links, focus, warnings. Close to the logo's infinity mark. */
+  --color-accent: #b3121b;
+  --color-danger: #b3121b;
+
+  /* Selected state: a pale red tint. Always pair with a dark border and a tick. */
+  --color-blush: #fbe3e1;
 
   /* Text and borders */
-  --color-ink: #1b2926;
-  --color-ink-soft: #4a5a56;
-  --color-edge: #2d3f3d;
-
-  /* Alerts */
-  --color-danger: #a12a2a;
+  --color-ink: #141414;
+  --color-ink-soft: #55504a;
+  --color-edge: #141414;
 
   --radius-card: 1.25rem;
 }

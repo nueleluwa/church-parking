@@ -1,6 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
+import { errorBox, field, primaryButton } from "@/components/ui";
+import { Spinner } from "@/components/Spinner";
 import { checkInAsGuest, type CheckInState } from "./actions";
 
 type Props = {
@@ -8,9 +10,6 @@ type Props = {
   services: { id: number; name: string; time: string }[];
   defaultServiceId: number;
 };
-
-const field =
-  "mt-1 w-full rounded-xl border-2 border-edge/40 bg-white px-4 py-3 text-lg focus:border-edge focus:outline-none";
 
 export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
   const [state, action, pending] = useActionState<CheckInState, FormData>(checkInAsGuest, {});
@@ -61,16 +60,13 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
       </label>
 
       {state.error && (
-        <p role="alert" className="rounded-xl border-2 border-danger bg-white p-3 font-medium text-danger">
+        <p role="alert" className={errorBox}>
           {state.error}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-full bg-brand px-6 py-4 text-lg font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className={primaryButton}>
+        {pending && <Spinner />}
         {pending ? "Please wait..." : "Get my pass"}
       </button>
     </form>

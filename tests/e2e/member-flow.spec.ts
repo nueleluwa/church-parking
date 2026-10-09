@@ -41,7 +41,7 @@ test("member saves a car, checks in with two taps, guest cannot take the plate, 
   const guest = await guestCtx.newPage();
   await guest.goto("/c/cp2");
   await guest.getByLabel("Your name").fill("Guest Person");
-  await guest.getByLabel("Phone number").fill("08031112224");
+  await guest.getByLabel("Phone number").fill(randomPhone());
   await guest.getByLabel("Plate number").fill(plate);
   await guest.getByRole("button", { name: "Get my pass" }).click();
   await expect(guest.getByText("We can't check in this car here. Please see an attendant.")).toBeVisible({
@@ -82,6 +82,7 @@ test("a member can delete their account", async ({ page }) => {
   await expect(page).toHaveURL(/\/account\?welcome=1$/, { timeout: 60_000 });
   await expect(page.getByText("Keep this app on your phone")).toBeVisible();
 
+  await page.locator("summary", { hasText: "Delete my account" }).click();
   await page.getByLabel("Your PIN", { exact: true }).fill("7391");
   await page.getByLabel("Yes, delete my account").check();
   await page.getByRole("button", { name: "Delete my account" }).click();

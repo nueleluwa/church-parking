@@ -26,7 +26,7 @@ export function SignInForm() {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-full bg-brand px-6 py-4 text-lg font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
+        className="w-full rounded-full bg-action px-6 py-4 text-lg font-semibold text-white hover:bg-action-dark disabled:opacity-60"
       >
         {pending ? "Please wait..." : "Sign in"}
       </button>

@@ -16,7 +16,7 @@ export function RegisterForm({ areas }: { areas: { slug: string; name: string }[
         <p className="text-5xl font-extrabold">{formatPlate(state.plate ?? "")}</p>
         <p className="mt-4 text-ink-soft">Tell the driver to remember this reference</p>
         <p className="text-4xl font-extrabold tracking-widest">{state.reference}</p>
-        <a href="/staff/register" className="mt-5 block rounded-full bg-brand px-6 py-4 text-lg font-semibold text-white">
+        <a href="/staff/register" className="mt-5 block rounded-full bg-action px-6 py-4 text-lg font-semibold text-white">
           Add another car
         </a>
       </div>
@@ -52,7 +52,7 @@ export function RegisterForm({ areas }: { areas: { slug: string; name: string }[
       )}
       <button
         disabled={pending}
-        className="w-full rounded-full bg-brand px-6 py-4 text-lg font-semibold text-white hover:bg-brand-dark disabled:opacity-60"
+        className="w-full rounded-full bg-action px-6 py-4 text-lg font-semibold text-white hover:bg-action-dark disabled:opacity-60"
       >
         {pending ? "Please wait..." : "Add car"}
       </button>

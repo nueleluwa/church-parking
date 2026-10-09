@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { ScanCard } from "@/lib/rules/scan";
+import { IconAlert, IconCheck } from "@/components/icons";
+import { dangerButton, primaryButton, secondaryButton } from "@/components/ui";
+import { Spinner } from "@/components/Spinner";
 import { formatPlate } from "@/lib/rules/plates";
+import type { ScanCard } from "@/lib/rules/scan";
 import { doesNotMatch, releaseCar, revealPhone } from "./actions";
 
 const time = (iso: string | null) =>
@@ -13,8 +16,6 @@ const time = (iso: string | null) =>
         minute: "2-digit",
       })
     : "";
-
-const btn = "w-full rounded-full px-6 py-4 text-lg font-semibold disabled:opacity-60";
 
 type Props = {
   card: ScanCard;
@@ -38,18 +39,29 @@ export function ResultCard({ card, method, onDone, doneLabel }: Props) {
           ? "This visit is closed. Do not release."
           : null;
 
+  function buzz(pattern: number | number[]) {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) navigator.vibrate(pattern);
+  }
+
   function release() {
     start(async () => {
       const r = await releaseCar(card.visitId, method);
-      if (r.ok) setFinished("released");
-      else setMessage(r.message);
+      if (r.ok) {
+        buzz(80);
+        setFinished("released");
+      } else {
+        buzz([120, 80, 120]);
+        setMessage(r.message);
+      }
     });
   }
   function hold() {
     start(async () => {
       const r = await doesNotMatch(card.visitId, card.plate);
-      if (r.ok) setFinished("held");
-      else setMessage(r.message);
+      if (r.ok) {
+        buzz([200, 100, 200]);
+        setFinished("held");
+      } else setMessage(r.message);
     });
   }
   function show() {
@@ -60,66 +72,78 @@ export function ResultCard({ card, method, onDone, doneLabel }: Props) {
     });
   }
 
+  const border = warning ? "border-danger" : "border-edge";
+
   return (
-    <div className="rounded-card bg-card p-6 text-center shadow-sm">
-      <p className="text-5xl font-extrabold tracking-wide">{formatPlate(card.plate)}</p>
-      <p className="mt-2 text-lg font-medium">
-        {card.areaName} · {card.serviceName}
-      </p>
-      <p className="mt-1 text-ink-soft">Reference {card.reference}</p>
-
-      <p className="mt-4 text-xl font-semibold">{card.firstName}</p>
-      {card.isGuest && (
-        <div className="mt-2 space-y-2">
-          <span className="inline-block rounded-full border-2 border-edge bg-select px-3 py-1 text-sm font-extrabold">
-            GUEST
-          </span>
-          <p>
-            Phone: <span className="font-semibold">{phone ?? `•••• ${card.phoneLast4}`}</span>
-          </p>
-          {!phone && (
-            <button onClick={show} disabled={pending} className="font-medium text-brand underline">
-              Show number
-            </button>
-          )}
-          <p className="text-sm text-ink-soft">Ask the driver for their name and phone number and check them.</p>
-        </div>
-      )}
-
+    <div className={`overflow-hidden rounded-card border-4 bg-card text-center shadow-sm ${border}`}>
       {warning && (
-        <p role="alert" className="mt-4 rounded-xl border-4 border-danger p-3 font-extrabold text-danger">
-          {warning}
-        </p>
-      )}
-      {message && (
-        <p role="alert" className="mt-4 rounded-xl border-2 border-danger p-3 font-medium text-danger">
-          {message}
+        <p role="alert" className="flex items-center justify-center gap-2 bg-danger px-4 py-3 text-lg font-extrabold text-white">
+          <IconAlert className="h-6 w-6 shrink-0" />
+          <span>{warning}</span>
         </p>
       )}
 
-      {finished ? (
-        <div className="mt-5 space-y-3">
-          <p className="rounded-xl border-4 border-edge bg-select p-3 text-xl font-extrabold">
-            {finished === "released" ? "Car released" : "Car held. The coordinator has been told."}
+      <div className="p-6">
+        <div className="mx-auto inline-block rounded-xl border-4 border-ink bg-white px-4 py-2">
+          <p className="text-4xl font-extrabold tracking-wider">{formatPlate(card.plate)}</p>
+        </div>
+        <p className="mt-3 text-lg font-semibold">
+          {card.areaName} · {card.serviceName}
+        </p>
+        <p className="mt-1 text-ink-soft">Reference {card.reference}</p>
+
+        <p className="mt-4 text-2xl font-bold">{card.firstName}</p>
+        {card.isGuest && (
+          <div className="mt-2 space-y-2">
+            <span className="inline-block rounded-full border-2 border-edge bg-blush px-3 py-1 text-sm font-extrabold">
+              GUEST
+            </span>
+            <p>
+              Phone: <span className="font-semibold">{phone ?? `•••• ${card.phoneLast4}`}</span>
+            </p>
+            {!phone && (
+              <button onClick={show} disabled={pending} className="font-medium text-accent underline">
+                Show number
+              </button>
+            )}
+            <p className="text-sm text-ink-soft">
+              Ask the driver for their name and phone number and check them.
+            </p>
+          </div>
+        )}
+
+        {message && (
+          <p role="alert" className="mt-4 rounded-2xl border-2 border-danger p-3 font-medium text-danger">
+            {message}
           </p>
-          <button onClick={onDone} className={`${btn} bg-brand text-white hover:bg-brand-dark`}>
+        )}
+
+        {finished ? (
+          <div className="mt-5 space-y-3">
+            <p className="flex items-center justify-center gap-2 rounded-2xl border-4 border-edge bg-blush p-3 text-xl font-extrabold">
+              <IconCheck />
+              {finished === "released" ? "Car released" : "Car held. The coordinator has been told."}
+            </p>
+            <button onClick={onDone} className={primaryButton}>
+              {doneLabel}
+            </button>
+          </div>
+        ) : card.state === "ready" ? (
+          <div className="mt-5 space-y-3">
+            <button onClick={release} disabled={pending} className={primaryButton}>
+              {pending ? <Spinner /> : <IconCheck />}
+              Release car
+            </button>
+            <button onClick={hold} disabled={pending} className={dangerButton}>
+              Does not match
+            </button>
+          </div>
+        ) : (
+          <button onClick={onDone} className={`${secondaryButton} mt-5`}>
             {doneLabel}
           </button>
-        </div>
-      ) : card.state === "ready" ? (
-        <div className="mt-5 space-y-3">
-          <button onClick={release} disabled={pending} className={`${btn} bg-brand text-white hover:bg-brand-dark`}>
-            Release car
-          </button>
-          <button onClick={hold} disabled={pending} className={`${btn} border-2 border-danger bg-white text-danger`}>
-            Does not match
-          </button>
-        </div>
-      ) : (
-        <button onClick={onDone} className={`${btn} mt-5 border-2 border-edge bg-white`}>
-          {doneLabel}
-        </button>
-      )}
+        )}
+      </div>
     </div>
   );
 }

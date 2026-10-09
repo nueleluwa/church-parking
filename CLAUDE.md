@@ -68,9 +68,9 @@ pnpm db:reset     # reset the hosted dev database (supabase db reset --linked) a
 
 `references/original-*.webp` is the user's style reference: a parking-booking dashboard. Take its look, not its features.
 
-- **Use:** muted sage and grey-green surfaces, a dark slate-green sidebar or header, white rounded cards, a soft yellow for the selected state, a deep green main button, a rounded geometric sans font and a "P" mark.
+- **Use:** the church palette from decision D-10: near-black (`#141414`) header and tab bar with the CCI logo, church red (`#B3121B`) as the accent, black main buttons, a warm off-white page, white rounded cards, a pale red tint for the selected state, the Inter font and a "P" mark.
 - **Ignore:** choosing a vehicle type, choosing a parking spot, time slots, prices, maps and the driving view. None of these are in the spec.
-- **Contrast:** soft yellow on white is too faint in sunlight. Pair the yellow with a dark border or dark text, and keep pass and scanner screens at WCAG AA contrast or better.
+- **Contrast:** the pale red selected state is too faint alone in sunlight, so pair it with a dark border and a tick. Keep pass and scanner screens at WCAG AA contrast or better. `tests/unit/contrast.test.ts` checks the theme colours.
 
 ## Done means
 

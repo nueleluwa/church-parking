@@ -43,7 +43,7 @@ export default async function AccountPage({
         <h1 className="text-2xl font-bold">Hello, {member.full_name.split(" ")[0]}</h1>
 
         {welcome && (
-          <div className="rounded-card border-4 border-edge bg-select p-5">
+          <div className="rounded-card border-4 border-edge bg-blush p-5">
             <h2 className="text-lg font-bold">Keep this app on your phone</h2>
             <p className="mt-1">
               <strong>Android (Chrome):</strong> tap the menu (three dots), then &quot;Add to Home
@@ -57,7 +57,7 @@ export default async function AccountPage({
         )}
 
         {passToken && (
-          <Link href={`/p/${passToken}`} className="block rounded-full bg-brand px-6 py-4 text-center text-lg font-semibold text-white hover:bg-brand-dark">
+          <Link href={`/p/${passToken}`} className="block rounded-full bg-action px-6 py-4 text-center text-lg font-semibold text-white hover:bg-action-dark">
             Show my pass
           </Link>
         )}
@@ -102,13 +102,19 @@ export default async function AccountPage({
           )}
         </Section>
 
-        <Section title="Change my PIN">
-          <ChangePinForm />
-        </Section>
+        <details className="rounded-card bg-card p-6 shadow-sm">
+          <summary className="cursor-pointer text-xl font-bold">Change my PIN</summary>
+          <div className="mt-4">
+            <ChangePinForm />
+          </div>
+        </details>
 
-        <Section title="Delete my account">
-          <DeleteAccountForm />
-        </Section>
+        <details className="rounded-card bg-card p-6 shadow-sm">
+          <summary className="cursor-pointer text-xl font-bold">Delete my account</summary>
+          <div className="mt-4">
+            <DeleteAccountForm />
+          </div>
+        </details>
 
         <form action={signOutMember}>
           <button className={secondaryButton}>Sign out</button>

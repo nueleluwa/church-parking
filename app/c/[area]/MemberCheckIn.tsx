@@ -2,6 +2,8 @@
 
 import { useActionState, useState } from "react";
 import { errorBox, field, primaryButton } from "@/components/ui";
+import { IconCheck } from "@/components/icons";
+import { Spinner } from "@/components/Spinner";
 import { formatPlate } from "@/lib/rules/plates";
 import { checkInMember, type CheckInState } from "./actions";
 
@@ -33,11 +35,12 @@ export function MemberCheckIn({ areaSlug, vehicles, services, defaultServiceId }
                 key={v.id}
                 aria-pressed={selected}
                 onClick={() => setVehicleId(v.id)}
-                className={`w-full rounded-xl border-2 px-4 py-4 text-left text-2xl font-extrabold ${
-                  selected ? "border-edge bg-select text-ink" : "border-transparent bg-page text-ink"
+                className={`flex w-full items-center justify-between rounded-2xl border-2 px-4 py-4 text-left text-2xl font-extrabold ${
+                  selected ? "border-edge bg-blush text-ink" : "border-transparent bg-page text-ink"
                 }`}
               >
                 {formatPlate(v.plate)}
+                {selected && <IconCheck className="h-7 w-7" />}
               </button>
             );
           })}
@@ -45,7 +48,7 @@ export function MemberCheckIn({ areaSlug, vehicles, services, defaultServiceId }
       </fieldset>
 
       <details>
-        <summary className="cursor-pointer font-medium text-brand underline">Change service</summary>
+        <summary className="cursor-pointer font-medium text-accent underline">Change service</summary>
         <select name="serviceId" defaultValue={defaultServiceId} className={field}>
           {services.map((s) => (
             <option key={s.id} value={s.id}>
@@ -62,6 +65,7 @@ export function MemberCheckIn({ areaSlug, vehicles, services, defaultServiceId }
       )}
 
       <button disabled={pending || !vehicleId} className={primaryButton}>
+        {pending && <Spinner />}
         {pending ? "Please wait..." : "Check in"}
       </button>
     </form>
