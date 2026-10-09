@@ -13,11 +13,14 @@
 # By hand:          sudo -iu deploy church-deploy <40-character commit id>
 set -euo pipefail
 
+# Our own Node (installed by provision.sh), whatever other versions the server has for other sites
+export PATH=/opt/node24/bin:$PATH
+
 APP_DIR=/srv/church-parking
 REPO_URL=git@github.com:nueleluwa/church-parking.git
 BRANCH=main
 KEEP_RELEASES=4
-PORT=3000
+PORT=$(node -p "require('$APP_DIR/shared/ports.json').app")
 
 SHA="${1:-${SSH_ORIGINAL_COMMAND:-}}"
 SHA="${SHA%% *}"
@@ -69,6 +72,13 @@ log "Installing packages"
 pnpm install --frozen-lockfile --reporter=append-only
 log "Building"
 pnpm build
+
+# Changes to the database go in BEFORE the new version starts. If one fails, nothing has been switched yet,
+# so the version that is running carries on. A backup is taken first whenever there is something to apply.
+if [[ -x "$REL/deploy/db/migrate.sh" || -f "$REL/deploy/db/migrate.sh" ]]; then
+  log "Checking for database changes"
+  bash "$REL/deploy/db/migrate.sh" --with-backup
+fi
 
 log "Switching to the new version"
 ln -sfn "$REL" "$APP_DIR/current"
