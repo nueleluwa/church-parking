@@ -121,7 +121,7 @@ test("a coordinator corrects a visit with a reason; undo release, and a reason i
 
   // Move it to another car park (audited, needs a reason)
   await page.locator("summary", { hasText: "Corrections" }).click();
-  await page.locator("details select").nth(1).selectOption({ label: "Roadside" });
+  await page.getByRole("combobox", { name: "Car park", exact: true }).selectOption({ label: "Roadside" });
   await page.getByLabel("Reason (required)").fill("Parked on the roadside, not in car park 1");
   await page.getByRole("button", { name: "Save correction" }).click();
   await expect(page.getByText("Done.")).toBeVisible({ timeout: 30_000 });

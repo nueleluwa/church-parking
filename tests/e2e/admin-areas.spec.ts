@@ -80,8 +80,8 @@ test("an admin renames a car park: it shows everywhere, persists, and no record 
       await aPage.goto("/staff/search");
       await aPage.getByLabel("Vehicle plate number").fill(plate);
       await aPage.getByRole("button", { name: "Search" }).click();
-      await expect(aPage.getByText(NEW_NAME, { exact: true })).toBeVisible({ timeout: 60_000 });
-      await expect(aPage.getByText(original, { exact: true })).toHaveCount(0);
+      await expect(aPage.locator("[data-area]", { hasText: NEW_NAME })).toBeVisible({ timeout: 60_000 });
+      await expect(aPage.locator("[data-area]", { hasText: new RegExp("^" + original + "$") })).toHaveCount(0);
 
       // Attendants cannot reach the admin screens
       await aPage.goto("/admin/areas");

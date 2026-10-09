@@ -50,7 +50,8 @@ test.describe("background updates never interrupt the user", () => {
     await expect(page.getByText("Car saved.")).toBeVisible({ timeout: 30_000 });
     await page.getByLabel("Plate number").fill(randomPlate("S2"));
     await page.getByRole("button", { name: "Save car" }).click();
-    await expect(page.getByText("Car saved.")).toBeVisible({ timeout: 30_000 });
+    // Wait until BOTH cars are listed: the first "Car saved." message may still be on screen
+    await expect(page.locator("[data-plate]")).toHaveCount(2, { timeout: 30_000 });
     await page.goto("/c/cp1");
 
     // Two cars: tap one, and the confirmation for that car appears (the first of the two taps)
@@ -283,7 +284,7 @@ test.describe("moving between pages never makes the header or tab bar disappear"
     await expect(page.getByRole("heading", { name: "Welcome to Church Parking" })).toBeVisible({ timeout: 60_000 });
     await watchForGaps(page);
 
-    await page.getByRole("link", { name: "Member sign-in" }).click();
+    await page.locator("main").getByRole("link", { name: "Sign in", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible({ timeout: 60_000 });
     await page.getByRole("link", { name: "Create an account" }).click();
     await expect(page.getByRole("heading", { name: "Create an account" })).toBeVisible({ timeout: 60_000 });
