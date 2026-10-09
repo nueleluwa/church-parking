@@ -15,6 +15,7 @@ test.setTimeout(300_000);
 
 // The smallest phones we support, a common size, and a larger phone
 const WIDTHS = [320, 360, 412];
+const ILLUSTRATION_SELECTOR = 'img[src="/vehicle-illustration.png"]';
 
 // The longest plate the app accepts (10 characters). Random each time, so a plate parked by
 // an earlier test never blocks this one.
@@ -159,6 +160,7 @@ test("the driver's pass, check-in and account keep plates on one line at every p
   const ctx = await browser.newContext();
   const driver = await ctx.newPage();
   await driver.goto("/c/cp1");
+  await driver.getByRole("button", { name: "Continue as guest" }).click();
   await driver.getByLabel("Your name").fill("Layout Driver");
   await driver.getByLabel("Phone number").fill(randomPhone());
   await driver.getByLabel("Plate number").fill(longPlate());
@@ -200,5 +202,84 @@ test("admin header and all six tabs fit at every phone width", async ({ page }) 
       await expectHeaderAndTabsFit(page, `admin ${path} at ${width}px`);
       await expectNoOverflow(page, `admin ${path} at ${width}px`);
     }
+  }
+});
+
+test("member screens (choose a car, confirm, pass, my vehicles, history) fit at every phone width, with an undistorted picture", async ({
+  page,
+}) => {
+  await memberSignUp(page);
+  await expect(page).toHaveURL(/welcome=1/, { timeout: 60_000 });
+
+  // Two cars, one with a very long make and model, to test the tightest case
+  const cars: [string, string, string][] = [
+    [longPlate(), "Mercedes-Benz E-Class Estate Limited Edition", "Metallic dark blue"],
+    [`${letters(3)}${100 + Math.floor(Math.random() * 900)}${letters(2)}`, "Toyota Corolla", "Silver"],
+  ];
+  for (const [plate, make, colour] of cars) {
+    await page.getByLabel("Plate number").fill(plate);
+    await page.getByLabel(/Make and model/).fill(make);
+    await page.getByLabel(/^Colour/).fill(colour);
+    await page.getByRole("button", { name: "Save car" }).click();
+    await expect(page.locator("[data-plate]").filter({ hasText: plate.slice(0, 3) })).toBeVisible({ timeout: 30_000 });
+  }
+
+  /** The picture keeps its shape: shown size has the same proportions as the file. */
+  async function expectPictureUndistorted(label: string) {
+    const pics = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLImageElement>('img[src="/vehicle-illustration.png"]')].map((i) => ({
+        ratio: i.getBoundingClientRect().width / i.getBoundingClientRect().height,
+        natural: i.naturalWidth / i.naturalHeight,
+        width: i.getBoundingClientRect().width,
+      })),
+    );
+    expect(pics.length, `${label}: no picture`).toBeGreaterThan(0);
+    for (const p of pics) {
+      expect(Math.abs(p.ratio - p.natural) / p.natural, `${label}: the picture is stretched`).toBeLessThan(0.03);
+      expect(p.width, `${label}: the picture is tiny`).toBeGreaterThanOrEqual(40);
+    }
+  }
+
+  for (const width of WIDTHS) {
+    await page.setViewportSize({ width, height: 800 });
+
+    await page.goto("/account");
+    await expect(page.locator(ILLUSTRATION_SELECTOR).first()).toBeVisible({ timeout: 60_000 });
+    await expectPlatesWhole(page, `my vehicles at ${width}px`, 16);
+    await expectNoOverflow(page, `my vehicles at ${width}px`);
+    await expectPictureUndistorted(`my vehicles at ${width}px`);
+
+    await page.goto("/c/cp1");
+    const list = page.getByRole("group", { name: "Your cars" });
+    await expect(list).toBeVisible({ timeout: 60_000 });
+    await expectPlatesWhole(page, `choose a car at ${width}px`, 16);
+    await expectNoOverflow(page, `choose a car at ${width}px`);
+    await expectPictureUndistorted(`choose a car at ${width}px`);
+
+    await list.getByRole("button").first().click();
+    await expect(page.getByRole("button", { name: "Check in" })).toBeVisible();
+    await expectPlatesWhole(page, `confirm at ${width}px`, 18);
+    await expectNoOverflow(page, `confirm at ${width}px`);
+    await expectAreaNamesWhole(page, `confirm at ${width}px`);
+    await expectPictureUndistorted(`confirm at ${width}px`);
+  }
+
+  // Check in once, then check the pass and the history at every width
+  await page.getByRole("button", { name: "Check in" }).click();
+  await expect(page.getByText("VALID", { exact: true })).toBeVisible({ timeout: 60_000 });
+  const passUrl = page.url();
+  for (const width of WIDTHS) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto(passUrl);
+    await expect(page.getByText("VALID", { exact: true })).toBeVisible({ timeout: 60_000 });
+    await expectPlatesWhole(page, `pass at ${width}px`, 20);
+    await expectNoOverflow(page, `pass at ${width}px`);
+    await expectAreaNamesWhole(page, `pass at ${width}px`);
+    await expectPictureUndistorted(`pass at ${width}px`);
+
+    await page.goto("/account?tab=history");
+    await expect(page.getByRole("heading", { name: "Parking history" })).toBeVisible({ timeout: 60_000 });
+    await expectNoOverflow(page, `history at ${width}px`);
+    await expectPictureUndistorted(`history at ${width}px`);
   }
 });

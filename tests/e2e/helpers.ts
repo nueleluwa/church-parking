@@ -65,6 +65,7 @@ export async function guestCheckIn(browser: Browser, plate: string, area = "cp1"
   const ctx = await browser.newContext();
   const guest = await ctx.newPage();
   await guest.goto(`/c/${area}`);
+  await guest.getByRole("button", { name: "Continue as guest" }).click();
   await guest.getByLabel("Your name").fill("Stability Guest");
   await guest.getByLabel("Phone number").fill(randomPhone());
   await guest.getByLabel("Plate number").fill(plate);

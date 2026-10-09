@@ -1,23 +1,29 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
-import { Plate } from "@/components/Plate";
 import { StatusBadge } from "@/components/StatusBadge";
 import { secondaryButton } from "@/components/ui";
+import { VehicleImage } from "@/components/VehicleImage";
 import { listMemberVehicles, memberHistory, openPassTokenForMember } from "@/lib/db";
+import { formatVisitTime } from "@/lib/format";
 import { currentMember } from "@/lib/member-auth";
 import { formatPlate, lagosDate, visitTone } from "@/lib/rules";
-import { removeVehicle, signOutMember } from "./actions";
+import { signOutMember } from "./actions";
 import { AddVehicleForm, ChangePinForm, DeleteAccountForm } from "./AccountForms";
+import { AddVehicleToggle, VehicleItem } from "./VehicleItem";
 
 export const dynamic = "force-dynamic";
 
 const STATUS = { parked: "Parked", released: "Left", missed: "Closed" } as const;
+const SAFE_NEXT = /^\/c\/[a-z0-9-]{1,40}$/;
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
-    <section className="rounded-card bg-card p-6 shadow-sm">
-      <h2 className="mb-3 text-xl font-bold">{title}</h2>
+    <section className="rounded-card bg-card p-5 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 className="text-xl font-bold">{title}</h2>
+      </div>
+      {action}
       {children}
     </section>
   );
@@ -26,17 +32,20 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ welcome?: string }>;
+  searchParams: Promise<{ welcome?: string; tab?: string; next?: string }>;
 }) {
   const member = await currentMember();
   if (!member) redirect("/account/signin");
-  const { welcome } = await searchParams;
+  const { welcome, tab, next = "" } = await searchParams;
+  const showHistory = tab === "history";
+  const backToCheckIn = SAFE_NEXT.test(next) ? next : null;
 
   const [vehicles, history, passToken] = await Promise.all([
     listMemberVehicles(member.id),
     memberHistory(member.id),
     openPassTokenForMember(member.id, lagosDate(new Date())),
   ]);
+  const nextQuery = backToCheckIn ? `&next=${encodeURIComponent(backToCheckIn)}` : "";
 
   return (
     <>
@@ -58,60 +67,118 @@ export default async function AccountPage({
           </div>
         )}
 
+        {backToCheckIn && (
+          <Link
+            href={backToCheckIn}
+            className="block rounded-full bg-action px-6 py-4 text-center text-lg font-semibold text-white hover:bg-action-dark"
+          >
+            Back to check-in
+          </Link>
+        )}
+
         {passToken && (
-          <Link href={`/p/${passToken}`} className="block rounded-full bg-action px-6 py-4 text-center text-lg font-semibold text-white hover:bg-action-dark">
+          <Link
+            href={`/p/${passToken}`}
+            className="block rounded-full bg-action px-6 py-4 text-center text-lg font-semibold text-white hover:bg-action-dark"
+          >
             Show my pass
           </Link>
         )}
 
-        <Section title="My cars">
-          {vehicles.length === 0 ? (
-            <p className="mb-4">You have no saved cars yet.</p>
-          ) : (
-            <ul className="mb-4 space-y-2">
-              {vehicles.map((v) => (
-                <li key={v.id} className="flex items-center justify-between rounded-xl bg-page px-4 py-3">
-                  <Plate plate={v.plate} size="md" align="start" className="flex-1" />
-                  <form action={removeVehicle}>
-                    <input type="hidden" name="vehicleId" value={v.id} />
-                    <button className="font-medium text-danger underline">Remove</button>
-                  </form>
-                </li>
-              ))}
-            </ul>
-          )}
-          <AddVehicleForm />
-        </Section>
+        <nav aria-label="My account" className="grid grid-cols-2 rounded-full bg-panel p-1">
+          {[
+            { label: "Vehicles", href: `/account?tab=vehicles${nextQuery}`, active: !showHistory },
+            { label: "History", href: `/account?tab=history${nextQuery}`, active: showHistory },
+          ].map((t) => (
+            <Link
+              key={t.label}
+              href={t.href}
+              aria-current={t.active ? "page" : undefined}
+              className={`rounded-full px-4 py-2.5 text-center font-semibold ${
+                t.active ? "border-2 border-edge bg-card" : "border-2 border-transparent"
+              }`}
+            >
+              {t.label}
+            </Link>
+          ))}
+        </nav>
 
-        <Section title="My visits">
-          {history.length === 0 ? (
-            <p>No visits yet.</p>
-          ) : (
-            <ul className="divide-y divide-edge/20">
-              {history.map((h) => (
-                <li key={h.reference + h.service_date} className="flex items-center justify-between py-2">
-                  <span>
-                    <span className="font-semibold">{h.service_date}</span> · {h.serviceName}
-                    <br />
-                    <span className="text-sm text-ink-soft">
-                      <span className="whitespace-nowrap">{formatPlate(h.plate)}</span> · {h.areaName}
-                    </span>
-                  </span>
-                  <StatusBadge tone={visitTone(h.status)} className="shrink-0">{STATUS[h.status]}</StatusBadge>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
+        {!showHistory ? (
+          <Section title="My vehicles">
+            <div className="mb-4">
+              <AddVehicleToggle startOpen={vehicles.length === 0 || Boolean(welcome) || Boolean(backToCheckIn)}>
+                <AddVehicleForm />
+              </AddVehicleToggle>
+            </div>
+            {vehicles.length === 0 ? (
+              <p>You have no saved cars yet.</p>
+            ) : (
+              <ul className="space-y-3">
+                {vehicles.map((v) => (
+                  <VehicleItem key={v.id} vehicle={v} />
+                ))}
+              </ul>
+            )}
+          </Section>
+        ) : (
+          <Section title="Parking history">
+            {history.length === 0 ? (
+              <p>No visits yet.</p>
+            ) : (
+              <ul className="space-y-2">
+                {history.map((h) => {
+                  const row = (
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="whitespace-nowrap text-sm font-semibold text-ink-soft">
+                          {formatVisitTime(h.checkedInAt)}
+                        </p>
+                        <StatusBadge tone={visitTone(h.status)} className="shrink-0">
+                          {STATUS[h.status]}
+                        </StatusBadge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <VehicleImage size="sm" />
+                        <p className="min-w-0 whitespace-nowrap text-xl font-extrabold tracking-wide">
+                          {formatPlate(h.plate)}
+                        </p>
+                      </div>
+                      <p className="flex flex-nowrap gap-1.5 whitespace-nowrap text-sm text-ink-soft">
+                        <span className="truncate">{h.serviceName}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="shrink-0">{h.areaName}</span>
+                      </p>
+                    </div>
+                  );
+                  return (
+                    <li key={h.reference + h.service_date}>
+                      {h.passToken ? (
+                        <Link
+                          href={`/p/${h.passToken}`}
+                          aria-label={`Open the pass for ${formatPlate(h.plate)}`}
+                          className="flex rounded-2xl border-2 border-success bg-success-soft p-3"
+                        >
+                          {row}
+                        </Link>
+                      ) : (
+                        <div className="flex rounded-2xl border-2 border-edge/15 bg-card p-3">{row}</div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </Section>
+        )}
 
-        <details className="rounded-card bg-card p-6 shadow-sm">
+        <details className="rounded-card bg-card p-5 shadow-sm">
           <summary className="cursor-pointer text-xl font-bold">Change my PIN</summary>
           <div className="mt-4">
             <ChangePinForm />
           </div>
         </details>
 
-        <details className="rounded-card bg-card p-6 shadow-sm">
+        <details className="rounded-card bg-card p-5 shadow-sm">
           <summary className="cursor-pointer text-xl font-bold">Delete my account</summary>
           <div className="mt-4">
             <DeleteAccountForm />

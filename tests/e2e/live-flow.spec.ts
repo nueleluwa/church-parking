@@ -14,6 +14,7 @@ test("guest checks in, staff releases, second release is refused", async ({ page
   // Guest check-in
   await page.goto("/c/cp1");
   await expect(page.getByRole("heading", { name: "Car Park 1" })).toBeVisible();
+  await page.getByRole("button", { name: "Continue as guest" }).click();
   await page.getByLabel("Your name").fill("Test Guest");
   await page.getByLabel("Phone number").fill(phone);
   await page.getByLabel("Plate number").fill(plate);
@@ -30,6 +31,7 @@ test("guest checks in, staff releases, second release is refused", async ({ page
   const other = await context.browser()!.newContext();
   const guest2 = await other.newPage();
   await guest2.goto(new URL("/c/cp2", passUrl).toString());
+  await guest2.getByRole("button", { name: "Continue as guest" }).click();
   await guest2.getByLabel("Your name").fill("Someone Else");
   await guest2.getByLabel("Phone number").fill(`080${Math.floor(10000000 + Math.random() * 89999999)}`);
   await guest2.getByLabel("Plate number").fill(plate);

@@ -1,4 +1,6 @@
 import { canAddVehicle } from "@/lib/rules/limits";
+import { lagosDate } from "@/lib/rules/service";
+import type { VehicleDetails } from "@/lib/rules/vehicle";
 import { db } from "./client";
 import type { Member } from "./types";
 
@@ -60,12 +62,12 @@ export async function clearAttempts(key: string): Promise<void> {
   if (error) fail(error.message);
 }
 
-export type MemberVehicle = { id: string; plate: string };
+export type MemberVehicle = { id: string; plate: string; make: string | null; colour: string | null };
 
 export async function listMemberVehicles(memberId: string): Promise<MemberVehicle[]> {
   const { data, error } = await db()
     .from("member_vehicles")
-    .select("vehicles(id, plate)")
+    .select("vehicles(id, plate, make, colour)")
     .eq("member_id", memberId);
   if (error) fail(error.message);
   const rows = (data ?? []) as unknown as { vehicles: MemberVehicle }[];
@@ -78,7 +80,11 @@ export type AddVehicleResult = "added" | "already_yours" | "taken" | "in_use" | 
  * Save a plate to a member (R-5 locks it to them). Refused if another member
  * has it, or if it has an open visit: first claim wins (R-4).
  */
-export async function addMemberVehicle(memberId: string, plate: string): Promise<AddVehicleResult> {
+export async function addMemberVehicle(
+  memberId: string,
+  plate: string,
+  details: VehicleDetails = { make: null, colour: null },
+): Promise<AddVehicleResult> {
   const saved = await db()
     .from("member_vehicles")
     .select("vehicle_id", { count: "exact", head: true })
@@ -104,7 +110,7 @@ export async function addMemberVehicle(memberId: string, plate: string): Promise
     if (open.error) fail(open.error.message);
     if ((open.count ?? 0) > 0) return "in_use";
   } else {
-    const created = await db().from("vehicles").insert({ plate }).select("id").single();
+    const created = await db().from("vehicles").insert({ plate, ...details }).select("id").single();
     if (created.error || !created.data) fail(created.error?.message ?? "no vehicle");
     vehicleId = created.data.id as string;
   }
@@ -112,7 +118,31 @@ export async function addMemberVehicle(memberId: string, plate: string): Promise
   const { error } = await db().from("member_vehicles").insert({ member_id: memberId, vehicle_id: vehicleId });
   if (error?.code === UNIQUE_VIOLATION) return "taken";
   if (error) fail(error.message);
+  // The car may already exist from an earlier guest visit with no details: add the member's
+  if (existing.data?.id && (details.make || details.colour)) await updateVehicleRow(vehicleId, details);
   return "added";
+}
+
+async function updateVehicleRow(vehicleId: string, details: VehicleDetails): Promise<void> {
+  const { error } = await db().from("vehicles").update(details).eq("id", vehicleId);
+  if (error) fail(error.message);
+}
+
+/** Change the make, model and colour of a car the member has saved. Returns false if it is not theirs. */
+export async function updateMemberVehicleDetails(
+  memberId: string,
+  vehicleId: string,
+  details: VehicleDetails,
+): Promise<boolean> {
+  const owned = await db()
+    .from("member_vehicles")
+    .select("vehicle_id", { count: "exact", head: true })
+    .eq("member_id", memberId)
+    .eq("vehicle_id", vehicleId);
+  if (owned.error) fail(owned.error.message);
+  if ((owned.count ?? 0) === 0) return false;
+  await updateVehicleRow(vehicleId, details);
+  return true;
 }
 
 export async function removeMemberVehicle(memberId: string, vehicleId: string): Promise<void> {
@@ -127,16 +157,21 @@ export async function removeMemberVehicle(memberId: string, vehicleId: string): 
 export type HistoryRow = {
   reference: string;
   service_date: string;
+  checkedInAt: string;
   status: "parked" | "released" | "missed";
   plate: string;
+  make: string | null;
+  colour: string | null;
   areaName: string;
   serviceName: string;
+  /** Only for a car still parked today, so the member can open its pass. */
+  passToken: string | null;
 };
 
 export async function memberHistory(memberId: string, limit = 20): Promise<HistoryRow[]> {
   const { data, error } = await db()
     .from("visits")
-    .select("reference, service_date, status, vehicles(plate), areas(name), services(name)")
+    .select("reference, service_date, checked_in_at, status, pass_token, vehicles(plate, make, colour), areas(name), services(name)")
     .eq("member_id", memberId)
     .order("checked_in_at", { ascending: false })
     .limit(limit);
@@ -144,18 +179,25 @@ export async function memberHistory(memberId: string, limit = 20): Promise<Histo
   const rows = (data ?? []) as unknown as {
     reference: string;
     service_date: string;
+    checked_in_at: string;
     status: HistoryRow["status"];
-    vehicles: { plate: string };
+    pass_token: string;
+    vehicles: { plate: string; make: string | null; colour: string | null };
     areas: { name: string };
     services: { name: string };
   }[];
+  const today = lagosDate(new Date());
   return rows.map((r) => ({
     reference: r.reference,
     service_date: r.service_date,
+    checkedInAt: r.checked_in_at,
     status: r.status,
     plate: r.vehicles.plate,
+    make: r.vehicles.make,
+    colour: r.vehicles.colour,
     areaName: r.areas.name,
     serviceName: r.services.name,
+    passToken: r.status === "parked" && r.service_date === today ? r.pass_token : null,
   }));
 }
 
@@ -187,4 +229,20 @@ export async function openPassTokensByVehicle(
     .eq("service_date", today);
   if (error) fail(error.message);
   return Object.fromEntries((data ?? []).map((v) => [v.vehicle_id as string, v.pass_token as string]));
+}
+
+export type ConvertResult =
+  | { status: "ok"; memberId: string }
+  | { status: "not_found" | "not_guest" | "not_open" | "phone_taken" | "plate_taken" };
+
+/**
+ * A guest turns their pass details into a member account (CI-7). One database step
+ * makes the member, saves the car to them and moves the visit across.
+ */
+export async function convertGuestToMember(token: string, pinHash: string): Promise<ConvertResult> {
+  const { data, error } = await db().rpc("convert_guest_to_member", { p_token: token, p_pin_hash: pinHash });
+  if (error) fail(error.message);
+  const result = data as string;
+  if (/^[0-9a-f-]{36}$/.test(result)) return { status: "ok", memberId: result };
+  return { status: result as Exclude<ConvertResult["status"], "ok"> };
 }

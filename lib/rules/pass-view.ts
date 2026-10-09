@@ -8,6 +8,9 @@ export type PassViewInput = {
   serviceName: string;
   serviceDate: string;
   today: string; // Lagos date
+  make?: string | null;
+  colour?: string | null;
+  checkedInAt?: string;
 };
 
 export type PassView =
@@ -19,6 +22,9 @@ export type PassView =
       reference: string;
       areaName: string;
       serviceName: string;
+      make: string | null;
+      colour: string | null;
+      checkedInAt: string | null;
     };
 
 /** R-7: a pass works only on the day it was issued. */
@@ -43,5 +49,8 @@ export function buildPassView(i: PassViewInput, isOwner: boolean): PassView {
     reference: i.reference,
     areaName: i.areaName,
     serviceName: i.serviceName,
+    make: i.make ?? null,
+    colour: i.colour ?? null,
+    checkedInAt: i.checkedInAt ?? null,
   };
 }

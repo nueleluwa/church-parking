@@ -5,7 +5,7 @@ import { errorBox, field, okBox, primaryButton, secondaryButton } from "@/compon
 import { useFields } from "@/components/useFields";
 import { addVehicle, changePin, deleteAccount, type FormState } from "./actions";
 
-function Messages({ state }: { state: FormState }) {
+export function Messages({ state }: { state: FormState }) {
   return (
     <>
       {state.error && (
@@ -20,13 +20,17 @@ function Messages({ state }: { state: FormState }) {
 
 export function AddVehicleForm() {
   const [state, action, pending] = useActionState<FormState, FormData>(addVehicle, {});
-  const { bind, set } = useFields({ plate: "" });
+  const { bind, set } = useFields({ plate: "", make: "", colour: "" });
 
   // After a successful save the plate box is emptied; after an error it keeps what was typed.
   const [handled, setHandled] = useState(state);
   if (state !== handled) {
     setHandled(state);
-    if (state.ok) set("plate", "");
+    if (state.ok) {
+      set("plate", "");
+      set("make", "");
+      set("colour", "");
+    }
   }
 
   return (
@@ -41,6 +45,14 @@ export function AddVehicleForm() {
           placeholder="PHC 234 AB"
           className={`${field} uppercase`}
         />
+      </label>
+      <label className="block font-medium">
+        Make and model <span className="font-normal text-ink-soft">(optional)</span>
+        <input {...bind("make")} maxLength={40} autoComplete="off" placeholder="Toyota Corolla" className={field} />
+      </label>
+      <label className="block font-medium">
+        Colour <span className="font-normal text-ink-soft">(optional)</span>
+        <input {...bind("colour")} maxLength={20} autoComplete="off" placeholder="Silver" className={field} />
       </label>
       <Messages state={state} />
       <button disabled={pending} className={primaryButton}>

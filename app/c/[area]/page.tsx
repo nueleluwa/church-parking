@@ -13,6 +13,7 @@ import {
 import { currentMember } from "@/lib/member-auth";
 import { rememberedPassToken } from "@/lib/pass-cookie";
 import { hasServiceToday, lagosDate, passState, pickService, servicesForCheckIn } from "@/lib/rules";
+import { GuestEntry } from "./GuestEntry";
 import { GuestForm } from "./GuestForm";
 import { MemberCheckIn } from "./MemberCheckIn";
 
@@ -73,13 +74,15 @@ export default async function CheckInPage({ params }: { params: Promise<{ area: 
               {vehicles.length === 0 ? (
                 <div className="space-y-3">
                   <p>You have no saved cars yet. Save your car once, then check in with two taps.</p>
-                  <Link href="/account" className={primaryButton}>
+                  <Link href={`/account?next=${encodeURIComponent(`/c/${area.slug}`)}`} className={primaryButton}>
                     Save my car
                   </Link>
                 </div>
               ) : (
                 <MemberCheckIn
                   areaSlug={area.slug}
+                  areaName={area.name}
+                  addVehicleHref={`/account?next=${encodeURIComponent(`/c/${area.slug}`)}`}
                   vehicles={vehicles}
                   services={services}
                   defaultServiceId={picked?.id ?? 0}
@@ -115,17 +118,13 @@ export default async function CheckInPage({ params }: { params: Promise<{ area: 
           ) : services.length === 0 ? (
             <p className="mt-5 font-medium">{noServiceMessage}</p>
           ) : (
-            <div className="mt-5 space-y-4">
-              <div className="flex gap-3 text-center font-semibold">
-                <Link href={`/account/signin?next=/c/${area.slug}`} className="flex-1 rounded-full border-2 border-edge bg-white px-4 py-3">
-                  Sign in
-                </Link>
-                <Link href={`/account/signup?next=/c/${area.slug}`} className="flex-1 rounded-full border-2 border-edge bg-white px-4 py-3">
-                  Create account
-                </Link>
-              </div>
-              <p className="text-center font-medium text-ink-soft">or continue as a guest</p>
-              {guestForm}
+            <div className="mt-4">
+              <GuestEntry
+                areaSlug={area.slug}
+                areaName={area.name}
+                services={services}
+                defaultServiceId={picked?.id ?? 0}
+              />
             </div>
           )}
         </div>

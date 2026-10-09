@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
+import { BlockedCard } from "@/components/BlockedCard";
 import { Plate } from "@/components/Plate";
 import { Spinner } from "@/components/Spinner";
 import { errorBox, field, primaryButton, secondaryButton } from "@/components/ui";
@@ -11,9 +12,11 @@ type Props = {
   areaSlug: string;
   services: { id: number; name: string; time: string }[];
   defaultServiceId: number;
+  /** Returns to the welcome (sign in or guest). Hidden while a refusal is showing. */
+  onBack?: () => void;
 };
 
-export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
+export function GuestForm({ areaSlug, services, defaultServiceId, onBack }: Props) {
   const [state, action, pending] = useActionState<CheckInState, FormData>(checkInAsGuest, {});
   const formRef = useRef<HTMLFormElement>(null);
   const { values, bind } = useFields({
@@ -26,6 +29,8 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
   // error) brings the form back for editing, with everything still filled in.
   const [confirmedAt, setConfirmedAt] = useState<CheckInState | null>(null);
   const showConfirm = confirmedAt === state;
+  const [dismissed, setDismissed] = useState<CheckInState | null>(null);
+  const showBlocked = Boolean(state.blocked) && dismissed !== state;
 
   function review() {
     if (formRef.current?.reportValidity()) setConfirmedAt(state);
@@ -35,7 +40,9 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
     <form ref={formRef} action={action} className="space-y-4">
       <input type="hidden" name="area" value={areaSlug} />
 
-      <div className={showConfirm ? "hidden" : "space-y-4"}>
+      {showBlocked && <BlockedCard message={state.error ?? ""} onBack={() => setDismissed(state)} />}
+
+      <div className={showConfirm || showBlocked ? "hidden" : "space-y-4"}>
         <label className="block font-medium">
           Service
           <select {...bind("serviceId")} className={field}>
@@ -77,7 +84,7 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
           />
         </label>
 
-        {state.error && (
+        {state.error && !state.blocked && (
           <p role="alert" className={errorBox}>
             {state.error}
           </p>
@@ -86,9 +93,14 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
         <button type="button" onClick={review} className={primaryButton}>
           Get my pass
         </button>
+        {onBack && (
+          <button type="button" onClick={onBack} className="w-full text-center font-medium text-accent underline">
+            Back
+          </button>
+        )}
       </div>
 
-      {showConfirm && (
+      {showConfirm && !showBlocked && (
         <div className="space-y-4">
           <p className="text-lg font-semibold">Please check your details</p>
           <div className="rounded-2xl border-2 border-edge bg-page p-4 text-center">

@@ -53,13 +53,13 @@ test.describe("background updates never interrupt the user", () => {
     await expect(page.getByText("Car saved.")).toBeVisible({ timeout: 30_000 });
     await page.goto("/c/cp1");
 
-    const cars = page.getByRole("button", { pressed: false }).filter({ hasText: /\d{3}/ });
+    // Two cars: tap one, and the confirmation for that car appears (the first of the two taps)
+    const cars = page.getByRole("group", { name: "Your cars" }).getByRole("button");
     await cars.first().click();
-    const selected = page.getByRole("button", { pressed: true });
-    await expect(selected).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "Check in" })).toBeVisible({ timeout: 30_000 });
     const result = await observe(page, WATCH_SECONDS);
     expectCalm(result, "member check-in");
-    await expect(page.getByRole("button", { pressed: true })).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "Check in" })).toBeVisible();
 
     await page.getByRole("button", { name: "Check in" }).click();
     await expect(page.getByText("VALID", { exact: true })).toBeVisible({ timeout: 60_000 });
@@ -135,6 +135,7 @@ test.describe("background updates never interrupt the user", () => {
     const driver = await browser.newContext();
     const dp = await driver.newPage();
     await dp.goto("/c/cp1");
+    await dp.getByRole("button", { name: "Continue as guest" }).click();
     await dp.getByLabel("Your name").fill("Driver");
     await dp.getByLabel("Phone number").fill(randomPhone());
     await dp.getByLabel("Plate number").fill(randomPlate("DR"));
@@ -157,6 +158,7 @@ test.describe("what the user typed survives a server response", () => {
     const page = await ctx.newPage();
     const phone = randomPhone();
     await page.goto("/c/cp2");
+    await page.getByRole("button", { name: "Continue as guest" }).click();
     await page.getByLabel("Your name").fill("Second Person");
     await page.getByLabel("Phone number").fill(phone);
     await page.getByLabel("Plate number").fill(plate);
@@ -164,6 +166,8 @@ test.describe("what the user typed survives a server response", () => {
     await page.getByRole("button", { name: "Yes, get my pass" }).click();
     await expect(page.getByText("This car is already checked in.")).toBeVisible({ timeout: 60_000 });
 
+    // Going back shows the form again with everything still filled in
+    await page.getByRole("button", { name: "Go back" }).click();
     await expect(page.getByLabel("Your name")).toHaveValue("Second Person");
     await expect(page.getByLabel("Phone number")).toHaveValue(phone);
     await expect(page.getByLabel("Plate number")).toHaveValue(plate);

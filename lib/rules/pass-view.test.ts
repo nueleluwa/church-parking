@@ -9,18 +9,28 @@ const base: PassViewInput = {
   serviceName: "Service 1",
   serviceDate: "2026-10-11",
   today: "2026-10-11",
+  make: "Toyota Corolla",
+  colour: "Silver",
+  checkedInAt: "2026-10-11T08:12:00Z",
 };
 
 describe("buildPassView", () => {
   test("the public view shows only plate and state, with no name, phone or token", () => {
     const view = buildPassView(base, false);
     expect(view).toEqual({ kind: "public", plate: "PHC234AB", state: "valid" });
-    expect(JSON.stringify(view)).not.toMatch(/name|phone|token|PK-/i);
+    expect(JSON.stringify(view)).not.toMatch(/name|phone|token|PK-|Toyota|Silver|2026-10-11T/i);
   });
 
   test("the holder also sees reference, area and service", () => {
     const view = buildPassView(base, true);
-    expect(view).toMatchObject({ kind: "owner", reference: "PK-7Q4M", areaName: "Car Park 1" });
+    expect(view).toMatchObject({
+      kind: "owner",
+      reference: "PK-7Q4M",
+      areaName: "Car Park 1",
+      make: "Toyota Corolla",
+      colour: "Silver",
+      checkedInAt: "2026-10-11T08:12:00Z",
+    });
     expect(JSON.stringify(view)).not.toMatch(/phone|token/i);
   });
 });

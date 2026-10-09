@@ -85,7 +85,7 @@ Priority: **MVP** must ship for the pilot. **v1.1** comes soon after. **Later** 
 | CI-5 | If the plate already has an open visit, block the check-in, tell the driver "This car is already checked in. Please see an attendant." and alert the coordinator. Never show the existing pass. | MVP |
 | CI-5b | If the plate belongs to a member, block a guest check-in for it and alert the coordinator. | MVP |
 | CI-6 | The pass reopens on the phone or member account that created it, until the car is released. | MVP |
-| CI-7 | Turn a guest registration into a member account. | v1.1 |
+| CI-7 | Turn a guest registration into a member account. | v1.1 (built early, see D-15) |
 
 ### Exit
 | ID | Requirement | Priority |

@@ -40,6 +40,7 @@ test("member saves a car, checks in with two taps, guest cannot take the plate, 
   const guestCtx = await browser.newContext();
   const guest = await guestCtx.newPage();
   await guest.goto("/c/cp2");
+  await guest.getByRole("button", { name: "Continue as guest" }).click();
   await guest.getByLabel("Your name").fill("Guest Person");
   await guest.getByLabel("Phone number").fill(randomPhone());
   await guest.getByLabel("Plate number").fill(plate);

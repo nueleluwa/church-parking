@@ -10,6 +10,7 @@ import {
   deleteMember,
   removeMemberVehicle,
   setMemberPin,
+  updateMemberVehicleDetails,
 } from "@/lib/db";
 import { serverEnv } from "@/lib/env";
 import {
@@ -21,7 +22,7 @@ import {
   PIN_MESSAGES,
   startMemberSession,
 } from "@/lib/member-auth";
-import { normalisePhone, normalisePlate, PIN_PATTERN } from "@/lib/rules";
+import { checkVehicleDetails, normalisePhone, normalisePlate, PIN_PATTERN } from "@/lib/rules";
 
 export type FormState = { error?: string; ok?: string };
 
@@ -98,7 +99,13 @@ export async function addVehicle(_prev: FormState, formData: FormData): Promise<
   const plate = normalisePlate(String(formData.get("plate") ?? ""));
   if (plate.length < 4 || plate.length > 10) return { error: "Please check your plate number." };
 
-  const result = await addMemberVehicle(member.id, plate);
+  const details = checkVehicleDetails({
+    make: String(formData.get("make") ?? ""),
+    colour: String(formData.get("colour") ?? ""),
+  });
+  if (!details.ok) return { error: details.message };
+
+  const result = await addMemberVehicle(member.id, plate, details.details);
   switch (result) {
     case "added":
       // Refresh this page's data in place, so the new car shows without a reload
@@ -111,6 +118,25 @@ export async function addVehicle(_prev: FormState, formData: FormData): Promise<
     default:
       return { error: "We cannot save this car. Please see the parking team." };
   }
+}
+
+/** Change the make, model and colour of one of the member's own cars. */
+export async function updateVehicleDetails(_prev: FormState, formData: FormData): Promise<FormState> {
+  const member = await currentMember();
+  if (!member) redirect("/account/signin");
+
+  const id = z.string().uuid().safeParse(formData.get("vehicleId"));
+  if (!id.success) return { error: "We cannot find this car." };
+  const details = checkVehicleDetails({
+    make: String(formData.get("make") ?? ""),
+    colour: String(formData.get("colour") ?? ""),
+  });
+  if (!details.ok) return { error: details.message };
+
+  const saved = await updateMemberVehicleDetails(member.id, id.data, details.details);
+  if (!saved) return { error: "We cannot find this car." };
+  revalidatePath("/account");
+  return { ok: "Details saved." };
 }
 
 export async function removeVehicle(formData: FormData): Promise<void> {

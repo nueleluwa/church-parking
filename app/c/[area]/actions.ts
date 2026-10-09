@@ -25,7 +25,8 @@ import {
 } from "@/lib/rules";
 import { hashKey } from "@/lib/session";
 
-export type CheckInState = { error?: string };
+/** `blocked` means the car was refused (already checked in, or a member's car): shown as a card, not a form error. */
+export type CheckInState = { error?: string; blocked?: boolean };
 
 const schema = z.object({
   area: z.string().min(1).max(40),
@@ -93,7 +94,7 @@ export async function checkInAsGuest(_prev: CheckInState, formData: FormData): P
     phoneKey: hashKey("phone", phone, secret),
   });
 
-  if (result.status === "blocked") return { error: MESSAGES[result.reason] };
+  if (result.status === "blocked") return { error: MESSAGES[result.reason], blocked: true };
   if (result.status === "rate_limited") return { error: MESSAGES.rate_limited };
 
   await rememberPass(result.token);
@@ -153,6 +154,7 @@ export async function checkInMember(_prev: CheckInState, formData: FormData): Pr
         result.reason === "plate_conflict"
           ? MESSAGES.plate_conflict
           : "We cannot check in this car. Please see an attendant.",
+      blocked: true,
     };
   }
 

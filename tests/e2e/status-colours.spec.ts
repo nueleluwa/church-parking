@@ -20,6 +20,7 @@ test("a valid pass is green with white text and a tick, a released one is not gr
   const ctx = await browser.newContext();
   const driver = await ctx.newPage();
   await driver.goto("/c/cp1");
+  await driver.getByRole("button", { name: "Continue as guest" }).click();
   await driver.getByLabel("Your name").fill("Colour Driver");
   await driver.getByLabel("Phone number").fill(`080${Math.floor(10000000 + Math.random() * 89999999)}`);
   await driver.getByLabel("Plate number").fill(plate);
@@ -74,6 +75,7 @@ test("a valid pass is green with white text and a tick, a released one is not gr
   const ctx2 = await browser.newContext();
   const d2 = await ctx2.newPage();
   await d2.goto("/c/cp1");
+  await d2.getByRole("button", { name: "Continue as guest" }).click();
   await d2.getByLabel("Your name").fill("Old Pass");
   await d2.getByLabel("Phone number").fill(`080${Math.floor(10000000 + Math.random() * 89999999)}`);
   await d2.getByLabel("Plate number").fill(plate2);
@@ -104,7 +106,7 @@ test("a member's history shows a parked car in green and a finished visit in neu
   await page.goto("/c/cp1");
   await page.getByRole("button", { name: "Check in" }).click();
   await expect(page.getByText("VALID", { exact: true })).toBeVisible({ timeout: 60_000 });
-  await page.goto("/account");
+  await page.goto("/account?tab=history");
 
   const parked = page.getByText("Parked", { exact: true });
   await expect(parked).toBeVisible({ timeout: 60_000 });
