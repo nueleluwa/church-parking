@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Surfaces */
+  --color-page: #eaf0e4;
+  --color-sage: #d3d6c4;
+  --color-sage-dark: #bcc1a9;
+  --color-card: #ffffff;
+
+  /* Dark slate-green header / sidebar */
+  --color-slate-green: #3f5654;
+  --color-slate-green-dark: #2d3f3d;
+
+  /* Main button */
+  --color-brand: #2f6b55;
+  --color-brand-dark: #245443;
+
+  /* Selected state: always pair with ink text and a dark border */
+  --color-select: #f4f57a;
+
+  /* Text and borders */
+  --color-ink: #1b2926;
+  --color-ink-soft: #4a5a56;
+  --color-edge: #2d3f3d;
+
+  /* Alerts */
+  --color-danger: #a12a2a;
+
+  --radius-card: 1.25rem;
+}
+
+body {
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
