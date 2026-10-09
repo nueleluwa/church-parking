@@ -19,7 +19,10 @@ DATABASE_URL=$(grep -E '^DATABASE_URL=' "$ENV_FILE" | head -1 | cut -d= -f2-)
 
 mkdir -p "$DEST"
 FILE="$DEST/church-$KIND-$(date -u +%Y%m%d-%H%M%S).dump"
-pg_dump "$DATABASE_URL" --format=custom --no-owner --file "$FILE.partial"
+# Only the app's own tables (public) and the migration record (ops). The scheduler's internal tables (cron) are
+# rebuilt by the migrations and cannot be dumped by a normal role. A half-written file is removed if anything fails.
+trap 'rm -f "$FILE.partial"' ERR
+pg_dump "$DATABASE_URL" --format=custom --no-owner --schema=public --schema=ops --file "$FILE.partial"
 # A backup that cannot be read back is worth nothing, so check it before keeping it
 pg_restore --list "$FILE.partial" >/dev/null
 mv "$FILE.partial" "$FILE"

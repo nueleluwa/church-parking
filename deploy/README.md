@@ -57,8 +57,9 @@ Look first, change nothing: `ssh user@server 'bash -s' < deploy/inspect-server.s
 - **Roll back:** Actions, Run workflow, with an older commit's id. Database changes are not undone by a rollback, so keep each change safe for the version before it; if one must be undone, restore the pre-change backup (below).
 - **Look at it:** `sudo -iu deploy pm2 status` (two programs: `church-parking`, `church-postgrest`), `sudo -iu deploy pm2 logs church-parking`, `cat /srv/church-parking/shared/deployed-sha`.
 - **Backups:** nightly at 02:15, 14 kept, plus one before each database change. They are on this server's disk, so **also copy them elsewhere**: put a script at `/srv/church-parking/shared/offsite.sh` that takes the backup's path and sends it somewhere (for example `rclone copy "$1" remote:church-parking`); it is run after every backup.
-- **Restore** (stops the app first): `sudo -iu deploy pm2 stop church-parking`, then `pg_restore --clean --if-exists --no-owner -d "<DATABASE_URL>" /var/backups/church-parking/<file>.dump`, then start the app again. Practise this once on a copy before you need it.
+- **Restore** (stops the app first): `sudo -iu deploy pm2 stop church-parking`, then restore the chosen file into the database with `pg_restore --clean --if-exists --no-owner -d "<DATABASE_URL from the settings file>" /var/backups/church-parking/<file>.dump`, then `sudo -iu deploy pm2 start church-parking`. A message such as "schema public already exists" is harmless. This was tested on 9 October 2026 by restoring a backup into an empty scratch database: all 12 tables came back with the right data. Practise it again before relying on it.
 - **Renew the certificate:** replace the two files in `/etc/ssl/churchparking/` and run `provision.sh` again.
+- **If a file under `deploy/` changes** (the launcher, backup tool or nginx settings), copy the repository to the server again and re-run `provision.sh`, because the installed copies belong to root and are not updated by a deploy.
 - **Security updates:** PostgreSQL and the system are the church's to keep up to date: `sudo apt update && sudo apt upgrade` regularly.
 
 ## Things this setup does on purpose
