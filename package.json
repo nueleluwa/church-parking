@@ -22,6 +22,7 @@
     "packageManager": "pnpm@12.10.1",
     "type": "module",
     "dependencies": {
+        "@supabase/supabase-js": "^2.117.3",
         "next": "^16.4.0",
         "react": "^19.3.0",
         "react-dom": "^19.3.0"
