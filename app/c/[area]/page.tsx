@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
-import { getAreaBySlug, getPassByToken, listActiveServices } from "@/lib/db";
+import { getAreaBySlug, getPassByToken, listActiveServices, listMemberVehicles } from "@/lib/db";
+import { currentMember } from "@/lib/member-auth";
 import { rememberedPassToken } from "@/lib/pass-cookie";
 import { lagosDate, passState, pickService } from "@/lib/rules";
 import { GuestForm } from "./GuestForm";
+import { MemberCheckIn } from "./MemberCheckIn";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +26,9 @@ export default async function CheckInPage({ params }: { params: Promise<{ area: 
   const hasLivePass =
     existing &&
     passState({ status: existing.status, serviceDate: existing.service_date, today }) === "valid";
+
+  const member = await currentMember();
+  const vehicles = member ? await listMemberVehicles(member.id) : [];
 
   const allServices = await listActiveServices();
   const sundayServices = allServices.filter((s) => s.weekday === Number(new Date(`${today}T12:00:00Z`).getUTCDay()));
@@ -54,8 +59,40 @@ export default async function CheckInPage({ params }: { params: Promise<{ area: 
             </div>
           ) : services.length === 0 ? (
             <p className="mt-5">There is no service today. Check-in opens on Sunday.</p>
-          ) : (
+          ) : member ? (
             <div className="mt-5">
+              {vehicles.length === 0 ? (
+                <div className="space-y-3">
+                  <p>You have no saved cars yet. Save your car once, then check in with two taps.</p>
+                  <Link href="/account" className="block rounded-full bg-brand px-6 py-4 text-center text-lg font-semibold text-white hover:bg-brand-dark">
+                    Save my car
+                  </Link>
+                </div>
+              ) : (
+                <MemberCheckIn
+                  areaSlug={area.slug}
+                  vehicles={vehicles}
+                  services={services}
+                  defaultServiceId={picked?.id ?? services[0].id}
+                />
+              )}
+              <p className="mt-4 text-center">
+                <Link href="/account" className="font-medium text-brand underline">
+                  My account
+                </Link>
+              </p>
+            </div>
+          ) : (
+            <div className="mt-5 space-y-4">
+              <div className="flex gap-3 text-center font-semibold">
+                <Link href={`/account/signin?next=/c/${area.slug}`} className="flex-1 rounded-full border-2 border-edge bg-white px-4 py-3">
+                  Sign in
+                </Link>
+                <Link href={`/account/signup?next=/c/${area.slug}`} className="flex-1 rounded-full border-2 border-edge bg-white px-4 py-3">
+                  Create account
+                </Link>
+              </div>
+              <p className="text-center font-medium text-ink-soft">or continue as a guest</p>
               <GuestForm
                 areaSlug={area.slug}
                 services={services}

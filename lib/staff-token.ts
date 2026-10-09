@@ -14,10 +14,12 @@ export function readStaffToken(token: string, secret: string, now = Date.now()):
   const body = verifyValue(token, secret);
   if (!body) return null;
   try {
-    const { sid, exp } = JSON.parse(Buffer.from(body, "base64url").toString()) as {
+    const { sid, exp, k } = JSON.parse(Buffer.from(body, "base64url").toString()) as {
       sid?: unknown;
       exp?: unknown;
+      k?: unknown;
     };
+    if (k !== undefined) return null; // a member token, not a staff one
     if (typeof sid !== "string" || typeof exp !== "number" || exp <= now) return null;
     return sid;
   } catch {

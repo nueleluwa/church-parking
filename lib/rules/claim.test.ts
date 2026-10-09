@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from "vitest";
 import {
   claimGuestVisit,
+  claimMemberVisit,
   RATE_LIMITS,
   type AlertKind,
   type ClaimStore,
@@ -37,6 +38,10 @@ class FakeStore implements ClaimStore {
   }
   async hasOpenVisit(id: string) {
     return !this.hideOpenVisit && this.openVehicles.has(id);
+  }
+  members = new Set<string>(); // "memberId:vehicleId"
+  async memberOwnsVehicle(m: string, v: string) {
+    return this.members.has(`${m}:${v}`);
   }
   async createGuest() {
     return "guest-1";
@@ -140,5 +145,32 @@ describe("rate limits (T-7)", () => {
     }
     const r = await claimGuestVisit(store, input({ plate: "ZZZ999ZZ", phoneKey: "phone:fresh" }));
     expect(r).toEqual({ status: "rate_limited" });
+  });
+});
+
+describe("claimMemberVisit (CI-4)", () => {
+  const member = { memberId: "m1", vehicleId: "v-1", plate: "PHC234AB", serviceId: 1, areaId: 1, serviceDate: "2026-10-11" };
+
+  test("a member checks in a saved vehicle", async () => {
+    store.members.add("m1:v-1");
+    const r = await claimMemberVisit(store, member);
+    expect(r.status).toBe("ok");
+    expect(store.visits[0]).toMatchObject({ member_id: "m1", vehicle_id: "v-1" });
+    expect(store.visits[0].guest_id).toBeUndefined();
+  });
+
+  test("a member can't check in a vehicle that isn't theirs", async () => {
+    const r = await claimMemberVisit(store, member);
+    expect(r).toEqual({ status: "blocked", reason: "not_your_vehicle" });
+    expect(store.visits).toHaveLength(0);
+  });
+
+  test("a second check-in is blocked, alerts the coordinator and has no token", async () => {
+    store.members.add("m1:v-1");
+    await claimMemberVisit(store, member);
+    const second = await claimMemberVisit(store, member);
+    expect(second).toEqual({ status: "blocked", reason: "plate_conflict" });
+    expect(JSON.stringify(second)).not.toMatch(/token|PK-/);
+    expect(store.alerts).toEqual([{ kind: "plate_conflict", plate: "PHC234AB" }]);
   });
 });

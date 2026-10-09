@@ -12,7 +12,8 @@ export type NewVisit = {
   reference: string;
   pass_token: string;
   vehicle_id: string;
-  guest_id: string;
+  guest_id?: string;
+  member_id?: string;
   service_id: number;
   area_id: number;
   service_date: string;
@@ -27,6 +28,7 @@ export interface ClaimStore {
   createVehicle(plate: string): Promise<string>;
   isMemberPlate(vehicleId: string): Promise<boolean>;
   hasOpenVisit(vehicleId: string): Promise<boolean>;
+  memberOwnsVehicle(memberId: string, vehicleId: string): Promise<boolean>;
   createGuest(name: string, phone: string): Promise<string>;
   insertVisit(visit: NewVisit): Promise<"ok" | "open_visit_exists" | "reference_taken">;
   raiseAlert(kind: AlertKind, plate: string, detail: Record<string, unknown>): Promise<void>;
@@ -107,6 +109,57 @@ export async function claimGuestVisit(
     }
     if (outcome === "open_visit_exists") {
       // Someone else claimed this plate a moment ago. The database decides.
+      await store.raiseAlert("plate_conflict", input.plate, alertDetail);
+      return { status: "blocked", reason: "plate_conflict" };
+    }
+  }
+  throw new Error("Could not make a unique reference.");
+}
+
+export type MemberClaimInput = {
+  memberId: string;
+  vehicleId: string;
+  plate: string;
+  serviceId: number;
+  areaId: number;
+  serviceDate: string;
+};
+
+export type MemberClaimResult =
+  | { status: "ok"; token: string; reference: string }
+  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" };
+
+/**
+ * A signed-in member checks a saved vehicle in (CI-4). One open visit per
+ * vehicle still applies (R-2): a second check-in is blocked and alerts the
+ * coordinator, and never shows the existing pass.
+ */
+export async function claimMemberVisit(
+  store: ClaimStore,
+  input: MemberClaimInput,
+): Promise<MemberClaimResult> {
+  if (!(await store.memberOwnsVehicle(input.memberId, input.vehicleId))) {
+    return { status: "blocked", reason: "not_your_vehicle" };
+  }
+  const alertDetail = { area_id: input.areaId, service_id: input.serviceId };
+  if (await store.hasOpenVisit(input.vehicleId)) {
+    await store.raiseAlert("plate_conflict", input.plate, alertDetail);
+    return { status: "blocked", reason: "plate_conflict" };
+  }
+
+  for (let i = 0; i < MAX_REFERENCE_TRIES; i++) {
+    const visit: NewVisit = {
+      reference: makeReference(),
+      pass_token: makePassToken(),
+      vehicle_id: input.vehicleId,
+      member_id: input.memberId,
+      service_id: input.serviceId,
+      area_id: input.areaId,
+      service_date: input.serviceDate,
+    };
+    const outcome = await store.insertVisit(visit);
+    if (outcome === "ok") return { status: "ok", token: visit.pass_token, reference: visit.reference };
+    if (outcome === "open_visit_exists") {
       await store.raiseAlert("plate_conflict", input.plate, alertDetail);
       return { status: "blocked", reason: "plate_conflict" };
     }

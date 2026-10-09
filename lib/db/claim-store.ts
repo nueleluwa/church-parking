@@ -61,6 +61,16 @@ export const claimStore: ClaimStore = {
     return (count ?? 0) > 0;
   },
 
+  async memberOwnsVehicle(memberId, vehicleId) {
+    const { count, error } = await db()
+      .from("member_vehicles")
+      .select("member_id", { count: "exact", head: true })
+      .eq("member_id", memberId)
+      .eq("vehicle_id", vehicleId);
+    if (error) fail(error.message);
+    return (count ?? 0) > 0;
+  },
+
   async createGuest(name, phone) {
     const { data, error } = await db()
       .from("guests")
