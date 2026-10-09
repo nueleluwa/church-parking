@@ -150,7 +150,7 @@ db-pool = 10
 log-level = "warn"
 EOF
 chown "$APP_USER:$APP_USER" "$APP_DIR/shared/postgrest.conf"; chmod 600 "$APP_DIR/shared/postgrest.conf"
-cat >"$APP_DIR/shared/ecosystem.postgrest.cjs" <<EOF
+cat >"$APP_DIR/shared/ecosystem.postgrest.config.cjs" <<EOF
 // How PM2 runs PostgREST. Written by deploy/db/install-db.sh. Not touched by deploys of the app.
 module.exports = {
   apps: [
@@ -171,8 +171,8 @@ module.exports = {
   ],
 };
 EOF
-chown "$APP_USER:$APP_USER" "$APP_DIR/shared/ecosystem.postgrest.cjs"
-sudo -iu "$APP_USER" bash -c "pm2 startOrReload $APP_DIR/shared/ecosystem.postgrest.cjs >/dev/null && pm2 save >/dev/null"
+chown "$APP_USER:$APP_USER" "$APP_DIR/shared/ecosystem.postgrest.config.cjs"
+sudo -iu "$APP_USER" bash -c "pm2 startOrReload $APP_DIR/shared/ecosystem.postgrest.config.cjs >/dev/null && pm2 save >/dev/null"
 
 step "The local door on 127.0.0.1:$PROXY_PORT"
 sed -e "s/__REST_PROXY_PORT__/$PROXY_PORT/g" -e "s/__REST_PORT__/$REST_PORT/g" "$REPO_ROOT/deploy/nginx/church-rest-proxy.conf" >/etc/nginx/conf.d/church-rest-proxy.conf
