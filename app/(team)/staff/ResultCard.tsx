@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { IconAlert, IconCheck } from "@/components/icons";
-import { dangerButton, primaryButton, secondaryButton } from "@/components/ui";
+import { IconCheck } from "@/components/icons";
+import { Plate } from "@/components/Plate";
 import { Spinner } from "@/components/Spinner";
-import { formatPlate } from "@/lib/rules/plates";
-import type { ScanCard } from "@/lib/rules/scan";
+import { StatusBadge } from "@/components/StatusBadge";
+import { dangerButton, primaryButton, secondaryButton } from "@/components/ui";
 import type { CorrectionContext } from "@/lib/correction-context";
+import type { ScanCard } from "@/lib/rules/scan";
 import { CorrectionPanel } from "./CorrectionPanel";
 import { doesNotMatch, releaseCar, revealPhone } from "./actions";
 
@@ -27,6 +28,9 @@ type Props = {
   /** Set for coordinators and admins: shows the corrections panel. */
   corrections?: CorrectionContext | null;
 };
+
+/** A line of facts that stays on one line. Long names shorten with "..." rather than wrap. */
+const oneLine = "flex min-w-0 flex-nowrap items-center justify-center gap-2 whitespace-nowrap";
 
 export function ResultCard({ card, method, onDone, doneLabel, corrections }: Props) {
   const [pending, start] = useTransition();
@@ -76,73 +80,72 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
     });
   }
 
-  const border = warning ? "border-danger" : "border-edge";
-
   return (
-    <div className={`overflow-hidden rounded-card border-4 bg-card text-center shadow-sm ${border}`}>
-      {warning && (
-        <p role="alert" className="flex items-center justify-center gap-2 bg-danger px-4 py-3 text-lg font-extrabold text-white">
-          <IconAlert className="h-6 w-6 shrink-0" />
-          <span>{warning}</span>
-        </p>
-      )}
+    <div
+      className={`overflow-hidden rounded-card border-4 bg-card text-center shadow-sm ${warning ? "border-danger" : "border-success"}`}
+    >
+      {!finished &&
+        (warning ? (
+          <StatusBadge tone="danger" variant="bar">
+            <span role="alert">{warning}</span>
+          </StatusBadge>
+        ) : (
+          <StatusBadge tone="success" variant="bar">
+            VALID PASS
+          </StatusBadge>
+        ))}
 
-      <div className="p-6">
-        <div className="mx-auto inline-block rounded-xl border-4 border-ink bg-white px-4 py-2">
-          <p className="text-4xl font-extrabold tracking-wider">{formatPlate(card.plate)}</p>
+      <div className="space-y-2 p-4">
+        <Plate plate={card.plate} size="lg" />
+
+        <p className={`${oneLine} text-base font-semibold`}>
+          <span data-area className="shrink-0">{card.areaName}</span>
+          <span aria-hidden="true">·</span>
+          <span className="truncate">{card.serviceName}</span>
+        </p>
+
+        <div className={oneLine}>
+          <span className="truncate text-xl font-bold">{card.firstName}</span>
+          <StatusBadge tone="neutral">{card.isGuest ? "GUEST" : "MEMBER"}</StatusBadge>
+          {card.isNewCar && <StatusBadge tone="danger">NEW CAR</StatusBadge>}
         </div>
-        <p className="mt-3 text-lg font-semibold">
-          {card.areaName} · {card.serviceName}
-        </p>
-        <p className="mt-1 text-ink-soft">Reference {card.reference}</p>
 
-        <p className="mt-4 text-2xl font-bold">{card.firstName}</p>
-        <div className="mt-2 space-y-2">
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="inline-block rounded-full border-2 border-edge bg-blush px-3 py-1 text-sm font-extrabold">
-              {card.isGuest ? "GUEST" : "MEMBER"}
-            </span>
-            {card.isNewCar && (
-              <span className="inline-block rounded-full bg-danger px-3 py-1 text-sm font-extrabold text-white">
-                NEW CAR
-              </span>
-            )}
-          </div>
-          <p>
-            Phone: <span className="font-semibold">{phone ?? `•••• ${card.phoneLast4}`}</span>
-          </p>
+        <p className={`${oneLine} text-base`}>
+          <span>Phone</span>
+          <span className="font-semibold">{phone ?? `•••• ${card.phoneLast4}`}</span>
           {!phone && (
             <button onClick={show} disabled={pending} className="font-medium text-accent underline">
               Show number
             </button>
           )}
-          <p className={`text-sm ${card.askForDetails ? "font-semibold text-ink" : "text-ink-soft"}`}>
-            {card.askForDetails
-              ? card.isNewCar
-                ? "This car was only just saved to the account. Ask the driver for their name and phone number and check them."
-                : "Ask the driver for their name and phone number and check them."
-              : "Check that the plate matches the car."}
-          </p>
-        </div>
+        </p>
+        <p className="text-sm text-ink-soft">Ref {card.reference}</p>
+
+        <p className={`text-sm ${card.askForDetails ? "font-semibold text-ink" : "text-ink-soft"}`}>
+          {card.askForDetails
+            ? card.isNewCar
+              ? "New car on this account. Ask the driver for their name and phone number and check them."
+              : "Ask the driver for their name and phone number and check them."
+            : "Check that the plate matches the car."}
+        </p>
 
         {message && (
-          <p role="alert" className="mt-4 rounded-2xl border-2 border-danger p-3 font-medium text-danger">
+          <p role="alert" className="rounded-2xl border-2 border-danger p-3 font-medium text-danger">
             {message}
           </p>
         )}
 
         {finished ? (
-          <div className="mt-5 space-y-3">
-            <p className="flex items-center justify-center gap-2 rounded-2xl border-4 border-edge bg-blush p-3 text-xl font-extrabold">
-              <IconCheck />
+          <div className="space-y-3 pt-2">
+            <StatusBadge tone={finished === "released" ? "success" : "warning"} variant="soft" className="justify-center text-lg">
               {finished === "released" ? "Car released" : "Car held. The coordinator has been told."}
-            </p>
+            </StatusBadge>
             <button onClick={onDone} className={primaryButton}>
               {doneLabel}
             </button>
           </div>
         ) : card.state === "ready" ? (
-          <div className="mt-5 space-y-3">
+          <div className="space-y-3 pt-2">
             <button onClick={release} disabled={pending} className={primaryButton}>
               {pending ? <Spinner /> : <IconCheck />}
               Release car
@@ -152,7 +155,7 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
             </button>
           </div>
         ) : (
-          <button onClick={onDone} className={`${secondaryButton} mt-5`}>
+          <button onClick={onDone} className={`${secondaryButton} mt-2`}>
             {doneLabel}
           </button>
         )}

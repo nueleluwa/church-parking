@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { IconCheck } from "@/components/icons";
-import { formatPlate } from "@/lib/rules/plates";
+import { Plate } from "@/components/Plate";
 import type { SweepRow } from "@/lib/db";
 import { sweepAction } from "../ops-actions";
 
@@ -53,15 +53,19 @@ export function SweepList({ rows, serviceId }: { rows: SweepRow[]; serviceId: nu
               const m = marks[r.visitId];
               return (
                 <li key={r.visitId} className={`rounded-2xl border-2 p-3 ${m ? "border-transparent bg-panel opacity-70" : "border-edge/30 bg-card"}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <p className="text-xl font-extrabold tracking-wide">{formatPlate(r.plate)}</p>
-                      <p className="text-sm text-ink-soft">
-                        {r.firstName} · {r.isGuest ? "Guest" : "Member"} · {r.serviceName}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <Plate plate={r.plate} size="md" align="start" />
+                      <p className="mt-1 flex flex-nowrap items-center gap-1.5 whitespace-nowrap text-sm text-ink-soft">
+                        <span className="truncate">{r.firstName}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{r.isGuest ? "Guest" : "Member"}</span>
+                        <span aria-hidden="true">·</span>
+                        <span className="truncate">{r.serviceName}</span>
                       </p>
                     </div>
                     {m && (
-                      <span className="flex items-center gap-1 font-bold">
+                      <span className="flex shrink-0 items-center gap-1 whitespace-nowrap font-bold">
                         <IconCheck className="h-5 w-5" />
                         {m === "gone" ? "Gone" : "Still here"}
                       </span>

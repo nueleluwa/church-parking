@@ -101,8 +101,6 @@ export type RegisterState = {
   plate?: string;
   /** The plate belongs to a member: offer "Register for the member". */
   memberPlate?: boolean;
-  /** What was typed, sent back so the form keeps it (React clears a form after each action). */
-  values?: { area: string; plate: string; phone: string; name: string };
 };
 
 /**
@@ -115,13 +113,7 @@ export async function registerCar(_prev: RegisterState, formData: FormData): Pro
   if (!staff) return { error: "Please sign in again." };
 
   const raw = Object.fromEntries(formData);
-  const values = {
-    area: String(raw.area ?? ""),
-    plate: String(raw.plate ?? ""),
-    phone: String(raw.phone ?? ""),
-    name: String(raw.name ?? ""),
-  };
-  const fail = (error: string, extra: Partial<RegisterState> = {}): RegisterState => ({ error, values, ...extra });
+  const fail = (error: string, extra: Partial<RegisterState> = {}): RegisterState => ({ error, ...extra });
 
   const parsed = registerSchema.safeParse(raw);
   if (!parsed.success) return fail("Please fill in the plate number and area.");

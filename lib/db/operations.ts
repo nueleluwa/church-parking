@@ -1,4 +1,4 @@
-import type { CorrectionAction, CorrectionResult, VisitRow } from "@/lib/rules";
+import type { CorrectionAction, CorrectionResult, RenameResult, VisitRow } from "@/lib/rules";
 import { db } from "./client";
 import { logAudit } from "./staff";
 
@@ -184,4 +184,24 @@ export async function correctVisit(input: {
   });
   if (error) fail(error.message);
   return data as CorrectionResult;
+}
+
+export type AreaRecord = { id: number; name: string; slug: string; active: boolean };
+
+/** Every car park, including any switched off, for the admin screen. */
+export async function listAllAreas(): Promise<AreaRecord[]> {
+  const { data, error } = await db().from("areas").select("id, name, slug, active").order("sort").order("id");
+  if (error) fail(error.message);
+  return (data ?? []) as AreaRecord[];
+}
+
+/**
+ * Rename a car park by its id. The id and the QR address (slug) never change, so
+ * every visit and sign keeps pointing at the same car park. The rename and its
+ * audit row happen together in the database.
+ */
+export async function renameArea(areaId: number, staffId: string, name: string): Promise<RenameResult> {
+  const { data, error } = await db().rpc("rename_area", { p_area: areaId, p_staff: staffId, p_name: name });
+  if (error) fail(error.message);
+  return data as RenameResult;
 }

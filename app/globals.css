@@ -21,6 +21,14 @@
   --color-accent: #b3121b;
   --color-danger: #b3121b;
 
+  /* Status colours, used the same way everywhere (see StatusBadge):
+     green = valid, red = invalid or error, amber = pending, neutral = finished. */
+  --color-success: #166534;
+  --color-success-soft: #e3f4e8;
+  --color-warning-ink: #6b3f00;
+  --color-warning-soft: #fff1cc;
+  --color-warning-edge: #b8860b;
+
   /* Selected state: a pale red tint. Always pair with a dark border and a tick. */
   --color-blush: #fbe3e1;
 

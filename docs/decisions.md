@@ -45,3 +45,16 @@ Each entry records what was decided and why. To change a decision, add a new ent
 **Decision:** the colour scheme follows the church's brand: church red (`#B3121B`) as the accent, near-black (`#141414`) for the header, staff tab bar and main buttons, a warm off-white page, white cards, and a pale red tint for the selected state. This replaces the sage-green and soft-yellow direction taken from the style reference (the layout, rounded cards and "P" mark stay).
 **Why:** the church asked for red as the accent colour, and the logo's white lettering reads best on a dark background.
 **Rules:** main buttons are black, never red, so **Release car** can't be mistaken for a warning. Red is for accents, links, focus and warnings, including **Does not match**. The selected state always has a dark border and a tick, since the tint alone is too faint in sunlight. VALID passes use a solid black banner with white text. `tests/unit/contrast.test.ts` checks every text and background pair against WCAG AA (4.5:1).
+
+## D-11 Status colours: green valid, red invalid, amber pending, grey finished
+**Decision:** statuses use one set of colours on every screen, through the `StatusBadge` component. Green means valid or good, red means invalid, expired or an error, amber means pending or processing, and grey means finished with nothing left to do. Every status also has an icon (a tick, a warning triangle or a clock) and words, so it never depends on colour alone. This replaces the line in D-10 that made VALID passes a black banner.
+**Why:** the church asked for a green VALID badge and red for anything wrong, which volunteers recognise at a glance.
+**Rules:** main buttons stay black and warning actions stay red (D-10). The pale red tint is only for a selected item, never for a status. `tests/unit/contrast.test.ts` checks every status colour pair against WCAG AA.
+
+## D-12 Car park names are editable, and the QR address never changes
+**Decision:** an admin can rename a car park at `/admin/areas`. A rename changes only the name shown. The car park keeps its id and its slug, so every visit, record and printed QR sign keeps working. Two car parks cannot share a name (capital letters are ignored). Each rename is written to the audit log with the old and new name.
+**Why:** the church's real car parks are not called "Car Park 1", "Car Park 2" and "Roadside", and signs already printed must keep working after a rename.
+
+## D-13 A dev-only test service, switched off outside tests
+**Decision:** weekdays have no real service, so development and the automated tests use one row called "Automated test service", open all day on today's weekday. It is switched on by `pnpm dev:test-service on` or by a test run, and off again by `pnpm dev:test-service off` or when the tests finish. It is not part of the seed data and is never created on a real deployment.
+**Why:** it was first created by hand with the name "TEST ALL DAY", which then appeared next to car park names on staff screens. A plain name that is hidden when not in use keeps test data out of the live interface.

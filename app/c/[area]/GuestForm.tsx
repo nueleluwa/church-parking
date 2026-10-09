@@ -1,9 +1,10 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { errorBox, field, primaryButton, secondaryButton } from "@/components/ui";
+import { Plate } from "@/components/Plate";
 import { Spinner } from "@/components/Spinner";
-import { formatPlate } from "@/lib/rules/plates";
+import { errorBox, field, primaryButton, secondaryButton } from "@/components/ui";
+import { useFields } from "@/components/useFields";
 import { checkInAsGuest, type CheckInState } from "./actions";
 
 type Props = {
@@ -15,16 +16,19 @@ type Props = {
 export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
   const [state, action, pending] = useActionState<CheckInState, FormData>(checkInAsGuest, {});
   const formRef = useRef<HTMLFormElement>(null);
-  // The details being confirmed. It belongs to one result of the action, so a new
-  // result (such as an error) brings the form back for editing.
-  const [confirming, setConfirming] = useState<{ plate: string; phone: string; at: CheckInState } | null>(null);
-  const showConfirm = confirming !== null && confirming.at === state;
+  const { values, bind } = useFields({
+    serviceId: String(defaultServiceId),
+    name: "",
+    phone: "",
+    plate: "",
+  });
+  // Confirming belongs to one result of the action, so a new result (such as an
+  // error) brings the form back for editing, with everything still filled in.
+  const [confirmedAt, setConfirmedAt] = useState<CheckInState | null>(null);
+  const showConfirm = confirmedAt === state;
 
   function review() {
-    const form = formRef.current;
-    if (!form || !form.reportValidity()) return;
-    const data = new FormData(form);
-    setConfirming({ plate: String(data.get("plate") ?? ""), phone: String(data.get("phone") ?? ""), at: state });
+    if (formRef.current?.reportValidity()) setConfirmedAt(state);
   }
 
   return (
@@ -34,7 +38,7 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
       <div className={showConfirm ? "hidden" : "space-y-4"}>
         <label className="block font-medium">
           Service
-          <select name="serviceId" defaultValue={defaultServiceId} className={field}>
+          <select {...bind("serviceId")} className={field}>
             {services.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name} ({s.time})
@@ -45,13 +49,13 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
 
         <label className="block font-medium">
           Your name
-          <input name="name" autoComplete="name" required maxLength={80} className={field} />
+          <input {...bind("name")} autoComplete="name" required maxLength={80} className={field} />
         </label>
 
         <label className="block font-medium">
           Phone number
           <input
-            name="phone"
+            {...bind("phone")}
             type="tel"
             inputMode="tel"
             autoComplete="tel"
@@ -64,7 +68,7 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
         <label className="block font-medium">
           Plate number
           <input
-            name="plate"
+            {...bind("plate")}
             autoCapitalize="characters"
             autoComplete="off"
             required
@@ -84,14 +88,14 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
         </button>
       </div>
 
-      {showConfirm && confirming && (
+      {showConfirm && (
         <div className="space-y-4">
           <p className="text-lg font-semibold">Please check your details</p>
           <div className="rounded-2xl border-2 border-edge bg-page p-4 text-center">
             <p className="text-sm text-ink-soft">Plate number</p>
-            <p className="text-3xl font-extrabold tracking-wider">{formatPlate(confirming.plate)}</p>
+            <Plate plate={values.plate} size="lg" className="mt-1" />
             <p className="mt-3 text-sm text-ink-soft">Phone number</p>
-            <p className="text-2xl font-bold">{confirming.phone}</p>
+            <p className="text-2xl font-bold">{values.phone}</p>
           </div>
           <p className="text-sm text-ink-soft">
             The attendant will check these when you leave. A wrong plate or number can hold up your car.
@@ -100,7 +104,7 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
             {pending && <Spinner />}
             {pending ? "Please wait..." : "Yes, get my pass"}
           </button>
-          <button type="button" onClick={() => setConfirming(null)} disabled={pending} className={secondaryButton}>
+          <button type="button" onClick={() => setConfirmedAt(null)} disabled={pending} className={secondaryButton}>
             Change something
           </button>
         </div>

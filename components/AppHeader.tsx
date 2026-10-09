@@ -11,7 +11,9 @@ import { PMark } from "./PMark";
 export function AppHeader({ title = "Parking", right }: { title?: string; right?: ReactNode }) {
   return (
     <header className="sticky top-0 z-20 rounded-b-3xl border-b-4 border-accent bg-night px-4 py-3 text-white shadow-md">
-      <div className="relative mx-auto flex max-w-md items-center justify-center gap-2.5">
+      <div
+        className={`relative mx-auto flex max-w-md items-center justify-center gap-2.5 ${right ? "pr-11 min-[400px]:pr-0" : ""}`}
+      >
         <Link href="/" aria-label="CCI Parking home" className="flex shrink-0 items-center">
           <Image src="/cci-logo.svg" alt="CCI" width={105} height={30} unoptimized priority />
         </Link>

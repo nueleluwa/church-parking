@@ -1,10 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
-import { errorBox, field, primaryButton, secondaryButton } from "@/components/ui";
+import { useActionState, useState } from "react";
+import { errorBox, field, okBox, primaryButton, secondaryButton } from "@/components/ui";
+import { useFields } from "@/components/useFields";
 import { addVehicle, changePin, deleteAccount, type FormState } from "./actions";
-
-const okBox = "rounded-xl border-2 border-edge bg-blush p-3 font-medium";
 
 function Messages({ state }: { state: FormState }) {
   return (
@@ -21,12 +20,21 @@ function Messages({ state }: { state: FormState }) {
 
 export function AddVehicleForm() {
   const [state, action, pending] = useActionState<FormState, FormData>(addVehicle, {});
+  const { bind, set } = useFields({ plate: "" });
+
+  // After a successful save the plate box is emptied; after an error it keeps what was typed.
+  const [handled, setHandled] = useState(state);
+  if (state !== handled) {
+    setHandled(state);
+    if (state.ok) set("plate", "");
+  }
+
   return (
     <form action={action} className="space-y-3">
       <label className="block font-medium">
         Plate number
         <input
-          name="plate"
+          {...bind("plate")}
           required
           autoCapitalize="characters"
           autoComplete="off"

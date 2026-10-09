@@ -40,11 +40,21 @@ const pairs: [string, string, string][] = [
   ["accent", "card", "red link text on cards"],
   ["accent", "page", "red link text on the page"],
   ["ink", "panel", "text on stone panels"],
+  ["card", "success", "white text on the green VALID banner"],
+  ["ink", "success-soft", "text on the light green status"],
+  ["warning-ink", "warning-soft", "text on the amber pending status"],
+  ["success", "card", "green text on cards"],
 ];
 
 describe("colour contrast (WCAG AA, 4.5:1)", () => {
   test.each(pairs)("%s on %s: %s", (fg, bg) => {
     expect(ratio(colour(fg), colour(bg))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  test("each status colour is clearly different from the others", () => {
+    // Red and green must not be confusable by brightness alone: the icon and words back them up too.
+    expect(colour("success")).not.toBe(colour("danger"));
+    expect(ratio(colour("success"), colour("danger"))).toBeGreaterThan(1);
   });
 
   test("the pale red selected state is separated from white by a dark border", () => {

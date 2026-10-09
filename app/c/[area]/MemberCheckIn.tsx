@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { IconCheck } from "@/components/icons";
 import { Spinner } from "@/components/Spinner";
 import { errorBox, field, primaryButton } from "@/components/ui";
+import { useFields } from "@/components/useFields";
 import { formatPlate } from "@/lib/rules/plates";
 import { checkInMember, type CheckInState } from "./actions";
 
@@ -27,15 +28,16 @@ export function MemberCheckIn({ areaSlug, vehicles, services, defaultServiceId, 
   const free = vehicles.filter((v) => !v.passToken);
   const [vehicleId, setVehicleId] = useState(free.length === 1 ? free[0].id : "");
   const hasService = services.length > 0;
+  const { bind } = useFields({ serviceId: String(defaultServiceId) });
 
   return (
     <div className="space-y-4">
       {vehicles
         .filter((v) => v.passToken)
         .map((v) => (
-          <div key={v.id} className="rounded-2xl border-2 border-edge bg-blush p-4">
-            <p className="flex items-center gap-2 text-xl font-extrabold">
-              <IconCheck className="h-6 w-6" />
+          <div key={v.id} className="rounded-2xl border-2 border-success bg-success-soft p-4">
+            <p className="flex items-center gap-2 whitespace-nowrap text-xl font-extrabold">
+              <IconCheck className="h-6 w-6 shrink-0" />
               {formatPlate(v.plate)}
             </p>
             <p className="mt-1 font-medium">Already checked in. Your pass is good all day.</p>
@@ -66,8 +68,8 @@ export function MemberCheckIn({ areaSlug, vehicles, services, defaultServiceId, 
                         selected ? "border-edge bg-blush text-ink" : "border-transparent bg-page text-ink"
                       }`}
                     >
-                      {formatPlate(v.plate)}
-                      {selected && <IconCheck className="h-7 w-7" />}
+                      <span className="whitespace-nowrap">{formatPlate(v.plate)}</span>
+                      {selected && <IconCheck className="h-7 w-7 shrink-0" />}
                     </button>
                   );
                 })}
@@ -76,7 +78,7 @@ export function MemberCheckIn({ areaSlug, vehicles, services, defaultServiceId, 
 
             <details>
               <summary className="cursor-pointer font-medium text-accent underline">Change service</summary>
-              <select name="serviceId" defaultValue={defaultServiceId} className={field}>
+              <select {...bind("serviceId")} className={field}>
                 {services.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name} ({s.time})

@@ -3,7 +3,7 @@
 import { hash, verify } from "@node-rs/argon2";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { claimStore, getStaffByPhone } from "@/lib/db";
+import { claimStore, clearAttempts, getStaffByPhone } from "@/lib/db";
 import { ipKey as makeIpKey } from "@/lib/member-auth";
 import { serverEnv } from "@/lib/env";
 import { normalisePhone } from "@/lib/rules";
@@ -36,10 +36,6 @@ export async function signInStaff(_prev: SignInState, formData: FormData): Promi
     claimStore.countAttempts(phoneKey, LIMITS.windowMinutes),
     ipKey ? claimStore.countAttempts(ipKey, LIMITS.windowMinutes) : Promise.resolve(0),
   ]);
-  await Promise.all([
-    claimStore.recordAttempt(phoneKey),
-    ipKey ? claimStore.recordAttempt(ipKey) : Promise.resolve(),
-  ]);
   if (phoneTries >= LIMITS.phone || ipTries >= LIMITS.ip) {
     return { error: "Too many tries. Please wait 15 minutes, then try again." };
   }
@@ -49,8 +45,16 @@ export async function signInStaff(_prev: SignInState, formData: FormData): Promi
   const ok = await verify(staff?.password_hash ?? (await dummyHash), parsed.data.password).catch(
     () => false,
   );
-  if (!staff || !staff.active || !ok) return { error: WRONG };
+  if (!staff || !staff.active || !ok) {
+    // Only wrong passwords count towards the limit, so signing in often never locks anyone out
+    await Promise.all([
+      claimStore.recordAttempt(phoneKey),
+      ipKey ? claimStore.recordAttempt(ipKey) : Promise.resolve(),
+    ]);
+    return { error: WRONG };
+  }
 
+  await clearAttempts(phoneKey);
   await startStaffSession(staff.id);
   redirect("/staff/scan");
 }

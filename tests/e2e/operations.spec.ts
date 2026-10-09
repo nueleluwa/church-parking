@@ -1,6 +1,7 @@
 import { hash } from "@node-rs/argon2";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test, type Browser, type Page } from "@playwright/test";
+import { TEST_SERVICE_NAME } from "./test-service";
 
 // Runs against the real hosted dev project. Needs a service running today
 // and the admin account from `pnpm db:seed-admin`.
@@ -124,7 +125,7 @@ test("a coordinator corrects a visit with a reason; undo release, and a reason i
   await page.getByRole("button", { name: "Save correction" }).click();
   await expect(page.getByText("Done.")).toBeVisible({ timeout: 30_000 });
   await findCar(page, plate);
-  await expect(page.getByText("Roadside · TEST ALL DAY")).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("p", { hasText: new RegExp(`Roadside.*${TEST_SERVICE_NAME}`) })).toBeVisible({ timeout: 30_000 });
 });
 
 test("an attendant cannot reach the dashboard, sweep or corrections", async ({ page }) => {

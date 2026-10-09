@@ -1,33 +1,30 @@
 "use client";
 
 import { useActionState } from "react";
+import { errorBox, field, primaryButton } from "@/components/ui";
+import { useFields } from "@/components/useFields";
 import { signInStaff, type SignInState } from "./actions";
-
-const field =
-  "mt-1 w-full rounded-xl border-2 border-edge/40 bg-white px-4 py-3 text-lg focus:border-edge focus:outline-none";
 
 export function SignInForm() {
   const [state, action, pending] = useActionState<SignInState, FormData>(signInStaff, {});
+  // The phone number is kept after a wrong password. The password is cleared on purpose.
+  const { bind } = useFields({ phone: "" });
   return (
     <form action={action} className="space-y-4">
       <label className="block font-medium">
         Phone number
-        <input name="phone" type="tel" inputMode="tel" autoComplete="username" required className={field} />
+        <input {...bind("phone")} type="tel" inputMode="tel" autoComplete="username" required className={field} />
       </label>
       <label className="block font-medium">
         Password
         <input name="password" type="password" autoComplete="current-password" required className={field} />
       </label>
       {state.error && (
-        <p role="alert" className="rounded-xl border-2 border-danger bg-white p-3 font-medium text-danger">
+        <p role="alert" className={errorBox}>
           {state.error}
         </p>
       )}
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-full bg-action px-6 py-4 text-lg font-semibold text-white hover:bg-action-dark disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className={primaryButton}>
         {pending ? "Please wait..." : "Sign in"}
       </button>
     </form>

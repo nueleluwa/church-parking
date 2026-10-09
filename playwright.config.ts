@@ -12,6 +12,7 @@ const port = 3457;
 export default defineConfig({
   testDir: "tests/e2e",
   globalSetup: "./tests/e2e/global-setup.ts",
+  globalTeardown: "./tests/e2e/global-teardown.ts",
   workers: 1, // the dev server compiles pages on demand, so parallel runs time out
   use: { baseURL: `http://localhost:${port}` },
   projects: [{ name: "mobile", use: { ...devices["Pixel 7"] } }],

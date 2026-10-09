@@ -34,6 +34,7 @@ pnpm test:e2e     # playwright
 pnpm lint
 pnpm typecheck
 pnpm db:reset     # reset the hosted dev database (supabase db reset --linked) and load seed data
+pnpm dev:test-service on|off   # dev only: open or hide the all-day test service, so check-in works on a weekday
 ```
 
 ## Architecture rules

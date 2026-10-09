@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { IconAlert, IconCheck } from "@/components/icons";
+import { Plate } from "@/components/Plate";
 import type { DashboardData } from "@/lib/dashboard-data";
 import { resolveAlertAction } from "../ops-actions";
 
@@ -16,22 +18,50 @@ function Big({ label, value, id }: { label: string; value: number; id: string })
   );
 }
 
-/** The live board. It asks for fresh numbers every few seconds, so a check-in shows up within 5 seconds. */
+/** The same numbers, ignoring the timestamp, so an unchanged board is never redrawn. */
+const fingerprint = (d: DashboardData) => JSON.stringify({ ...d, updatedAt: "" });
+
+/**
+ * The live board. It asks for fresh numbers every few seconds, so a check-in shows
+ * up within 5 seconds. It only redraws when a number actually changed, and it
+ * never reloads the page, so the chosen service and the scroll position stay put.
+ */
 export function DashboardLive({ initial }: { initial: DashboardData }) {
+  const router = useRouter();
   const [data, setData] = useState(initial);
+  const [updatedAt, setUpdatedAt] = useState(initial.updatedAt);
   const [serviceId, setServiceId] = useState(initial.serviceId);
   const [offline, setOffline] = useState(false);
+  const shown = useRef(fingerprint(initial));
+  const latest = useRef(0); // ignores an old reply that arrives after a newer one
 
-  const load = useCallback(async (id: number | null) => {
-    try {
-      const res = await fetch(`/staff/dashboard/data${id ? `?service=${id}` : ""}`, { cache: "no-store" });
-      if (!res.ok) throw new Error("bad response");
-      setData(await res.json());
-      setOffline(false);
-    } catch {
-      setOffline(true);
-    }
-  }, []);
+  const load = useCallback(
+    async (id: number | null) => {
+      const ticket = ++latest.current;
+      try {
+        const res = await fetch(`/staff/dashboard/data${id ? `?service=${id}` : ""}`, { cache: "no-store" });
+        if (ticket !== latest.current) return;
+        if (res.status === 401) {
+          // The session ended: go to sign-in once, instead of showing a false "No connection"
+          router.replace("/staff/signin");
+          return;
+        }
+        if (!res.ok) throw new Error("bad response");
+        const next: DashboardData = await res.json();
+        if (ticket !== latest.current) return;
+        setOffline(false);
+        setUpdatedAt(next.updatedAt);
+        const print = fingerprint(next);
+        if (print !== shown.current) {
+          shown.current = print;
+          setData(next);
+        }
+      } catch {
+        if (ticket === latest.current) setOffline(true);
+      }
+    },
+    [router],
+  );
 
   // Asks again every few seconds while the screen is showing.
   useEffect(() => {
@@ -47,12 +77,16 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
   }
 
   async function resolve(id: number) {
-    setData((d) => ({ ...d, alerts: d.alerts.filter((a) => a.id !== id) }));
+    setData((d) => {
+      const next = { ...d, alerts: d.alerts.filter((a) => a.id !== id) };
+      shown.current = fingerprint(next);
+      return next;
+    });
     await resolveAlertAction(id);
     void load(serviceId);
   }
 
-  const updated = new Date(data.updatedAt).toLocaleTimeString("en-GB", {
+  const updated = new Date(updatedAt).toLocaleTimeString("en-GB", {
     timeZone: "Africa/Lagos",
     hour: "2-digit",
     minute: "2-digit",
@@ -150,8 +184,8 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
             {data.alerts.map((al) => (
               <li key={al.id} className="rounded-card border-4 border-danger bg-card p-4">
                 <p className="font-bold">{al.title}</p>
-                <p className="mt-1 text-2xl font-extrabold tracking-wide">{al.plate}</p>
-                <p className="text-sm text-ink-soft">
+                {al.plate && <Plate plate={al.plate} size="md" align="start" className="mt-1" />}
+                <p className="mt-1 truncate whitespace-nowrap text-sm text-ink-soft">
                   {al.when}
                   {al.where && ` · ${al.where}`}
                 </p>

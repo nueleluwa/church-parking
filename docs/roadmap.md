@@ -48,6 +48,7 @@ Build one milestone at a time. Each one ends with working, tested code and passi
 **Acceptance:** a check-in made on one phone appears on the dashboard on another phone within 5 seconds. A car marked Gone in the sweep becomes `missed`.
 
 ## M6 Admin
+- Done early: admins can rename car parks at `/admin/areas` (decision D-12).
 - Manage services, areas, staff and member PIN resets (AD-1, AD-3). Must work on a phone (AD-6).
 - Printable A4 QR signs per area, with church name and logo (AD-2).
 

@@ -2,10 +2,13 @@
 
 import { useActionState } from "react";
 import { errorBox, field, primaryButton } from "@/components/ui";
+import { useFields } from "@/components/useFields";
 import { signUp, type FormState } from "../actions";
 
 export function SignUpForm({ next }: { next: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(signUp, {});
+  // Name and phone are kept after an error. The PINs are cleared on purpose.
+  const { bind } = useFields({ name: "", phone: "" });
   const pinProps = {
     type: "password",
     inputMode: "numeric" as const,
@@ -19,12 +22,12 @@ export function SignUpForm({ next }: { next: string }) {
       <input type="hidden" name="next" value={next} />
       <label className="block font-medium">
         Your name
-        <input name="name" autoComplete="name" required maxLength={80} className={field} />
+        <input {...bind("name")} autoComplete="name" required maxLength={80} className={field} />
       </label>
       <label className="block font-medium">
         Phone number
         <input
-          name="phone"
+          {...bind("phone")}
           type="tel"
           inputMode="tel"
           autoComplete="username"

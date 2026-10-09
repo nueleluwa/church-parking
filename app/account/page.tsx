@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
+import { Plate } from "@/components/Plate";
+import { StatusBadge } from "@/components/StatusBadge";
 import { secondaryButton } from "@/components/ui";
 import { listMemberVehicles, memberHistory, openPassTokenForMember } from "@/lib/db";
 import { currentMember } from "@/lib/member-auth";
-import { formatPlate, lagosDate } from "@/lib/rules";
+import { formatPlate, lagosDate, visitTone } from "@/lib/rules";
 import { removeVehicle, signOutMember } from "./actions";
 import { AddVehicleForm, ChangePinForm, DeleteAccountForm } from "./AccountForms";
 
@@ -38,7 +40,7 @@ export default async function AccountPage({
 
   return (
     <>
-      <AppHeader title="My account" />
+      <AppHeader />
       <main className="mx-auto max-w-md space-y-4 px-4 py-6">
         <h1 className="text-2xl font-bold">Hello, {member.full_name.split(" ")[0]}</h1>
 
@@ -69,7 +71,7 @@ export default async function AccountPage({
             <ul className="mb-4 space-y-2">
               {vehicles.map((v) => (
                 <li key={v.id} className="flex items-center justify-between rounded-xl bg-page px-4 py-3">
-                  <span className="text-xl font-bold">{formatPlate(v.plate)}</span>
+                  <Plate plate={v.plate} size="md" align="start" className="flex-1" />
                   <form action={removeVehicle}>
                     <input type="hidden" name="vehicleId" value={v.id} />
                     <button className="font-medium text-danger underline">Remove</button>
@@ -92,10 +94,10 @@ export default async function AccountPage({
                     <span className="font-semibold">{h.service_date}</span> · {h.serviceName}
                     <br />
                     <span className="text-sm text-ink-soft">
-                      {formatPlate(h.plate)} · {h.areaName}
+                      <span className="whitespace-nowrap">{formatPlate(h.plate)}</span> · {h.areaName}
                     </span>
                   </span>
-                  <span className="font-medium">{STATUS[h.status]}</span>
+                  <StatusBadge tone={visitTone(h.status)} className="shrink-0">{STATUS[h.status]}</StatusBadge>
                 </li>
               ))}
             </ul>

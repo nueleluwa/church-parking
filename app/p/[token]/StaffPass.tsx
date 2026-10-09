@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { ScanCard } from "@/lib/rules/scan";
-import { ResultCard } from "@/app/staff/(app)/ResultCard";
+import { ResultCard } from "@/app/(team)/staff/ResultCard";
 import type { CorrectionContext } from "@/lib/correction-context";
 
 /** What a signed-in staff member sees when they open a pass link: the scanner result card. */

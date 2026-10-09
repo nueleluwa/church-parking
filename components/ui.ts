@@ -13,7 +13,7 @@ export const dangerButton = `${buttonBase} border-2 border-danger bg-white text-
 
 export const errorBox = "rounded-2xl border-2 border-danger bg-white p-3 font-medium text-danger";
 
-export const okBox = "rounded-2xl border-2 border-edge bg-blush p-3 font-medium text-ink";
+export const okBox = "rounded-2xl border-2 border-success bg-success-soft p-3 font-medium text-ink";
 
 export const card = "rounded-card bg-card p-6 shadow-sm";
 

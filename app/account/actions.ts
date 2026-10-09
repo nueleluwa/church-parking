@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
@@ -100,6 +101,8 @@ export async function addVehicle(_prev: FormState, formData: FormData): Promise<
   const result = await addMemberVehicle(member.id, plate);
   switch (result) {
     case "added":
+      // Refresh this page's data in place, so the new car shows without a reload
+      revalidatePath("/account");
       return { ok: "Car saved." };
     case "already_yours":
       return { error: "You have already saved this car." };
@@ -115,7 +118,7 @@ export async function removeVehicle(formData: FormData): Promise<void> {
   if (!member) redirect("/account/signin");
   const id = z.string().uuid().safeParse(formData.get("vehicleId"));
   if (id.success) await removeMemberVehicle(member.id, id.data);
-  redirect("/account");
+  revalidatePath("/account");
 }
 
 const changePinSchema = z

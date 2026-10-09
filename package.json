@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "db:reset": "supabase db reset --linked",
-    "db:seed-admin": "node --env-file=.env.local scripts/seed-admin.ts"
+    "db:seed-admin": "node --env-file=.env.local scripts/seed-admin.ts",
+    "dev:test-service": "node --env-file=.env.local scripts/test-service.ts"
   },
   "devEngines": {
     "packageManager": {
