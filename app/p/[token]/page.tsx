@@ -89,7 +89,7 @@ export default async function PassPage({ params }: { params: Promise<{ token: st
   return (
     <>
       <AppHeader title="Parking pass" />
-      {view.state === "valid" && <PassRefresher />}
+      {view.state === "valid" && <PassRefresher token={token} state={view.state} />}
       <main className="mx-auto max-w-md space-y-4 px-4 py-6">
         <div className={`flex items-center justify-center gap-3 rounded-card border-4 px-4 py-4 ${state.box}`}>
           {state.icon}
