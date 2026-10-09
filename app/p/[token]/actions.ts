@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { convertGuestToMember } from "@/lib/db";
 import { hashPin, startMemberSession } from "@/lib/member-auth";
-import { rememberedPassToken } from "@/lib/pass-cookie";
+import { rememberedPassTokens } from "@/lib/pass-cookie";
 import { PIN_PATTERN } from "@/lib/rules";
 
 export type SaveDetailsState = { error?: string };
@@ -34,7 +34,7 @@ export async function saveGuestDetails(_prev: SaveDetailsState, formData: FormDa
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please check your PIN." };
 
   const { token, pin } = parsed.data;
-  if ((await rememberedPassToken()) !== token) {
+  if (!(await rememberedPassTokens()).includes(token)) {
     return { error: "Please save your details from the phone that checked in." };
   }
 

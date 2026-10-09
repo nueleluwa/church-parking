@@ -49,3 +49,4 @@ export { checkAreaName, makeAreaSlug, AREA_NAME_MIN, AREA_NAME_MAX, RENAME_MESSA
 export { checkVehicleDetails, describeVehicle, MAKE_MAX, COLOUR_MAX, type VehicleDetails } from "./vehicle";
 export * from "./reports";
 export * from "./analytics";
+export * from "./pass-tokens";

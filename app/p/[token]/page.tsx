@@ -11,9 +11,9 @@ import { getPassByToken, getScanDetailByToken } from "@/lib/db";
 import { serverEnv } from "@/lib/env";
 import { formatLagosDate, formatLagosTime } from "@/lib/format";
 import { currentMember } from "@/lib/member-auth";
-import { rememberedPassToken } from "@/lib/pass-cookie";
+import { rememberedPassTokens } from "@/lib/pass-cookie";
 import { qrSvg } from "@/lib/qr";
-import { buildPassView, buildScanCard, describeVehicle, lagosDate, passTone, type PassState } from "@/lib/rules";
+import { buildPassView, buildScanCard, describeVehicle, lagosDate, ownsPass, passTone, type PassState } from "@/lib/rules";
 import { currentStaff } from "@/lib/staff-auth";
 import { PassRefresher } from "./PassRefresher";
 import { SaveDetailsCard } from "./SaveDetailsCard";
@@ -81,8 +81,10 @@ export default async function PassPage({
 
   // Only the phone that made the pass sees the full pass (CI-6). Everyone
   // else sees the plate and status, and nothing else.
-  const isOwner = (await rememberedPassToken()) === token;
-  const member = isOwner ? await currentMember() : null;
+  // The full pass (with the QR) is for the phone that made it, or for the member who owns it, on any phone.
+  const [remembered, signedIn] = await Promise.all([rememberedPassTokens(), currentMember()]);
+  const isOwner = ownsPass({ token, remembered, passMemberId: pass.memberId, signedInMemberId: signedIn?.id ?? null });
+  const member = isOwner ? signedIn : null;
   const view = buildPassView(
     {
       plate: pass.plate,
@@ -175,6 +177,7 @@ export default async function PassPage({
           <div className="space-y-1 px-2 text-center text-sm text-ink-soft">
             <p>Tip: turn your screen brightness up so the attendant can scan it in the sun.</p>
             <p>Staying for more than one service? This pass stays valid all day.</p>
+            <p>Lost this page? The attendant at the exit can find your car by its plate number.</p>
           </div>
         )}
 

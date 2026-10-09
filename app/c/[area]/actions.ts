@@ -12,7 +12,7 @@ import {
 } from "@/lib/db";
 import { serverEnv } from "@/lib/env";
 import { currentMember, ipKey } from "@/lib/member-auth";
-import { rememberedPassToken, rememberPass } from "@/lib/pass-cookie";
+import { rememberedPassTokens, rememberPass } from "@/lib/pass-cookie";
 import {
   claimGuestVisit,
   claimMemberVisit,
@@ -63,9 +63,9 @@ export async function checkInAsGuest(_prev: CheckInState, formData: FormData): P
 
   const secret = serverEnv().SESSION_SECRET;
   // Independent reads, asked together so the driver waits for the slowest one, not the sum
-  const [area, heldToken, services, ip] = await Promise.all([
+  const [area, heldTokens, services, ip] = await Promise.all([
     getAreaBySlug(areaSlug),
-    rememberedPassToken(),
+    rememberedPassTokens(),
     listActiveServices(),
     ipKey("ip", secret),
   ]);
@@ -75,14 +75,12 @@ export async function checkInAsGuest(_prev: CheckInState, formData: FormData): P
   const today = lagosDate(now);
 
   // The same phone scanning again for the same car (staying for another service): show its pass.
-  const held = heldToken ? await getPassByToken(heldToken) : null;
-  if (
-    held &&
-    held.plate === plate &&
-    passState({ status: held.status, serviceDate: held.service_date, today }) === "valid"
-  ) {
-    redirect(`/p/${heldToken}`);
-  }
+  const held = await Promise.all(heldTokens.map(async (t) => ({ token: t, pass: await getPassByToken(t) })));
+  const sameCar = held.find(
+    ({ pass }) =>
+      pass && pass.plate === plate && passState({ status: pass.status, serviceDate: pass.service_date, today }) === "valid",
+  );
+  if (sameCar) redirect(`/p/${sameCar.token}`);
 
   const open = servicesForCheckIn(now, services);
   if (open.length === 0) return { error: MESSAGES.finished };

@@ -14,8 +14,8 @@ import {
   openPassTokensByVehicle,
 } from "@/lib/db";
 import { currentMember } from "@/lib/member-auth";
-import { rememberedPassToken } from "@/lib/pass-cookie";
-import { hasServiceToday, lagosDate, passState, pickService, servicesForCheckIn } from "@/lib/rules";
+import { rememberedPassTokens } from "@/lib/pass-cookie";
+import { formatPlate, hasServiceToday, lagosDate, passState, pickService, servicesForCheckIn } from "@/lib/rules";
 import { GuestEntry } from "./GuestEntry";
 import { GuestForm } from "./GuestForm";
 import { MemberCheckIn } from "./MemberCheckIn";
@@ -33,11 +33,13 @@ export default async function CheckInPage({ params }: { params: Promise<{ area: 
   const today = lagosDate(now);
 
   // CI-6: if this phone already has a live pass, offer it first.
-  const token = await rememberedPassToken();
-  const existing = token ? await getPassByToken(token) : null;
-  const hasLivePass =
-    existing &&
-    passState({ status: existing.status, serviceDate: existing.service_date, today }) === "valid";
+  // A phone can hold several passes (a second car), so offer each one that is still good.
+  const remembered = await rememberedPassTokens();
+  const found = await Promise.all(remembered.map(async (t) => ({ token: t, pass: await getPassByToken(t) })));
+  const livePasses = found
+    .filter(({ pass }) => pass && passState({ status: pass.status, serviceDate: pass.service_date, today }) === "valid")
+    .map(({ token, pass }) => ({ token, plate: pass!.plate }));
+  const hasLivePass = livePasses.length > 0;
 
   const member = await currentMember();
   const savedVehicles = member ? await listMemberVehicles(member.id) : [];
@@ -103,14 +105,16 @@ export default async function CheckInPage({ params }: { params: Promise<{ area: 
             <div className="space-y-3 rounded-card border-2 border-success bg-success-soft p-5">
               <p className="flex items-center gap-2 font-bold">
                 <IconCheck className="h-5 w-5 shrink-0" />
-                You already have a pass on this phone.
+                {livePasses.length === 1 ? "You already have a pass on this phone." : "You already have passes on this phone."}
               </p>
               <p className="text-sm text-ink-soft">
                 Staying for more than one service? Your pass is good all day. You do not need to check in again.
               </p>
-              <Link href={`/p/${token}`} className={redButton}>
-                Show my pass
-              </Link>
+              {livePasses.map((p) => (
+                <Link key={p.token} href={`/p/${p.token}`} className={redButton}>
+                  {livePasses.length === 1 ? "Show my pass" : `Show pass for ${formatPlate(p.plate)}`}
+                </Link>
+              ))}
             </div>
             {services.length > 0 && (
               <details className="rounded-card bg-card p-5 shadow-sm">
