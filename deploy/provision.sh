@@ -63,7 +63,7 @@ export DEBIAN_FRONTEND=noninteractive
 step "Packages we need (nothing is upgraded unless --fresh-server)"
 apt-get update -qq
 if [[ $FRESH -eq 1 ]]; then apt-get upgrade -y -qq; fi
-apt-get install -y -qq curl git openssl rsync ca-certificates xz-utils nginx
+apt-get install -y -qq --no-upgrade curl git openssl rsync ca-certificates xz-utils nginx
 
 step "Swap (small servers run out of memory while building)"
 MEM_MB=$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)
@@ -160,19 +160,26 @@ if [[ -f "$CERT_DIR/origin.pem" && -f "$CERT_DIR/origin.key" ]]; then
   if [[ -z "$PROBLEM" ]]; then HTTPS=1; else echo "Not using the certificate in $CERT_DIR: $PROBLEM." >&2; fi
 fi
 SRC="$HERE/nginx/churchparking-http.conf"; [[ $HTTPS -eq 1 ]] && SRC="$HERE/nginx/churchparking.conf"
-sed "s/__APP_PORT__/$APP_PORT/g" "$SRC" >/etc/nginx/conf.d/churchparking.conf
+NGINX_TARGET=/etc/nginx/conf.d/churchparking.conf
+[[ -f "$NGINX_TARGET" ]] && cp -a "$NGINX_TARGET" "$NGINX_TARGET.previous" || rm -f "$NGINX_TARGET.previous"
+sed "s/__APP_PORT__/$APP_PORT/g" "$SRC" >"$NGINX_TARGET"
 [[ $HTTPS -eq 1 ]] && echo "https is on for $DOMAIN." || echo "No usable server certificate yet: serving plain http only. Put origin.pem and origin.key in $CERT_DIR and run this script again."
 if [[ $FRESH -eq 1 ]]; then
   rm -f /etc/nginx/sites-enabled/default
   [[ $HTTPS -eq 1 ]] && install -m 644 "$HERE/nginx/catch-all.conf" /etc/nginx/conf.d/00-catch-all.conf
 fi
-nginx -t
+if ! nginx -t; then
+  echo "nginx does not accept the new settings. Putting things back so the other sites are not affected." >&2
+  if [[ -f "$NGINX_TARGET.previous" ]]; then mv -f "$NGINX_TARGET.previous" "$NGINX_TARGET"; else rm -f "$NGINX_TARGET"; fi
+  exit 1
+fi
+rm -f "$NGINX_TARGET.previous"
 systemctl enable --now nginx >/dev/null 2>&1 || true
 systemctl reload nginx
 
 step "Firewall"
 if [[ $FRESH -eq 1 ]]; then
-  apt-get install -y -qq ufw fail2ban unattended-upgrades
+  apt-get install -y -qq --no-upgrade ufw fail2ban unattended-upgrades
   SSH_PORT=$(ss -ltnpH 2>/dev/null | awk '/sshd/ {n=split($4,a,":"); print a[n]; exit}'); SSH_PORT=${SSH_PORT:-22}
   ufw --force reset >/dev/null; ufw default deny incoming >/dev/null; ufw default allow outgoing >/dev/null
   ufw allow "${SSH_PORT}/tcp" >/dev/null

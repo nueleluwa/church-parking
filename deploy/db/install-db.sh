@@ -55,7 +55,7 @@ if [[ ! -f /etc/postgresql-common/createcluster.conf ]] || ! grep -q '^create_ma
   mkdir -p /etc/postgresql-common
   echo "create_main_cluster = false" >>/etc/postgresql-common/createcluster.conf
 fi
-apt-get install -y -qq "postgresql-$PG_VERSION" "postgresql-$PG_VERSION-cron" "postgresql-client-$PG_VERSION"
+apt-get install -y -qq --no-upgrade "postgresql-$PG_VERSION" "postgresql-$PG_VERSION-cron" "postgresql-client-$PG_VERSION"
 
 if ! pg_lsclusters -h | awk '{print $1" "$2}' | grep -qx "$PG_VERSION $PG_CLUSTER"; then
   pg_createcluster "$PG_VERSION" "$PG_CLUSTER" --port "$PG_PORT" --start-conf=auto -- --auth-host=scram-sha-256 --auth-local=peer --encoding=UTF8
@@ -176,7 +176,13 @@ sudo -iu "$APP_USER" bash -c "pm2 startOrReload $APP_DIR/shared/ecosystem.postgr
 
 step "The local door on 127.0.0.1:$PROXY_PORT"
 sed -e "s/__REST_PROXY_PORT__/$PROXY_PORT/g" -e "s/__REST_PORT__/$REST_PORT/g" "$REPO_ROOT/deploy/nginx/church-rest-proxy.conf" >/etc/nginx/conf.d/church-rest-proxy.conf
-nginx -t && systemctl reload nginx
+if nginx -t; then
+  systemctl reload nginx
+else
+  echo "nginx does not accept the local door settings. Removing them so the other sites are not affected." >&2
+  rm -f /etc/nginx/conf.d/church-rest-proxy.conf
+  exit 1
+fi
 
 step "Database tables and functions (the migrations)"
 install -m 755 "$HERE/backup.sh" /usr/local/bin/church-backup
