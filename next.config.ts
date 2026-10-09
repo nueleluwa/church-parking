@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // The dev-only "N" badge sits on top of the first tab in the staff tab bar, so keep it off the screen.
   devIndicators: false,
+  // Lets a phone on the same Wi-Fi run the dev pages (development only).
+  allowedDevOrigins: ["192.168.*.*", "10.*.*.*"],
   async headers() {
     return [
       {

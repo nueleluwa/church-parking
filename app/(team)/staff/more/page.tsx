@@ -1,6 +1,7 @@
 import { IconAlert, IconCalendar, IconCheck, IconClock, IconLogout, IconPlus, IconSearch, IconUser, IconWifi } from "@/components/icons";
 import { MenuRow } from "@/components/MenuRow";
 import { SyncStatus } from "@/components/SyncStatus";
+import pkg from "@/package.json";
 import { hasRole } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
 import { signOut } from "../actions";
@@ -46,7 +47,7 @@ export default async function MorePage() {
         </li>
       </ul>
 
-      <p className="pt-2 text-center text-xs text-ink-soft">CCI Parking · Parking Management</p>
+      <p className="pt-2 text-center text-xs text-ink-soft">CCI Parking · Parking Management · v{pkg.version}</p>
     </>
   );
 }

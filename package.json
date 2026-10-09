@@ -4,6 +4,7 @@
   "description": "Church Parking: digital parking passes for CCI",
   "scripts": {
     "dev": "next dev",
+    "dev:https": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
     "test": "vitest run",

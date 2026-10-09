@@ -40,6 +40,14 @@ function InvalidPass({ reason, onAgain }: { reason: string; onAgain: () => void 
           <span className="block text-sm text-ink-soft">Reason</span>
           <span className="font-semibold">{reason}</span>
         </p>
+        <dl className="mt-2 divide-y divide-edge/15 rounded-2xl bg-white px-4 text-left">
+          {["Service", "Parking area"].map((label) => (
+            <div key={label} className="flex justify-between py-3">
+              <dt className="text-sm text-ink-soft">{label}</dt>
+              <dd className="font-semibold">—</dd>
+            </div>
+          ))}
+        </dl>
       </section>
       <button onClick={onAgain} className={redButton}>
         Scan another
@@ -93,8 +101,13 @@ export function Scanner({ corrections }: { corrections: CorrectionContext | null
           scanner.clear();
         };
         if (cancelled) await stop();
-      } catch {
-        setCameraError("We cannot use the camera. Allow camera access, or find the car by plate number.");
+      } catch (e) {
+        console.warn("Camera could not start:", e);
+        setCameraError(
+          window.isSecureContext
+            ? "We cannot use the camera. Allow camera access, or find the car by plate number."
+            : "The camera only works on a secure (https) address. Open the https address, or find the car by plate number.",
+        );
       }
     })();
 
