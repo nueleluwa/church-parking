@@ -66,6 +66,7 @@ service_window_open() {
   [[ -n "$url" ]] || return 1
   n=$(psql "$url" -Atqc "select count(*) from services
         where active
+          and name not like 'Test service%'  -- an all-day test service must not block deploys
           and weekday = extract(dow from (now() at time zone 'Africa/Lagos'))::int
           and (now() at time zone 'Africa/Lagos')::time between (starts_at - interval '30 minutes') and (ends_at + interval '30 minutes')" 2>/dev/null) || {
     echo "Could not read the service times; carrying on." >&2
