@@ -24,7 +24,7 @@ export default async function ServiceInfoPage() {
           <section key={service.id} className="rounded-card bg-card p-5 shadow-sm">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="text-xl font-bold">{service.name}</h2>
+                <h2 className="text-lg font-bold">{service.name}</h2>
                 <p className="text-ink-soft">
                   {hhmm(service.starts_at)} – {hhmm(service.ends_at)}
                 </p>
@@ -52,7 +52,7 @@ export default async function ServiceInfoPage() {
       )}
 
       <section className="rounded-card bg-card p-5 shadow-sm">
-        <h2 className="flex items-center gap-2 text-xl font-bold">
+        <h2 className="flex items-center gap-2 text-lg font-bold">
           <IconPin className="h-5 w-5" /> Car parks
         </h2>
         <ul className="mt-2 divide-y divide-edge/15">

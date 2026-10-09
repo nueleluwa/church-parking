@@ -15,16 +15,19 @@ export function TitleHeader({
   backHref,
   onBack,
   right,
+  wide = false,
 }: {
   title: string;
   backHref?: string;
   onBack?: () => void;
   right?: ReactNode;
+  /** Line the title row up with the wide page column on large screens (team screens). */
+  wide?: boolean;
 }) {
   const back = "flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/15";
   return (
     <header className="sticky top-0 z-20 rounded-b-3xl border-b-4 border-accent bg-night px-4 py-3 text-white shadow-md">
-      <div className="relative mx-auto flex h-8 max-w-md items-center justify-center">
+      <div className={`relative mx-auto flex h-8 max-w-md items-center justify-center ${wide ? "lg:max-w-5xl" : ""}`}>
         {backHref ? (
           <Link href={backHref} aria-label="Back" className={`absolute -left-2 ${back}`}>
             <IconChevronLeft className="h-6 w-6" />

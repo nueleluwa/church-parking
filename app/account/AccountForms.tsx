@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { PasswordField } from "@/components/PasswordField";
 import { errorBox, field, okBox, outlineButton, redButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import { addVehicle, changePin, deleteAccount, type FormState } from "./actions";
@@ -64,27 +65,12 @@ export function AddVehicleForm() {
 
 export function ChangePinForm() {
   const [state, action, pending] = useActionState<FormState, FormData>(changePin, {});
-  const pin = {
-    type: "password",
-    inputMode: "numeric" as const,
-    maxLength: 4,
-    required: true,
-    className: field,
-  };
+  const pin = { inputMode: "numeric" as const, maxLength: 4, required: true };
   return (
     <form action={action} className="space-y-3">
-      <label className="block font-medium">
-        Your PIN now
-        <input name="current" autoComplete="current-password" {...pin} />
-      </label>
-      <label className="block font-medium">
-        New PIN (4 numbers)
-        <input name="pin" autoComplete="new-password" {...pin} />
-      </label>
-      <label className="block font-medium">
-        Type the new PIN again
-        <input name="pin2" autoComplete="new-password" {...pin} />
-      </label>
+      <PasswordField label="Your PIN now" name="current" autoComplete="current-password" {...pin} />
+      <PasswordField label="New PIN (4 numbers)" name="pin" autoComplete="new-password" {...pin} />
+      <PasswordField label="Type the new PIN again" name="pin2" autoComplete="new-password" {...pin} />
       <Messages state={state} />
       <button disabled={pending} className={outlineButton}>
         {pending ? "Please wait..." : "Change PIN"}
@@ -101,18 +87,7 @@ export function DeleteAccountForm() {
         This removes your name, phone number and saved cars. Your past visits stay in the church
         records, with no name on them.
       </p>
-      <label className="block font-medium">
-        Your PIN
-        <input
-          name="pin"
-          type="password"
-          inputMode="numeric"
-          maxLength={4}
-          required
-          autoComplete="current-password"
-          className={field}
-        />
-      </label>
+      <PasswordField label="Your PIN" name="pin" inputMode="numeric" maxLength={4} required autoComplete="current-password" />
       <label className="flex items-center gap-3 font-medium">
         <input type="checkbox" name="confirm" value="yes" className="h-6 w-6" />
         Yes, delete my account

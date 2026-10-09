@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { AREA_NAME_MAX, checkAreaName } from "./area-name";
+import { AREA_NAME_MAX, checkAreaName, makeAreaSlug } from "./area-name";
 
 describe("checkAreaName", () => {
   test("accepts a normal name and tidies the spaces", () => {
@@ -27,5 +27,24 @@ describe("checkAreaName", () => {
 
   test("keeps letters from other languages and punctuation", () => {
     expect(checkAreaName("Ẹ̀bùn Park (East)")).toEqual({ ok: true, name: "Ẹ̀bùn Park (East)" });
+  });
+});
+
+describe("makeAreaSlug", () => {
+  test("makes a short lowercase address from the name", () => {
+    expect(makeAreaSlug("Church Gate", [])).toBe("church-gate");
+    expect(makeAreaSlug("  Car Park 3!  ", [])).toBe("car-park-3");
+  });
+  test("adds a number when the address is taken", () => {
+    expect(makeAreaSlug("Roadside", ["road", "roadside"])).toBe("roadside-2");
+    expect(makeAreaSlug("Roadside", ["roadside", "roadside-2"])).toBe("roadside-3");
+  });
+  test("a name with no usable letters still gets an address", () => {
+    expect(makeAreaSlug("!!!", [])).toBe("park");
+  });
+  test("long names are shortened without a trailing dash", () => {
+    const slug = makeAreaSlug("The very long overflow car park behind the hall", []);
+    expect(slug.length).toBeLessThanOrEqual(24);
+    expect(slug.endsWith("-")).toBe(false);
   });
 });

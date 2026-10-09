@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { errorBox, field, redButton } from "@/components/ui";
+import { PasswordField } from "@/components/PasswordField";
 import { useFields } from "@/components/useFields";
 import { signUp, type FormState } from "../actions";
 
@@ -9,14 +10,7 @@ export function SignUpForm({ next }: { next: string }) {
   const [state, action, pending] = useActionState<FormState, FormData>(signUp, {});
   // Name and phone are kept after an error. The PINs are cleared on purpose.
   const { bind } = useFields({ name: "", phone: "" });
-  const pinProps = {
-    type: "password",
-    inputMode: "numeric" as const,
-    maxLength: 4,
-    autoComplete: "new-password",
-    required: true,
-    className: field,
-  };
+  const pinProps = { inputMode: "numeric" as const, maxLength: 4, autoComplete: "new-password", required: true };
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="next" value={next} />
@@ -36,14 +30,8 @@ export function SignUpForm({ next }: { next: string }) {
           className={field}
         />
       </label>
-      <label className="block font-medium">
-        Choose a PIN (4 numbers)
-        <input name="pin" {...pinProps} />
-      </label>
-      <label className="block font-medium">
-        Type the PIN again
-        <input name="pin2" {...pinProps} />
-      </label>
+      <PasswordField label="Choose a PIN (4 numbers)" name="pin" {...pinProps} />
+      <PasswordField label="Type the PIN again" name="pin2" {...pinProps} />
       {state.error && (
         <p role="alert" className={errorBox}>
           {state.error}

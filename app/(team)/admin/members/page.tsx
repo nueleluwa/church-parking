@@ -1,3 +1,4 @@
+import { PasswordField } from "@/components/PasswordField";
 import { StatusBadge } from "@/components/StatusBadge";
 import { field, primaryButton } from "@/components/ui";
 import { searchMembers } from "@/lib/db";
@@ -23,7 +24,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
         Find a member by phone number or name. Setting a new PIN also unlocks the account. Tell the member their new PIN
         in person, and check who they are first.
       </p>
-      <form className="space-y-3 rounded-card bg-card p-4 shadow-sm">
+      <form className="space-y-3 rounded-card bg-card p-4 shadow-sm lg:max-w-xl">
         <label className="block font-medium">
           Phone number or name
           <input name="q" defaultValue={q} autoComplete="off" className={field} />
@@ -34,7 +35,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
       {q && members.length === 0 && (
         <p className="rounded-card bg-card p-4 font-medium shadow-sm">No member found.</p>
       )}
-      <ul className="space-y-3">
+      <ul className="grid items-start gap-3 lg:grid-cols-2">
         {members.map((m) => {
           const locked = m.locked_until !== null && new Date(m.locked_until) > new Date();
           return (
@@ -53,18 +54,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
                 <div className="mt-3">
                   <AdminForm action={resetMemberPinAction} submitLabel="Set PIN and unlock" clearOnSuccess>
                     <input type="hidden" name="memberId" value={m.id} />
-                    <label className="block font-medium">
-                      New PIN (4 numbers)
-                      <input
-                        name="pin"
-                        inputMode="numeric"
-                        pattern="\d{4}"
-                        maxLength={4}
-                        required
-                        autoComplete="off"
-                        className={field}
-                      />
-                    </label>
+                    <PasswordField label="New PIN (4 numbers)" name="pin" inputMode="numeric" pattern="\d{4}" maxLength={4} required autoComplete="new-password" />
                   </AdminForm>
                 </div>
               </details>

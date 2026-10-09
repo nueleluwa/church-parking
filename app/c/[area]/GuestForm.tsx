@@ -28,6 +28,7 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
   const [confirmedAt, setConfirmedAt] = useState<CheckInState | null>(null);
   const showConfirm = confirmedAt === state;
   const [dismissed, setDismissed] = useState<CheckInState | null>(null);
+  const [changingService, setChangingService] = useState(false);
   const showBlocked = Boolean(state.blocked) && dismissed !== state;
 
   function review() {
@@ -41,16 +42,34 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
       {showBlocked && <BlockedCard message={state.error ?? ""} onBack={() => setDismissed(state)} />}
 
       <div className={showConfirm || showBlocked ? "hidden" : "space-y-4"}>
-        <label className="block font-medium">
-          Service
-          <select {...bind("serviceId")} className={field}>
-            {services.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} ({s.time})
-              </option>
-            ))}
-          </select>
-        </label>
+        {changingService ? (
+          <label className="block font-medium">
+            Service
+            <select {...bind("serviceId")} className={field}>
+              {services.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.time})
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <div className="flex items-center justify-between gap-3 rounded-2xl bg-blush px-4 py-3">
+            <input type="hidden" name="serviceId" value={values.serviceId} />
+            <p className="min-w-0">
+              <span className="block text-sm text-ink-soft">Service</span>
+              <span className="block font-bold">
+                {services.find((s) => String(s.id) === values.serviceId)?.name} (
+                {services.find((s) => String(s.id) === values.serviceId)?.time})
+              </span>
+            </p>
+            {services.length > 1 && (
+              <button type="button" onClick={() => setChangingService(true)} className="shrink-0 font-semibold text-accent underline">
+                Change
+              </button>
+            )}
+          </div>
+        )}
 
         <label className="block font-medium">
           Your name

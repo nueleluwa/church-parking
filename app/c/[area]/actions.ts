@@ -61,14 +61,20 @@ export async function checkInAsGuest(_prev: CheckInState, formData: FormData): P
     return { error: "Please check your plate number." };
   }
 
-  const area = await getAreaBySlug(areaSlug);
+  const secret = serverEnv().SESSION_SECRET;
+  // Independent reads, asked together so the driver waits for the slowest one, not the sum
+  const [area, heldToken, services, ip] = await Promise.all([
+    getAreaBySlug(areaSlug),
+    rememberedPassToken(),
+    listActiveServices(),
+    ipKey("ip", secret),
+  ]);
   if (!area) return { error: "This parking sign isn't working. Please see an attendant." };
 
   const now = new Date();
   const today = lagosDate(now);
 
   // The same phone scanning again for the same car (staying for another service): show its pass.
-  const heldToken = await rememberedPassToken();
   const held = heldToken ? await getPassByToken(heldToken) : null;
   if (
     held &&
@@ -78,11 +84,10 @@ export async function checkInAsGuest(_prev: CheckInState, formData: FormData): P
     redirect(`/p/${heldToken}`);
   }
 
-  const open = servicesForCheckIn(now, await listActiveServices());
+  const open = servicesForCheckIn(now, services);
   if (open.length === 0) return { error: MESSAGES.finished };
   if (!open.some((s) => s.id === serviceId)) return { error: MESSAGES.bad_service };
 
-  const secret = serverEnv().SESSION_SECRET;
   const result = await claimGuestVisit(claimStore, {
     name,
     phone,
@@ -90,7 +95,7 @@ export async function checkInAsGuest(_prev: CheckInState, formData: FormData): P
     serviceId,
     areaId: area.id,
     serviceDate: today,
-    ipKey: (await ipKey("ip", secret)) ?? "",
+    ipKey: ip ?? "",
     phoneKey: hashKey("phone", phone, secret),
   });
 
@@ -118,22 +123,28 @@ export async function checkInMember(_prev: CheckInState, formData: FormData): Pr
   const parsed = memberSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please choose your car." };
 
-  const area = await getAreaBySlug(parsed.data.area);
-  if (!area) return { error: "This parking sign isn't working. Please see an attendant." };
-
-  const vehicle = (await listMemberVehicles(member.id)).find((v) => v.id === parsed.data.vehicleId);
-  if (!vehicle) return { error: "We cannot check in this car. Please see an attendant." };
-
   const now = new Date();
   const today = lagosDate(now);
 
-  const existing = (await openPassTokensByVehicle(member.id, today))[vehicle.id];
+  // Independent reads, asked together so the member waits for the slowest one, not the sum
+  const [area, vehicles, openTokens, services] = await Promise.all([
+    getAreaBySlug(parsed.data.area),
+    listMemberVehicles(member.id),
+    openPassTokensByVehicle(member.id, today),
+    listActiveServices(),
+  ]);
+  if (!area) return { error: "This parking sign isn't working. Please see an attendant." };
+
+  const vehicle = vehicles.find((v) => v.id === parsed.data.vehicleId);
+  if (!vehicle) return { error: "We cannot check in this car. Please see an attendant." };
+
+  const existing = openTokens[vehicle.id];
   if (existing) {
     await rememberPass(existing);
     redirect(`/p/${existing}`);
   }
 
-  const open = servicesForCheckIn(now, await listActiveServices());
+  const open = servicesForCheckIn(now, services);
   if (open.length === 0) return { error: MESSAGES.finished };
   const service = parsed.data.serviceId
     ? open.find((s) => s.id === parsed.data.serviceId)

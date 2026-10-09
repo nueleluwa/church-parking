@@ -45,6 +45,6 @@ export {
 } from "./corrections";
 export { describeAlert } from "./alerts";
 export { passTone, visitTone, progressTone, type Tone } from "./status";
-export { checkAreaName, AREA_NAME_MIN, AREA_NAME_MAX, RENAME_MESSAGES, type RenameResult } from "./area-name";
+export { checkAreaName, makeAreaSlug, AREA_NAME_MIN, AREA_NAME_MAX, RENAME_MESSAGES, type RenameResult } from "./area-name";
 export { checkVehicleDetails, describeVehicle, MAKE_MAX, COLOUR_MAX, type VehicleDetails } from "./vehicle";
 export * from "./reports";

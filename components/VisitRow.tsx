@@ -28,7 +28,7 @@ export function VisitRow({ visit }: { visit: Visit }) {
     <>
       <span
         aria-hidden="true"
-        className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
+        className={`hidden h-11 w-11 shrink-0 items-center justify-center rounded-full min-[360px]:flex ${
           parked ? "bg-success-soft text-success" : "bg-panel text-ink-soft"
         }`}
       >

@@ -17,7 +17,7 @@ export default function DesignPage() {
   return (
     <>
       <AppHeader title="Design tokens" />
-      <main className="mx-auto max-w-md space-y-6 px-4 py-6">
+      <main className="mx-auto max-w-md space-y-6 px-4 pb-8 pt-5">
         <section className="rounded-card bg-panel p-4">
           <h2 className="mb-3 font-semibold">Colours</h2>
           <ul className="grid grid-cols-4 gap-3">

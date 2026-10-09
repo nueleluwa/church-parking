@@ -28,7 +28,7 @@ export function StaffChrome({ staff, children }: { staff: StaffSession; children
       {coordinator && <SideNav admin={admin} name={staff.name} role={roleName} initials={initialsOf(staff.name)} />}
       <div className={coordinator ? "lg:pl-64 print:pl-0" : ""}>
         <div className="print:hidden">
-          <StaffHeader initials={initialsOf(staff.name)} />
+          <StaffHeader initials={initialsOf(staff.name)} wide={coordinator} />
         </div>
         <main
           className={`mx-auto space-y-4 px-4 pb-28 pt-5 print:max-w-none print:p-0 ${

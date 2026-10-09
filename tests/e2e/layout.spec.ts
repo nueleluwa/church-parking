@@ -88,7 +88,7 @@ async function expectHeaderAndTabsFit(page: Page, label: string) {
     const overlaps =
       button !== undefined &&
       boxes.some((b) => b.right > button.left + 0.5 && b.left < button.right - 0.5 && b.bottom > button.top && b.top < button.bottom);
-    const tabs = [...document.querySelectorAll<HTMLElement>("nav a")].map((a) => ({
+    const tabs = [...document.querySelectorAll<HTMLElement>('nav[aria-label="Parking team"] a')].map((a) => ({
       text: a.textContent ?? "",
       cut: a.scrollWidth > a.clientWidth + 1,
     }));
@@ -199,7 +199,7 @@ test("admin header and all six tabs fit at every phone width", async ({ page }) 
     await page.setViewportSize({ width, height: 800 });
     for (const path of ["/staff", "/staff/scan", "/admin", "/admin/areas"]) {
       await page.goto(path);
-      await expect(page.locator("nav a")).toHaveCount(6, { timeout: 60_000 });
+      await expect(page.getByRole("navigation", { name: "Parking team", exact: true }).locator("a")).toHaveCount(6, { timeout: 60_000 });
       await expectHeaderAndTabsFit(page, `admin ${path} at ${width}px`);
       await expectNoOverflow(page, `admin ${path} at ${width}px`);
     }

@@ -108,7 +108,7 @@ export default async function AccountPage({
             {history.length > 0 && (
               <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-xl font-bold">Recent visits</h2>
+                  <h2 className="text-lg font-bold">Recent visits</h2>
                   <Link href="/account?tab=history" className="font-semibold text-accent underline">
                     View all
                   </Link>
@@ -123,7 +123,7 @@ export default async function AccountPage({
           </>
         ) : (
           <section className="space-y-3">
-            <h2 className="text-xl font-bold">Parking history</h2>
+            <h2 className="text-lg font-bold">Parking history</h2>
             {history.length === 0 ? (
               <p className="rounded-card bg-card p-5 shadow-sm">No visits yet.</p>
             ) : (

@@ -61,7 +61,7 @@ export default async function ServicesPage() {
         Change a service&apos;s name or times. Drivers are put into the right service from these times. Switch a service
         off instead of deleting it, so old records keep their service.
       </p>
-      <ul className="space-y-3">
+      <ul className="grid items-start gap-3 lg:grid-cols-2">
         {services.map((s) => (
           <li key={s.id} className="rounded-card bg-card p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
@@ -85,7 +85,7 @@ export default async function ServicesPage() {
         ))}
       </ul>
 
-      <section className="rounded-card bg-card p-4 shadow-sm">
+      <section className="rounded-card bg-card p-4 shadow-sm lg:max-w-xl">
         <h2 className="text-lg font-bold">Add a service</h2>
         <div className="mt-3">
           <AdminForm action={saveServiceAction} submitLabel="Add service" clearOnSuccess>

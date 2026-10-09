@@ -124,7 +124,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           <p className="text-sm text-ink-soft">
             Showing {recent.length} of {visits.length}. Export the CSV for all of them.
           </p>
-          <div className="mt-2 overflow-x-auto">
+          <div className="mt-2 overflow-x-auto" role="region" aria-label="Transactions table, scroll sideways on a small screen" tabIndex={0}>
             <table className="w-full min-w-[34rem] text-left text-sm">
               <thead className="text-ink-soft">
                 <tr>

@@ -5,6 +5,9 @@ import { Spinner } from "@/components/Spinner";
 import { errorBox, field, okBox, primaryButton, secondaryButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import type { AreaRecord } from "@/lib/db";
+import { StatusBadge } from "@/components/StatusBadge";
+import { AdminForm } from "../AdminForm";
+import { setAreaActiveAction } from "../admin-actions";
 import { renameAreaAction, type RenameState } from "../actions";
 
 /** One car park: its name with a Rename button that opens a small form in place. */
@@ -26,7 +29,9 @@ function AreaRow({ area }: { area: AreaRecord }) {
     <li className="rounded-card bg-card p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-lg font-bold">{shownName}</p>
+          <p className="truncate text-lg font-bold">
+            {shownName} {!area.active && <StatusBadge tone="neutral">Off</StatusBadge>}
+          </p>
           <p className="truncate text-sm text-ink-soft">QR address /c/{area.slug}</p>
         </div>
         {!editing && (
@@ -64,6 +69,23 @@ function AreaRow({ area }: { area: AreaRecord }) {
         </form>
       )}
 
+      {!editing && (
+        <details className="mt-3">
+          <summary className="cursor-pointer font-semibold">{area.active ? "Switch off" : "Switch on"}</summary>
+          <div className="mt-3">
+            <AdminForm action={setAreaActiveAction} submitLabel={area.active ? "Switch off this car park" : "Switch on this car park"} variant="secondary">
+              <input type="hidden" name="areaId" value={area.id} />
+              <input type="hidden" name="active" value={area.active ? "no" : "yes"} />
+              <p className="text-sm text-ink-soft">
+                {area.active
+                  ? "Drivers will not be able to check in here. A car park with cars still parked in it cannot be switched off."
+                  : "Drivers can check in here again."}
+              </p>
+            </AdminForm>
+          </div>
+        </details>
+      )}
+
       {!editing && state.ok && (
         <p role="status" className={`${okBox} mt-3`}>
           Name saved.
@@ -75,7 +97,7 @@ function AreaRow({ area }: { area: AreaRecord }) {
 
 export function AreaList({ areas }: { areas: AreaRecord[] }) {
   return (
-    <ul className="space-y-3">
+    <ul className="grid items-start gap-3 lg:grid-cols-2">
       {areas.map((a) => (
         <AreaRow key={a.id} area={a} />
       ))}

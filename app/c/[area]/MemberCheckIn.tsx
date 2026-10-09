@@ -91,7 +91,7 @@ export function MemberCheckIn({
 
         {free.length > 0 && hasService && !confirming && (
           <section className="space-y-3">
-            <h2 className="text-xl font-bold">Select a vehicle</h2>
+            <h2 className="text-lg font-bold">Select a vehicle</h2>
             <div role="group" aria-label="Your cars" className="space-y-3">
               {free.map((v) => {
                 const selected = v.id === vehicleId;

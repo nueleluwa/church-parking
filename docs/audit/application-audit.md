@@ -381,3 +381,30 @@ Define start and end points and do not reward speed alone.
 Guard against gaming: report mismatch and manual-lookup rates alongside speed, and review the audit log for unusually fast releases of guest passes.
 
 Instrumentation needed (none exists): timestamps for page load and action completion, kept free of names, phones and tokens (security rule 6).
+
+
+---
+
+## R. Remediation status (added after the fixes)
+
+Re-checked on the same day. The register (`docs/audit/findings.json`) now carries a `status` and `status_note` on each finding.
+
+**Fixed and tested**
+SEC-01 security headers, SEC-02 hold on Does not match (D-18), SEC-03 and FUN-03 staff and member-PIN management, SEC-05 and FUN-05 guest retention job (D-20), SEC-09 live-database parallel release test, FUN-01 QR signs, FUN-02 reports and CSV, FUN-04 services, DAT-01 service date inside `release_visit`, UX-01 wording, WF-02, WF-04, WF-05, WF-06. Also added at the owner's request: show/hide buttons on every PIN and password box, and adding and switching off car parks.
+
+**Partly fixed**
+- A11Y-01: an automated axe scan now runs over every screen and passes (it found one real problem, a scrollable table that keyboards could not reach, now fixed). Keyboard order, screen-reader wording, text scaling and sunlight legibility still need a person.
+- OPS-01: CI workflow (`.github/workflows/ci.yml`) and the attendant guide with the paper fallback (`docs/attendant-guide.md`) are added. Hosting, a production Supabase project and backups are not done.
+- PERF-01: re-measured at about 157 KB gzip for current phones (the 196 KB figure included a 39 KB legacy-browser file that modern browsers do not download). Still above the 150 KB budget.
+- PERF-02 and WF-01: independent reads in both check-in actions now run together and two rule checks are asked together. A single SQL claim function was not built.
+- WF-07: the admin overview shows the open-exceptions count; there is no live badge on the tab bar.
+
+**Still open (cannot be closed from this computer)**
+FUN-06 camera scanner on real phones over https; PERF-03 load and 3G tests; SEC-07 deployment checks; DAT-02 first real midnight run; WF-03 camera keep-alive and WF-08 auto-return (both need device timing and usability testing); OPS-02 a dedicated test project; SEC-04 and SEC-06 accepted risks; FUN-07 and FUN-08.
+
+**Test results after the fixes**
+- `pnpm test`: 187 unit tests passed.
+- `pnpm typecheck`, `pnpm lint`: clean. `pnpm build`: compiled.
+- `pnpm test:e2e`: 65 passed, 0 failed (the earlier layout failures were real and fixed: the narrow-phone History row and a test that counted the hidden desktop menu).
+
+**Pilot recommendation after remediation:** still NO-GO until the scanner is proven on real phones over https and the app is deployed, with a production database and backups. The functional MVP gaps listed in section D are closed.

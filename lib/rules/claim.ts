@@ -84,8 +84,7 @@ export async function claimGuestVisit(
     if (input.ipKey) checks.push(store.countAttempts(input.ipKey, RATE_LIMITS.ip.windowMinutes));
     const [phoneCount, ipCount = 0] = await Promise.all(checks);
 
-    await store.recordAttempt(input.phoneKey);
-    if (input.ipKey) await store.recordAttempt(input.ipKey);
+    await Promise.all([store.recordAttempt(input.phoneKey), input.ipKey ? store.recordAttempt(input.ipKey) : null]);
     if (ipCount >= RATE_LIMITS.ip.max || phoneCount >= RATE_LIMITS.phone.max) {
       return { status: "rate_limited" };
     }
@@ -96,11 +95,13 @@ export async function claimGuestVisit(
 
   if (vehicleId) {
     await store.closeStaleOpenVisits(vehicleId, input.serviceDate);
-    if (await store.findOpenVisit(vehicleId)) {
+    // Two independent reads, asked together; the open visit is still judged first
+    const [open, isMember] = await Promise.all([store.findOpenVisit(vehicleId), store.isMemberPlate(vehicleId)]);
+    if (open) {
       await store.raiseAlert("plate_conflict", input.plate, alertDetail);
       return { status: "blocked", reason: "plate_conflict" };
     }
-    if (await store.isMemberPlate(vehicleId)) {
+    if (isMember) {
       await store.raiseAlert("member_plate_claim", input.plate, alertDetail);
       return { status: "blocked", reason: "member_plate" };
     }

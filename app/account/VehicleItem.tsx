@@ -132,7 +132,7 @@ export function AddVehicleToggle({
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold">{title}</h2>
+        <h2 className="text-lg font-bold">{title}</h2>
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}

@@ -19,8 +19,8 @@ export default async function MemberSignInPage({
   return (
     <>
       <AppHeader />
-      <main className="mx-auto max-w-md space-y-4 px-4 py-6">
-        <div className="rounded-card bg-card p-6 shadow-sm">
+      <main className="mx-auto max-w-md space-y-4 px-4 pb-8 pt-5">
+        <div className="rounded-card bg-card p-5 shadow-sm">
           <h1 className="mb-4 text-2xl font-bold">Sign in</h1>
           <SignInForm next={safeNext} />
         </div>

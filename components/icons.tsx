@@ -207,3 +207,16 @@ export const IconQr = (p: IconProps) => (
     <path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4" />
   </Icon>
 );
+
+export const IconEye = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" />
+    <circle cx="12" cy="12" r="3" />
+  </Icon>
+);
+
+export const IconEyeOff = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.8 9.8 0 0 0 4.4-1M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+  </Icon>
+);

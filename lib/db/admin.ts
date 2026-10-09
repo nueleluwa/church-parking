@@ -222,3 +222,38 @@ function addDay(date: string): string {
   d.setUTCDate(d.getUTCDate() + 1);
   return d.toISOString().slice(0, 10);
 }
+
+// ---------- Car parks (AD-1) ----------
+
+/** Add a car park. The name must be new (compared without capital letters); the slug is its permanent QR address. */
+export async function createArea(name: string, slug: string): Promise<number | "duplicate"> {
+  const { data: top } = await db().from("areas").select("sort").order("sort", { ascending: false }).limit(1);
+  const sort = ((top?.[0]?.sort as number | undefined) ?? 0) + 1;
+  const { data, error } = await db().from("areas").insert({ name, slug, sort }).select("id").single();
+  if (error?.code === UNIQUE_VIOLATION) return "duplicate";
+  if (error || !data) fail(error?.message ?? "no area");
+  return data.id as number;
+}
+
+export async function listAreaSlugs(): Promise<string[]> {
+  const { data, error } = await db().from("areas").select("slug");
+  if (error) fail(error.message);
+  return (data ?? []).map((a) => a.slug as string);
+}
+
+/** How many cars are parked in a car park right now. */
+export async function countParkedInArea(areaId: number): Promise<number> {
+  const { count, error } = await db()
+    .from("visits")
+    .select("id", { count: "exact", head: true })
+    .eq("area_id", areaId)
+    .eq("status", "parked");
+  if (error) fail(error.message);
+  return count ?? 0;
+}
+
+export async function setAreaActive(areaId: number, active: boolean): Promise<boolean> {
+  const { data, error } = await db().from("areas").update({ active }).eq("id", areaId).select("id");
+  if (error) fail(error.message);
+  return (data ?? []).length === 1;
+}

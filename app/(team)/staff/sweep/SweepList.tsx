@@ -26,6 +26,25 @@ export function SweepList({ rows, serviceId }: { rows: SweepRow[]; serviceId: nu
     });
   }
 
+  const [confirmingAll, setConfirmingAll] = useState(false);
+
+  /** Mark every car that is still unchecked as Still here, one audited decision each. "Gone" is never done in bulk. */
+  function markRestHere() {
+    setConfirmingAll(false);
+    start(async () => {
+      for (const row of rows) {
+        if (marks[row.visitId]) continue;
+        const r = await sweepAction(row.visitId, false, serviceId);
+        if (!r.ok) {
+          setError(r.message);
+          return;
+        }
+        setError(null);
+        setMarks((m) => ({ ...m, [row.visitId]: "here" }));
+      }
+    });
+  }
+
   const left = rows.filter((r) => !marks[r.visitId]).length;
   const byArea = new Map<string, SweepRow[]>();
   for (const r of rows) byArea.set(r.areaName, [...(byArea.get(r.areaName) ?? []), r]);
@@ -39,6 +58,31 @@ export function SweepList({ rows, serviceId }: { rows: SweepRow[]; serviceId: nu
       <p className="rounded-2xl bg-panel px-4 py-3 font-semibold">
         {left === 0 ? "All cars checked. Well done." : `${left} ${left === 1 ? "car" : "cars"} left to check`}
       </p>
+      {left > 1 &&
+        (confirmingAll ? (
+          <div role="group" aria-label="Confirm" className="space-y-2 rounded-2xl border-2 border-edge/30 bg-card p-3">
+            <p className="font-semibold">
+              Mark all {left} remaining cars as Still here? Walk the car parks first. Cars that have gone must be marked Gone
+              one by one.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={markRestHere} disabled={pending} className="rounded-full bg-action px-4 py-3 font-semibold text-white">
+                Yes, they are all here
+              </button>
+              <button onClick={() => setConfirmingAll(false)} className="rounded-full border-2 border-edge bg-white px-4 py-3 font-semibold">
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmingAll(true)}
+            disabled={pending}
+            className="w-full rounded-full border-2 border-edge bg-white px-4 py-3 font-semibold disabled:opacity-60"
+          >
+            Mark the rest Still here
+          </button>
+        ))}
       {error && (
         <p role="alert" className="rounded-2xl border-2 border-danger bg-white p-3 font-medium text-danger">
           {error}

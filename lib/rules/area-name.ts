@@ -21,3 +21,25 @@ export const RENAME_MESSAGES: Record<Exclude<RenameResult, "ok">, string> = {
   duplicate: "Another car park already has that name. Please choose a different name.",
   bad_input: "Please check the name and try again.",
 };
+
+/**
+ * The QR address for a new car park, made from its name: "Church Gate" gives "church-gate".
+ * It is never changed afterwards, so printed signs keep working when a car park is renamed.
+ * If the address is already taken, a number is added ("church-gate-2").
+ */
+export function makeAreaSlug(name: string, taken: string[]): string {
+  const base =
+    name
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 24)
+      .replace(/-+$/g, "") || "park";
+  if (!taken.includes(base)) return base;
+  for (let n = 2; n < 1000; n++) {
+    const candidate = `${base}-${n}`;
+    if (!taken.includes(candidate)) return candidate;
+  }
+  return `${base}-${Date.now()}`;
+}

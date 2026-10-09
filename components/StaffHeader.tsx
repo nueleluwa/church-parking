@@ -28,7 +28,7 @@ const SCREENS: Record<string, { title: string; back: string }> = {
   "/admin/signs": { title: "QR Signs", back: "/admin" },
 };
 
-export function StaffHeader({ initials }: { initials: string }) {
+export function StaffHeader({ initials, wide = false }: { initials: string; wide?: boolean }) {
   const path = usePathname();
   const clean = path.replace(/\/$/, "");
   const screen = SCREENS[clean] ?? (clean.startsWith("/admin/signs/") ? { title: "Print Sign", back: "/admin/signs" } : undefined);
@@ -48,6 +48,6 @@ export function StaffHeader({ initials }: { initials: string }) {
     </Link>
   );
 
-  if (!screen) return <AppHeader title="Team" right={avatar} />;
-  return <TitleHeader title={screen.title} backHref={screen.back} />;
+  if (!screen) return <AppHeader title="Team" right={avatar} wide={wide} />;
+  return <TitleHeader title={screen.title} backHref={screen.back} wide={wide} />;
 }

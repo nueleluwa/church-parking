@@ -325,3 +325,63 @@ test("the retention job deletes guest visits older than 24 months and keeps rece
     await db.from("vehicles").delete().eq("id", v.vehicleId);
   }
 });
+
+test("an admin adds a car park: it gets its own QR address and sign, drivers can check in there, duplicates are refused, and a car park with cars in it cannot be switched off", async ({ page, browser }) => {
+  const db = adminClient();
+  const name = `Test Lot ${Math.floor(Math.random() * 100000)}`;
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  try {
+    await adminSignIn(page);
+    await page.goto("/admin/areas");
+    const add = page.locator("section").filter({ hasText: "Add a car park" });
+    await add.getByLabel("Name of the car park").fill("Car Park 1");
+    await add.getByRole("button", { name: "Add car park" }).click();
+    await expect(add.getByText("Another car park already has that name.")).toBeVisible({ timeout: 60_000 });
+
+    await add.getByLabel("Name of the car park").fill(name);
+    await add.getByRole("button", { name: "Add car park" }).click();
+    await expect(add.getByText(`Its QR address is /c/${slug}`)).toBeVisible({ timeout: 60_000 });
+    const { data: area } = await db.from("areas").select("id, active, slug").eq("name", name).single();
+    expect(area).toMatchObject({ active: true, slug });
+
+    // It is listed, has a sign, and drivers can check in there
+    await page.reload();
+    await expect(page.getByText(name, { exact: true })).toBeVisible({ timeout: 60_000 });
+    await page.goto(`/admin/signs/${slug}`);
+    await expect(page.getByRole("article").getByText(name)).toBeVisible({ timeout: 60_000 });
+    const plate = randomPlate("LT");
+    await guestCheckIn(browser, plate, slug);
+
+    // It cannot be switched off while a car is parked in it
+    await page.goto("/admin/areas");
+    const card = page.locator("li").filter({ hasText: name });
+    await card.getByText("Switch off", { exact: true }).click();
+    await card.getByRole("button", { name: "Switch off this car park" }).click();
+    await expect(card.getByText(/1 car is still parked here/)).toBeVisible({ timeout: 60_000 });
+
+    // Once the car has gone it can be switched off, and then the sign stops working
+    await db.from("visits").update({ status: "released", released_at: new Date().toISOString(), release_method: "scan" }).eq("area_id", area!.id);
+    await card.getByRole("button", { name: "Switch off this car park" }).click();
+    await expect(card.getByText(/Car park switched off/)).toBeVisible({ timeout: 60_000 });
+    expect((await db.from("areas").select("active").eq("id", area!.id).single()).data!.active).toBe(false);
+    const guest = await (await browser.newContext()).newPage();
+    await guest.goto(`/c/${slug}`);
+    await expect(guest.getByRole("heading", { name: "We cannot find that page" })).toBeVisible({ timeout: 60_000 });
+
+    const { data: audit } = await db.from("audit_events").select("action").in("action", ["area_create", "area_deactivate"]).order("id", { ascending: false }).limit(2);
+    expect((audit ?? []).map((a) => a.action).sort()).toEqual(["area_create", "area_deactivate"]);
+  } finally {
+    const { data: a } = await db.from("areas").select("id").eq("name", name).maybeSingle();
+    if (a) {
+      const { data: visits } = await db.from("visits").select("id, vehicle_id, guest_id").eq("area_id", a.id);
+      for (const v of visits ?? []) {
+        await db.from("audit_events").update({ visit_id: null }).eq("visit_id", v.id);
+        await db.from("alerts").delete().eq("visit_id", v.id);
+        await db.from("visits").delete().eq("id", v.id);
+        await db.from("guests").delete().eq("id", v.guest_id);
+        await db.from("vehicles").delete().eq("id", v.vehicle_id);
+      }
+      await db.from("areas").delete().eq("id", a.id);
+    }
+  }
+});

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { IconCheck } from "@/components/icons";
 import { errorBox, field, outlineButton, redButton } from "@/components/ui";
@@ -8,10 +8,31 @@ import { useFields } from "@/components/useFields";
 import { Plate } from "@/components/Plate";
 import { registerCar, type RegisterState } from "../actions";
 
-export function RegisterForm({ areas }: { areas: { slug: string; name: string }[] }) {
+const LAST_AREA = "cp-last-area";
+
+export function RegisterForm({ areas, initialPlate = "" }: { areas: { slug: string; name: string }[]; initialPlate?: string }) {
   const [state, action, pending] = useActionState<RegisterState, FormData>(registerCar, {});
   const formRef = useRef<HTMLFormElement>(null);
-  const { bind } = useFields({ area: areas[0]?.slug ?? "", plate: "", phone: "", name: "" });
+  const { bind, values, set } = useFields({ area: areas[0]?.slug ?? "", plate: initialPlate, phone: "", name: "" });
+
+  // The car park used last time on this phone is chosen first: attendants usually stand in one place
+  useEffect(() => {
+    try {
+      const last = localStorage.getItem(LAST_AREA);
+      if (last && areas.some((a) => a.slug === last)) set("area", last);
+    } catch {
+      /* storage can be blocked: the first car park stays chosen */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    if (!state.reference) return;
+    try {
+      localStorage.setItem(LAST_AREA, values.area);
+    } catch {
+      /* ignore */
+    }
+  }, [state.reference, values.area]);
   const [forMember, setForMember] = useState(false);
 
   /** Submit again for the member: the flag is set first so it goes with this submit only. */

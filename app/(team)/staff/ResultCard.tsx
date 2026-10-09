@@ -133,10 +133,10 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
     <div className="space-y-4">
       <section
         role={finished ? "status" : undefined}
-        className={`rounded-card border-2 p-5 text-center ${cardClass}`}
+        className={`rounded-card border-2 p-4 text-center ${cardClass}`}
       >
-        <span className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${circle}`}>
-          <Icon className="h-8 w-8" />
+        <span className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${circle}`}>
+          <Icon className="h-7 w-7" />
         </span>
         <h2 className="mt-2 text-2xl font-extrabold">{title}</h2>
         <p className="mt-1 text-ink-soft">{sub}</p>

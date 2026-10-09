@@ -6,17 +6,21 @@ import { z } from "zod";
 import {
   clearAttempts,
   countActiveAdmins,
+  countParkedInArea,
+  createArea,
   createService,
   createStaffAccount,
   getMemberPhone,
   getStaffRecord,
+  listAreaSlugs,
   logAudit,
   resetMemberPinRecord,
+  setAreaActive,
   updateService,
   updateStaffAccount,
 } from "@/lib/db";
 import { serverEnv } from "@/lib/env";
-import { hasRole, normalisePhone, PIN_PATTERN } from "@/lib/rules";
+import { checkAreaName, hasRole, makeAreaSlug, normalisePhone, PIN_PATTERN } from "@/lib/rules";
 import { hashKey } from "@/lib/session";
 import { currentStaff } from "@/lib/staff-auth";
 
@@ -170,4 +174,41 @@ export async function resetMemberPinAction(fd: FormData): Promise<AdminState> {
   await logAudit(staff.id, null, "member_pin_reset", { after: { member_id: p.data.memberId } });
   revalidatePath("/admin/members");
   return { ok: true, message: "PIN changed and the account is unlocked. Tell the member their new PIN in person." };
+}
+
+// ---------- Car parks (AD-1) ----------
+
+export async function addAreaAction(fd: FormData): Promise<AdminState> {
+  const staff = await admin();
+  if (!staff) return NOT_ADMIN;
+  const checked = checkAreaName(String(fd.get("name") ?? ""));
+  if (!checked.ok) return { error: checked.message };
+
+  const slug = makeAreaSlug(checked.name, await listAreaSlugs());
+  const id = await createArea(checked.name, slug);
+  if (id === "duplicate") return { error: "Another car park already has that name. Please choose a different name." };
+
+  await logAudit(staff.id, null, "area_create", { after: { area_id: id, name: checked.name, slug } });
+  revalidatePath("/", "layout");
+  return { ok: true, message: `Car park added. Its QR address is /c/${slug}. Print its sign under QR Signs.` };
+}
+
+/** Switch a car park off or on. A car park with cars still parked in it cannot be switched off. */
+export async function setAreaActiveAction(fd: FormData): Promise<AdminState> {
+  const staff = await admin();
+  if (!staff) return NOT_ADMIN;
+  const p = z.object({ areaId: z.coerce.number().int().positive(), active: z.enum(["yes", "no"]) }).safeParse(formObject(fd));
+  if (!p.success) return BAD_FORM;
+  const on = p.data.active === "yes";
+
+  if (!on) {
+    const parked = await countParkedInArea(p.data.areaId);
+    if (parked > 0) {
+      return { error: `${parked} ${parked === 1 ? "car is" : "cars are"} still parked here. Switch it off after they have left.` };
+    }
+  }
+  if (!(await setAreaActive(p.data.areaId, on))) return { error: "We cannot find this car park." };
+  await logAudit(staff.id, null, on ? "area_activate" : "area_deactivate", { after: { area_id: p.data.areaId } });
+  revalidatePath("/", "layout");
+  return { ok: true, message: on ? "Car park switched on." : "Car park switched off. Drivers who scan its sign cannot check in until you switch it on." };
 }

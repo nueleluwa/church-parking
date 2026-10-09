@@ -143,7 +143,7 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
             </p>
           )}
 
-          <ul className="space-y-3">
+          <ul className="grid gap-3 lg:grid-cols-3">
             {data.summary.areas.map((a) => (
               <li key={a.areaId} className="rounded-card bg-card p-4 shadow-sm">
                 <h2 className="text-lg font-bold">{a.areaName}</h2>
@@ -173,14 +173,14 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
       )}
 
       <section aria-label="Alerts">
-        <h2 className="mb-2 flex items-center gap-2 text-xl font-bold">
+        <h2 className="mb-2 flex items-center gap-2 text-lg font-bold">
           <IconAlert className="h-6 w-6 text-danger" />
           Alerts {data.alerts.length > 0 && <span className="rounded-full bg-danger px-2 text-base text-white">{data.alerts.length}</span>}
         </h2>
         {data.alerts.length === 0 ? (
           <p className="rounded-card bg-card p-4 font-medium shadow-sm">No alerts. All clear.</p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="grid gap-3 lg:grid-cols-2">
             {data.alerts.map((al) => (
               <li key={al.id} className="rounded-card border-4 border-danger bg-card p-4">
                 <p className="font-bold">{al.title}</p>

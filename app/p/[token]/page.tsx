@@ -68,7 +68,7 @@ export default async function PassPage({
       return (
         <>
           <AppHeader />
-          <main className="mx-auto max-w-md space-y-4 px-4 py-6">
+          <main className="mx-auto max-w-md space-y-4 px-4 pb-8 pt-5">
             <StaffPass
               card={buildScanCard(detail, lagosDate(new Date()))}
               corrections={await correctionContext(staff)}

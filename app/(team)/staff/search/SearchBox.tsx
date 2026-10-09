@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { IconSearch } from "@/components/icons";
-import { field, redButton } from "@/components/ui";
+import { field, outlineButton, redButton } from "@/components/ui";
 import type { CorrectionContext } from "@/lib/correction-context";
 import type { ScanCard } from "@/lib/rules/scan";
 import { searchPasses } from "../actions";
@@ -109,9 +110,15 @@ export function SearchBox({ corrections }: { corrections: CorrectionContext | nu
         </p>
       )}
       {cards?.length === 0 && (
-        <p className="rounded-card bg-card p-4 text-center font-medium shadow-sm">
-          No car found today. Check the number, or use Add car to register it.
-        </p>
+        <div className="space-y-3 rounded-card bg-card p-4 text-center shadow-sm">
+          <p className="font-medium">No car found today. Check the number, or use Add car to register it.</p>
+          <Link
+            href={mode === "plate" ? `/staff/register?plate=${encodeURIComponent(query.trim())}` : "/staff/register"}
+            className={outlineButton}
+          >
+            Add car{mode === "plate" && query.trim() ? ` ${query.trim().toUpperCase()}` : ""}
+          </Link>
+        </div>
       )}
       {cards?.map((c) => (
         <ResultCard key={c.visitId} card={c} method="search" onDone={clear} doneLabel="Done" corrections={corrections} />

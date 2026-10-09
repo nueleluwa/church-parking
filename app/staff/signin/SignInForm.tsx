@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { errorBox, field, primaryButton } from "@/components/ui";
+import { PasswordField } from "@/components/PasswordField";
 import { useFields } from "@/components/useFields";
 import { signInStaff, type SignInState } from "./actions";
 
@@ -15,10 +16,7 @@ export function SignInForm() {
         Phone number
         <input {...bind("phone")} type="tel" inputMode="tel" autoComplete="username" required className={field} />
       </label>
-      <label className="block font-medium">
-        Password
-        <input name="password" type="password" autoComplete="current-password" required className={field} />
-      </label>
+      <PasswordField label="Password" name="password" autoComplete="current-password" required />
       {state.error && (
         <p role="alert" className={errorBox}>
           {state.error}

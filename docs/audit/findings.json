@@ -19,7 +19,8 @@
       "dependencies": "Owner decision on D-entry",
       "verification_test": "e2e: second attendant cannot release a held visit; coordinator clears with a reason",
       "priority": "P1",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: hold_visit / clear_hold, release refuses a held visit (D-18)"
     },
     {
       "id": "SEC-01",
@@ -37,7 +38,8 @@
       "dependencies": "none",
       "verification_test": "Header test in e2e",
       "priority": "P2",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: security headers added in next.config.ts; HSTS applies in production only"
     },
     {
       "id": "SEC-03",
@@ -55,7 +57,8 @@
       "dependencies": "FUN-03",
       "verification_test": "e2e: admin resets a locked member and deactivates staff",
       "priority": "P1",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: /admin/staff and /admin/members"
     },
     {
       "id": "SEC-04",
@@ -91,7 +94,8 @@
       "dependencies": "none",
       "verification_test": "Seed a 25-month-old guest, run the job, assert deleted",
       "priority": "P1",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: delete_expired_guest_data + daily cron (D-20)"
     },
     {
       "id": "SEC-06",
@@ -145,7 +149,8 @@
       "dependencies": "none",
       "verification_test": "Two parallel RPC calls: exactly one returns an id",
       "priority": "P2",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: live-database parallel release test added"
     },
     {
       "id": "FUN-01",
@@ -163,7 +168,8 @@
       "dependencies": "none",
       "verification_test": "Print and scan at 1.5 m in daylight",
       "priority": "P1",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: /admin/signs and /admin/signs/[slug]"
     },
     {
       "id": "FUN-02",
@@ -181,7 +187,8 @@
       "dependencies": "none",
       "verification_test": "Reconcile report numbers to the database; open CSV in Excel",
       "priority": "P1",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: /admin/reports and CSV export, export logged"
     },
     {
       "id": "FUN-03",
@@ -199,7 +206,8 @@
       "dependencies": "none",
       "verification_test": "e2e for each action",
       "priority": "P1",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: /admin/staff and /admin/members"
     },
     {
       "id": "FUN-04",
@@ -217,7 +225,8 @@
       "dependencies": "none",
       "verification_test": "e2e",
       "priority": "P2",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: /admin/services"
     },
     {
       "id": "FUN-05",
@@ -235,7 +244,8 @@
       "dependencies": "none",
       "verification_test": "See SEC-05",
       "priority": "P1",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: see SEC-05"
     },
     {
       "id": "FUN-06",
@@ -307,7 +317,8 @@
       "dependencies": "none",
       "verification_test": "axe clean; manual TalkBack and VoiceOver notes",
       "priority": "P2",
-      "status": "open"
+      "status": "partly-fixed",
+      "status_note": "partly fixed: axe scan added and passing; keyboard, screen-reader and sunlight checks still manual"
     },
     {
       "id": "DAT-01",
@@ -325,7 +336,8 @@
       "dependencies": "none",
       "verification_test": "SQL test",
       "priority": "P3",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: release_visit takes the service date"
     },
     {
       "id": "DAT-02",
@@ -361,7 +373,8 @@
       "dependencies": "none",
       "verification_test": "Re-measure under 150 KB",
       "priority": "P2",
-      "status": "open"
+      "status": "partly-fixed",
+      "status_note": "re-measured: about 157 KB gzip for modern browsers once the legacy-browser polyfill file (39 KB, not downloaded by current phones) is left out; still over the 150 KB budget"
     },
     {
       "id": "PERF-02",
@@ -379,7 +392,8 @@
       "dependencies": "none",
       "verification_test": "Timed e2e on staging",
       "priority": "P2",
-      "status": "open"
+      "status": "partly-fixed",
+      "status_note": "partly fixed: see WF-01"
     },
     {
       "id": "PERF-03",
@@ -415,7 +429,8 @@
       "dependencies": "none",
       "verification_test": "Spec section 11 run-through",
       "priority": "P1",
-      "status": "open"
+      "status": "partly-fixed",
+      "status_note": "partly fixed: CI workflow and attendant guide added; hosting, production database and backups still to do"
     },
     {
       "id": "OPS-02",
@@ -451,7 +466,8 @@
       "dependencies": "SEC-02",
       "verification_test": "e2e text check",
       "priority": "P3",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: Car held now tells the attendant to stay with the car and call the coordinator"
     },
     {
       "id": "UX-02",
@@ -487,7 +503,8 @@
       "dependencies": "none",
       "verification_test": "Existing claim tests; timed e2e",
       "priority": "P2",
-      "status": "open"
+      "status": "partly-fixed",
+      "status_note": "partly fixed: independent reads now run together in both check-in actions; a single SQL claim function was not built"
     },
     {
       "id": "WF-02",
@@ -505,7 +522,8 @@
       "dependencies": "none",
       "verification_test": "e2e guest flow",
       "priority": "P2",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed"
     },
     {
       "id": "WF-03",
@@ -541,7 +559,8 @@
       "dependencies": "none",
       "verification_test": "e2e",
       "priority": "P2",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed"
     },
     {
       "id": "WF-05",
@@ -559,7 +578,8 @@
       "dependencies": "none",
       "verification_test": "e2e",
       "priority": "P3",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed"
     },
     {
       "id": "WF-06",
@@ -577,7 +597,8 @@
       "dependencies": "none",
       "verification_test": "e2e plus audit check",
       "priority": "P2",
-      "status": "open"
+      "status": "fixed",
+      "status_note": "fixed: Mark the rest Still here with confirmation; Gone is never bulk"
     },
     {
       "id": "WF-07",
@@ -595,7 +616,8 @@
       "dependencies": "none",
       "verification_test": "e2e",
       "priority": "P2",
-      "status": "open"
+      "status": "partly-fixed",
+      "status_note": "partly: the admin overview shows the open-exceptions count; no live badge on the tab bar"
     },
     {
       "id": "WF-08",
@@ -615,5 +637,6 @@
       "priority": "P3",
       "status": "open"
     }
-  ]
+  ],
+  "remediated_at": "2026-10-09"
 }

@@ -125,8 +125,10 @@ export default async function AdminHome() {
                     {KIND[e.kind].word} · <span data-area>{e.areaName}</span>
                   </span>
                 </span>
-                <span className="whitespace-nowrap text-sm font-semibold">{formatLagosTime(e.at)}</span>
-                <StatusBadge tone={KIND[e.kind].tone}>{KIND[e.kind].badge}</StatusBadge>
+                <span className="flex shrink-0 flex-col items-end gap-1">
+                  <StatusBadge tone={KIND[e.kind].tone}>{KIND[e.kind].badge}</StatusBadge>
+                  <span className="whitespace-nowrap text-sm font-semibold">{formatLagosTime(e.at)}</span>
+                </span>
               </li>
             ))}
           </ul>

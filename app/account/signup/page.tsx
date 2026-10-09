@@ -19,8 +19,8 @@ export default async function MemberSignUpPage({
   return (
     <>
       <AppHeader />
-      <main className="mx-auto max-w-md space-y-4 px-4 py-6">
-        <div className="rounded-card bg-card p-6 shadow-sm">
+      <main className="mx-auto max-w-md space-y-4 px-4 pb-8 pt-5">
+        <div className="rounded-card bg-card p-5 shadow-sm">
           <h1 className="text-2xl font-bold">Create an account</h1>
           <p className="mb-4 mt-1 text-ink-soft">
             Save your car once. Next Sunday you check in with two taps.

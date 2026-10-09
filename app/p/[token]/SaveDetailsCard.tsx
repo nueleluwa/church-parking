@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { errorBox, field, redButton } from "@/components/ui";
+import { PasswordField } from "@/components/PasswordField";
+import { errorBox, redButton } from "@/components/ui";
 import { Spinner } from "@/components/Spinner";
 import { saveGuestDetails, type SaveDetailsState } from "./actions";
 
@@ -12,12 +13,10 @@ import { saveGuestDetails, type SaveDetailsState } from "./actions";
 export function SaveDetailsCard({ token }: { token: string }) {
   const [state, action, pending] = useActionState<SaveDetailsState, FormData>(saveGuestDetails, {});
   const pin = {
-    type: "password",
     inputMode: "numeric" as const,
     maxLength: 4,
     autoComplete: "new-password",
     required: true,
-    className: field,
   };
   return (
     <details className="rounded-card border-2 border-edge/30 bg-card p-4 shadow-sm">
@@ -34,14 +33,8 @@ export function SaveDetailsCard({ token }: { token: string }) {
       </summary>
       <form action={action} className="mt-4 space-y-3">
         <input type="hidden" name="token" value={token} />
-        <label className="block font-medium">
-          Choose a PIN (4 numbers)
-          <input name="pin" {...pin} />
-        </label>
-        <label className="block font-medium">
-          Type the PIN again
-          <input name="pin2" {...pin} />
-        </label>
+        <PasswordField label="Choose a PIN (4 numbers)" name="pin" {...pin} />
+        <PasswordField label="Type the PIN again" name="pin2" {...pin} />
         {state.error && (
           <p role="alert" className={errorBox}>
             {state.error}

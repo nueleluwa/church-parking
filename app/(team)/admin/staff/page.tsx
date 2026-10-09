@@ -1,3 +1,4 @@
+import { PasswordField } from "@/components/PasswordField";
 import { StatusBadge } from "@/components/StatusBadge";
 import { field } from "@/components/ui";
 import { listStaff } from "@/lib/db";
@@ -18,14 +19,16 @@ const roleLabel = (r: string) => ROLES.find((x) => x.value === r)?.label ?? r;
 /** AD-3: staff accounts. Everyone has their own account, so every action is traceable. */
 export default async function StaffPage() {
   const me = await requireStaff("admin");
-  const staff = await listStaff();
+  const all = await listStaff();
+  const staff = all.filter((s) => s.active);
+  const off = all.filter((s) => !s.active);
   return (
     <>
       <p className="text-ink-soft">
         Everyone on the team has their own account. Switch an account off when someone leaves: they are signed out at
         once.
       </p>
-      <ul className="space-y-3">
+      <ul className="grid items-start gap-3 lg:grid-cols-2">
         {staff.map((s) => (
           <li key={s.id} className="rounded-card bg-card p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
@@ -62,10 +65,7 @@ export default async function StaffPage() {
                 <AdminForm action={manageStaffAction} submitLabel="Set new password" variant="secondary">
                   <input type="hidden" name="staffId" value={s.id} />
                   <input type="hidden" name="intent" value="reset_password" />
-                  <label className="block font-medium">
-                    New password (at least 10 characters)
-                    <input name="password" type="text" minLength={10} autoComplete="off" className={field} />
-                  </label>
+                  <PasswordField label="New password (at least 10 characters)" name="password" minLength={10} autoComplete="new-password" />
                 </AdminForm>
 
                 <AdminForm
@@ -82,7 +82,31 @@ export default async function StaffPage() {
         ))}
       </ul>
 
-      <section className="rounded-card bg-card p-4 shadow-sm">
+      {off.length > 0 && (
+        <details className="rounded-card bg-card p-4 shadow-sm">
+          <summary className="cursor-pointer font-semibold">Switched-off accounts ({off.length})</summary>
+          <ul className="mt-3 divide-y divide-edge/15">
+            {off.map((s) => (
+              <li key={s.id} className="flex items-center justify-between gap-3 py-3">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{s.full_name}</p>
+                  <p className="text-sm text-ink-soft">
+                    {roleLabel(s.role)} · {s.phone}
+                  </p>
+                </div>
+                <div className="w-44 shrink-0">
+                  <AdminForm action={manageStaffAction} submitLabel="Switch on" variant="secondary">
+                    <input type="hidden" name="staffId" value={s.id} />
+                    <input type="hidden" name="intent" value="activate" />
+                  </AdminForm>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      <section className="rounded-card bg-card p-4 shadow-sm lg:max-w-xl">
         <h2 className="text-lg font-bold">Add a team member</h2>
         <div className="mt-3">
           <AdminForm action={createStaffAction} submitLabel="Create account" clearOnSuccess>
@@ -104,10 +128,7 @@ export default async function StaffPage() {
                 ))}
               </select>
             </label>
-            <label className="block font-medium">
-              Password (at least 10 characters)
-              <input name="password" type="text" required minLength={10} autoComplete="off" className={field} />
-            </label>
+            <PasswordField label="Password (at least 10 characters)" name="password" required minLength={10} autoComplete="new-password" />
           </AdminForm>
         </div>
       </section>

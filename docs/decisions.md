@@ -78,3 +78,15 @@ Each entry records what was decided and why. To change a decision, add a new ent
 **Decision:** attendant screens use `references/Christ Church Parking Workflow Mockup (1).png`: the logo header with the person's initials on the home screen, title headers elsewhere (Scan Pass, Manual Lookup, Recent Scans, Service Information, More), a tab bar (Scan, History, More; coordinators add Live and Sweep, admins add Admin), a scan result card showing the vehicle, driver, service, car park, check-in time, duration and pass status, and **Release car** (black) beside **Does not match** (red, holds the car and alerts the coordinator). Recent Scans and Service Information show real data only.
 **Not built:** the mockup's attendant "Scan Entry / Record Entry" is left out, because D-01 has drivers check themselves in and attendants only release exits. A guest's card shows the first name and last four phone digits only, never the full name or number. The torch button and "Contact an attendant" are not built.
 **Why:** follows the mockup's look while keeping the spec's rules and privacy limits.
+
+## D-18 Does not match puts the visit on hold
+**Decision:** tapping **Does not match** now holds the visit (`visits.held_at`), as well as alerting the coordinator. A held visit cannot be released by anyone: the release function refuses it. A coordinator or admin clears the hold on the scan card with a reason, and the clearing is audited and resolves the alert. Attendants see **On hold** and are told to stay with the car.
+**Why:** the audit found that "Car held" was only a message, so a second attendant could release the car. EX-3 only asked for an alert; this goes further to make the check real. The release function also now checks the service date itself (R-7), so the rule no longer relies on application code alone.
+
+## D-19 Admin screens follow the dashboard suite; coordinators and admins get a side menu on wide screens
+**Decision:** following `references/Christ Church Parking Dashboard Suite.png`, coordinators and admins get a dark side menu on screens 1024 px and wider (Dashboard, Live Parking, Sweep, Reports, Services, QR Signs, Staff Accounts, Members, Car Parks, Attendant tools). Phones keep the tab bar. The admin overview shows today's four numbers, the car parks and recent activity from real data. Services, QR signs, staff, members and reports are built as MVP requirements AD-1 to AD-4.
+**Not built:** Analytics charts and peak times (AD-5, v1.1), a Vehicles browser, Settings, the vehicle visit-details screen and the PDF download of a sign (browser Print, then Save as PDF, does the same).
+**Why:** these were either not in the spec or are later releases. Showing them would have meant invented data.
+
+## D-20 Guest data is deleted after 24 months by a daily job
+**Decision:** `delete_expired_guest_data` runs daily at 23:45 UTC. It deletes released or closed guest visits older than 24 months, then guests and plates nothing refers to. Open visits are never deleted. Audit rows stay but lose their link to the deleted visit.
