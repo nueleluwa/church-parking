@@ -37,7 +37,7 @@ test("an attendant registers a locked-out member's car, and the scanner flags it
   await page.getByLabel("Phone number").fill(process.env.ADMIN_PHONE!);
   await page.getByLabel("Password").fill(process.env.ADMIN_PASSWORD!);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/staff\/scan$/, { timeout: 60_000 });
+  await expect(page).toHaveURL(/\/staff$/, { timeout: 60_000 });
 
   // Adding it as a guest is refused, and offers Register for the member
   await page.goto("/staff/register");
@@ -50,8 +50,8 @@ test("an attendant registers a locked-out member's car, and the scanner flags it
 
   // The scanner card shows MEMBER, the last 4 digits and the NEW CAR flag
   await page.goto("/staff/search");
-  await page.getByLabel("Plate number, phone number or reference").fill(plate);
-  await page.getByRole("button", { name: "Find car" }).click();
+  await page.getByLabel("Vehicle plate number").fill(plate);
+  await page.getByRole("button", { name: "Search" }).click();
   await expect(page.getByText("MEMBER", { exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("NEW CAR", { exact: true })).toBeVisible();
   await expect(page.getByText(/Ask the driver for their name and phone number/)).toBeVisible();
@@ -59,8 +59,8 @@ test("an attendant registers a locked-out member's car, and the scanner flags it
 
   // Searching with look-alike characters still finds it (0/O and 1/I)
   const lookAlike = plate.replace(/[0-9]/, (d) => (d === "0" ? "O" : d === "1" ? "I" : d));
-  await page.getByLabel("Plate number, phone number or reference").fill(lookAlike);
-  await page.getByRole("button", { name: "Find car" }).click();
+  await page.getByLabel("Vehicle plate number").fill(lookAlike);
+  await page.getByRole("button", { name: "Search" }).click();
   await expect(page.getByText("MEMBER", { exact: true })).toBeVisible({ timeout: 30_000 });
 
   // Release

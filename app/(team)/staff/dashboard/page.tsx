@@ -9,7 +9,6 @@ export default async function DashboardPage() {
   const initial = await loadDashboard();
   return (
     <>
-      <h1 className="text-2xl font-bold">Live board</h1>
       <DashboardLive initial={initial} />
     </>
   );

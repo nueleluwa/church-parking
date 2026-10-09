@@ -12,6 +12,14 @@ export function formatLagosDate(iso: string): string {
     .replace(",", "");
 }
 
+/** "2h 14m", "45m" or "Less than a minute". */
+export function formatDuration(minutes: number): string {
+  if (minutes < 1) return "Less than a minute";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
 /** "Today, 09:12", "Yesterday, 09:12" or "Sun 5 Oct, 10:04". `now` is a parameter so it can be tested. */
 export function formatVisitTime(iso: string, now: Date = new Date()): string {
   const day = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: ZONE }).format(d);

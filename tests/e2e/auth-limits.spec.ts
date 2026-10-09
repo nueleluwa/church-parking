@@ -16,7 +16,7 @@ test("signing in often never locks a staff member out, but repeated wrong passwo
       await page.getByLabel("Phone number").fill(staff.phone);
       await page.getByLabel("Password").fill(staff.password);
       await page.getByRole("button", { name: "Sign in" }).click();
-      await expect(page).toHaveURL(/\/staff\/scan$/, { timeout: 60_000 });
+      await expect(page).toHaveURL(/\/staff$/, { timeout: 60_000 });
       await ctx.close();
     }
 

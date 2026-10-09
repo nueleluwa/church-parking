@@ -134,3 +134,31 @@ export const IconMore = (p: IconProps) => (
     <circle cx="19" cy="12" r="1.2" />
   </Icon>
 );
+
+export const IconFlag = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 21V4" />
+    <path d="M5 4h12l-2 4 2 4H5" />
+  </Icon>
+);
+
+export const IconKeyboard = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="2" y="6" width="20" height="12" rx="2" />
+    <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" />
+  </Icon>
+);
+
+export const IconTimer = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="13" r="8" />
+    <path d="M12 9v4l2 2M9 2h6" />
+  </Icon>
+);
+
+export const IconWifi = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M2 9a15 15 0 0 1 20 0M5 12.5a10.5 10.5 0 0 1 14 0M8.5 16a6 6 0 0 1 7 0" />
+    <circle cx="12" cy="19.5" r="1" />
+  </Icon>
+);

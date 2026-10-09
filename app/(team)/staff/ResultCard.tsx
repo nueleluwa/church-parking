@@ -1,24 +1,21 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { IconCheck } from "@/components/icons";
+import { FactRow } from "@/components/FactRow";
+import { IconAlert, IconCalendar, IconCheck, IconClock, IconFlag, IconPin, IconTimer, IconUser } from "@/components/icons";
 import { Plate } from "@/components/Plate";
 import { Spinner } from "@/components/Spinner";
 import { StatusBadge } from "@/components/StatusBadge";
-import { dangerButton, primaryButton, secondaryButton } from "@/components/ui";
+import { outlineButton, primaryButton, redButton } from "@/components/ui";
+import { VehicleImage } from "@/components/VehicleImage";
 import type { CorrectionContext } from "@/lib/correction-context";
+import { formatDuration, formatLagosDate, formatLagosTime } from "@/lib/format";
+import { describeVehicle } from "@/lib/rules/vehicle";
 import type { ScanCard } from "@/lib/rules/scan";
 import { CorrectionPanel } from "./CorrectionPanel";
 import { doesNotMatch, releaseCar, revealPhone } from "./actions";
 
-const time = (iso: string | null) =>
-  iso
-    ? new Date(iso).toLocaleTimeString("en-GB", {
-        timeZone: "Africa/Lagos",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "";
+const time = (iso: string | null) => (iso ? formatLagosTime(iso) : "");
 
 type Props = {
   card: ScanCard;
@@ -29,22 +26,28 @@ type Props = {
   corrections?: CorrectionContext | null;
 };
 
-/** A line of facts that stays on one line. Long names shorten with "..." rather than wrap. */
-const oneLine = "flex min-w-0 flex-nowrap items-center justify-center gap-2 whitespace-nowrap";
-
+/**
+ * What the attendant sees for one car (EX-2, EX-6): a status card first (green and ready, or
+ * red and a reason), then the car, then the facts to check, then the actions. Only the first
+ * name and the last 4 phone digits are ever shown (R-9).
+ */
 export function ResultCard({ card, method, onDone, doneLabel, corrections }: Props) {
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [finished, setFinished] = useState<"released" | "held" | null>(null);
   const [phone, setPhone] = useState<string | null>(null);
 
-  const warning =
+  const problem =
     card.state === "already_released"
-      ? `ALREADY RELEASED${card.releasedByName ? ` by ${card.releasedByName}` : ""} at ${time(card.releasedAt)}`
+      ? {
+          chip: "ALREADY RELEASED",
+          title: "Already released",
+          reason: `Released${card.releasedByName ? ` by ${card.releasedByName}` : ""} at ${time(card.releasedAt)}. Do not release again.`,
+        }
       : card.state === "expired"
-        ? "OLD PASS. This pass is from an earlier day. Do not release."
+        ? { chip: "OLD PASS", title: "Old pass", reason: "OLD PASS. This pass is from an earlier day. Do not release." }
         : card.state === "closed"
-          ? "This visit is closed. Do not release."
+          ? { chip: "CLOSED", title: "Visit closed", reason: "This visit is closed. Do not release." }
           : null;
 
   function buzz(pattern: number | number[]) {
@@ -80,88 +83,146 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections }: Pro
     });
   }
 
+  // The status card: its colour and words follow what has happened
+  const tone = finished === "released" ? "success" : finished === "held" || problem ? "danger" : "success";
+  const cardClass = tone === "success" ? "border-success bg-success-soft" : "border-danger bg-blush";
+  const circle = tone === "success" ? "bg-success text-white" : "bg-danger text-white";
+  const Icon = tone === "success" ? IconCheck : IconAlert;
+  const title =
+    finished === "released" ? "Car released" : finished === "held" ? "Car held" : (problem?.title ?? "Ready for exit");
+  const sub =
+    finished === "released"
+      ? "Vehicle has been released."
+      : finished === "held"
+        ? "Do not release this vehicle. The coordinator has been told."
+        : (problem?.reason ?? "Confirm the details, then release the car.");
+
+  const details = describeVehicle({ make: card.make, colour: card.colour });
+  const status =
+    finished === "released"
+      ? "Released"
+      : card.state === "ready"
+        ? "Valid"
+        : card.state === "already_released"
+          ? "Released"
+          : card.state === "expired"
+            ? "Expired"
+            : "Closed";
+
   return (
-    <div
-      className={`overflow-hidden rounded-card border-4 bg-card text-center shadow-sm ${warning ? "border-danger" : "border-success"}`}
-    >
-      {!finished &&
-        (warning ? (
-          <StatusBadge tone="danger" variant="bar">
-            <span role="alert">{warning}</span>
-          </StatusBadge>
-        ) : (
-          <StatusBadge tone="success" variant="bar">
-            VALID PASS
-          </StatusBadge>
-        ))}
+    <div className="space-y-4">
+      <section
+        role={finished ? "status" : undefined}
+        className={`rounded-card border-2 p-5 text-center ${cardClass}`}
+      >
+        <span className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${circle}`}>
+          <Icon className="h-8 w-8" />
+        </span>
+        <h2 className="mt-2 text-2xl font-extrabold">{title}</h2>
+        <p className="mt-1 text-ink-soft">{sub}</p>
+        {!finished && (
+          <div className="mt-3">
+            <StatusBadge tone={problem ? "danger" : "success"} variant="chip">
+              {problem ? problem.chip : "VALID PASS"}
+            </StatusBadge>
+          </div>
+        )}
+      </section>
 
-      <div className="space-y-2 p-4">
-        <Plate plate={card.plate} size="lg" />
-
-        <p className={`${oneLine} text-base font-semibold`}>
-          <span data-area className="shrink-0">{card.areaName}</span>
-          <span aria-hidden="true">·</span>
-          <span className="truncate">{card.serviceName}</span>
-        </p>
-
-        <div className={oneLine}>
-          <span className="truncate text-xl font-bold">{card.firstName}</span>
-          <StatusBadge tone="neutral">{card.isGuest ? "GUEST" : "MEMBER"}</StatusBadge>
-          {card.isNewCar && <StatusBadge tone="danger">NEW CAR</StatusBadge>}
+      <section className="rounded-card bg-card p-4 shadow-sm">
+        <div className="flex items-center gap-3">
+          <VehicleImage size="md" />
+          <div className="min-w-0 flex-1">
+            <Plate plate={card.plate} size="lg" align="start" variant="plain" />
+            {details && <p className="truncate text-base text-ink-soft">{details}</p>}
+          </div>
         </div>
 
-        <p className={`${oneLine} text-base`}>
-          <span>Phone</span>
-          <span className="font-semibold">{phone ?? `•••• ${card.phoneLast4}`}</span>
-          {!phone && (
-            <button onClick={show} disabled={pending} className="font-medium text-accent underline">
-              Show number
-            </button>
+        <dl className="mt-2 divide-y divide-edge/15">
+          <FactRow icon={<IconUser className="h-5 w-5" />} label="Driver">
+            <span className="inline-flex flex-wrap items-center gap-2 @[15rem]:justify-end">
+              <span className="font-bold">{card.firstName}</span>
+              <StatusBadge tone="neutral">{card.isGuest ? "GUEST" : "MEMBER"}</StatusBadge>
+              {card.isNewCar && <StatusBadge tone="danger">NEW CAR</StatusBadge>}
+            </span>
+          </FactRow>
+          <FactRow icon={<IconUser className="h-5 w-5" />} label="Phone">
+            <span className="block">{phone ?? `•••• ${card.phoneLast4}`}</span>
+            {!phone && (
+              <button onClick={show} disabled={pending} className="text-sm font-semibold text-accent underline">
+                Show number
+              </button>
+            )}
+          </FactRow>
+          <FactRow icon={<IconClock className="h-5 w-5" />} label="Service">
+            <span className="block">{card.serviceName}</span>
+          </FactRow>
+          <FactRow icon={<IconPin className="h-5 w-5" />} label="Parking area">
+            <span data-area>{card.areaName}</span>
+          </FactRow>
+          {card.checkedInAt && (
+            <FactRow icon={<IconCalendar className="h-5 w-5" />} label="Checked in">
+              <span className="block whitespace-nowrap">{time(card.checkedInAt)}</span>
+              <span className="block whitespace-nowrap text-sm font-medium text-ink-soft">
+                {formatLagosDate(card.checkedInAt)}
+              </span>
+            </FactRow>
           )}
-        </p>
-        <p className="text-sm text-ink-soft">Ref {card.reference}</p>
+          {card.minutesParked !== null && (
+            <FactRow icon={<IconTimer className="h-5 w-5" />} label="Duration">
+              <span className="block whitespace-nowrap">{formatDuration(card.minutesParked)}</span>
+            </FactRow>
+          )}
+          <FactRow icon={<IconCheck className="h-5 w-5" />} label="Pass status">
+            <StatusBadge tone={finished === "released" ? "neutral" : problem ? "danger" : "success"}>{status}</StatusBadge>
+          </FactRow>
+          <FactRow icon={<IconClock className="h-5 w-5" />} label="Reference">
+            <span className="block whitespace-nowrap">{card.reference}</span>
+          </FactRow>
+        </dl>
 
-        <p className={`text-sm ${card.askForDetails ? "font-semibold text-ink" : "text-ink-soft"}`}>
-          {card.askForDetails
-            ? card.isNewCar
-              ? "New car on this account. Ask the driver for their name and phone number and check them."
-              : "Ask the driver for their name and phone number and check them."
-            : "Check that the plate matches the car."}
-        </p>
-
-        {message && (
-          <p role="alert" className="rounded-2xl border-2 border-danger p-3 font-medium text-danger">
-            {message}
+        {card.state === "ready" && !finished && (
+          <p className={`mt-3 text-sm ${card.askForDetails ? "font-semibold text-ink" : "text-ink-soft"}`}>
+            {card.askForDetails
+              ? card.isNewCar
+                ? "New car on this account. Ask the driver for their name and phone number and check them."
+                : "Ask the driver for their name and phone number and check them."
+              : "Check that the plate matches the car."}
           </p>
         )}
+      </section>
 
-        {finished ? (
-          <div className="space-y-3 pt-2">
-            <StatusBadge tone={finished === "released" ? "success" : "warning"} variant="soft" className="justify-center text-lg">
-              {finished === "released" ? "Car released" : "Car held. The coordinator has been told."}
-            </StatusBadge>
-            <button onClick={onDone} className={primaryButton}>
-              {doneLabel}
-            </button>
-          </div>
-        ) : card.state === "ready" ? (
-          <div className="space-y-3 pt-2">
-            <button onClick={release} disabled={pending} className={primaryButton}>
-              {pending ? <Spinner /> : <IconCheck />}
-              Release car
-            </button>
-            <button onClick={hold} disabled={pending} className={dangerButton}>
-              Does not match
-            </button>
-          </div>
-        ) : (
-          <button onClick={onDone} className={`${secondaryButton} mt-2`}>
+      {message && (
+        <p role="alert" className="rounded-2xl border-2 border-danger bg-white p-3 font-medium text-danger">
+          {message}
+        </p>
+      )}
+
+      {finished ? (
+        <button onClick={onDone} className={primaryButton}>
+          {doneLabel}
+        </button>
+      ) : card.state === "ready" ? (
+        <div className="space-y-3">
+          <button onClick={release} disabled={pending} className={primaryButton}>
+            {pending ? <Spinner /> : <IconCheck />}
+            Release car
+          </button>
+          <button onClick={hold} disabled={pending} className={redButton}>
+            <IconFlag />
+            Does not match
+          </button>
+          <button onClick={onDone} disabled={pending} className={outlineButton}>
             {doneLabel}
           </button>
-        )}
+        </div>
+      ) : (
+        <button onClick={onDone} className={outlineButton}>
+          {doneLabel}
+        </button>
+      )}
 
-        {corrections && <CorrectionPanel visitId={card.visitId} context={corrections} />}
-      </div>
+      {corrections && <CorrectionPanel visitId={card.visitId} context={corrections} />}
     </div>
   );
 }

@@ -20,7 +20,7 @@ async function staffSignIn(page: Page, phone: string, password: string) {
   await page.getByLabel("Phone number").fill(phone);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/staff\/scan$/, { timeout: 60_000 });
+  await expect(page).toHaveURL(/\/staff$/, { timeout: 60_000 });
 }
 
 async function guestCheckIn(browser: Browser, plate: string, area = "cp1") {
@@ -39,8 +39,8 @@ async function guestCheckIn(browser: Browser, plate: string, area = "cp1") {
 
 async function findCar(page: Page, plate: string) {
   await page.goto("/staff/search");
-  await page.getByLabel("Plate number, phone number or reference").fill(plate);
-  await page.getByRole("button", { name: "Find car" }).click();
+  await page.getByLabel("Vehicle plate number").fill(plate);
+  await page.getByRole("button", { name: "Search" }).click();
 }
 
 test("a check-in on one phone shows on the dashboard on another within 5 seconds", async ({ page, browser }) => {
@@ -126,7 +126,8 @@ test("a coordinator corrects a visit with a reason; undo release, and a reason i
   await page.getByRole("button", { name: "Save correction" }).click();
   await expect(page.getByText("Done.")).toBeVisible({ timeout: 30_000 });
   await findCar(page, plate);
-  await expect(page.locator("p", { hasText: new RegExp(`Roadside.*${TEST_SERVICE_NAME}`) })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("[data-area]")).toHaveText("Roadside", { timeout: 30_000 });
+  await expect(page.getByText(TEST_SERVICE_NAME).first()).toBeVisible();
 });
 
 test("an attendant cannot reach the dashboard, sweep or corrections", async ({ page }) => {
@@ -147,7 +148,7 @@ test("an attendant cannot reach the dashboard, sweep or corrections", async ({ p
     await expect(page.getByRole("link", { name: "Live board" })).toHaveCount(0);
     for (const path of ["/staff/dashboard", "/staff/sweep"]) {
       await page.goto(path);
-      await expect(page).toHaveURL(/\/staff\/scan$/);
+      await expect(page).toHaveURL(/\/staff$/);
     }
     const response = await page.request.get("/staff/dashboard/data");
     expect(response.status()).toBe(401);

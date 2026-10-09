@@ -52,11 +52,11 @@ test("guest checks in, staff releases, second release is refused", async ({ page
   await page.getByLabel("Phone number").fill(process.env.ADMIN_PHONE!);
   await page.getByLabel("Password").fill(process.env.ADMIN_PASSWORD!);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/staff\/scan$/);
+  await expect(page).toHaveURL(/\/staff$/);
 
   await page.goto("/staff/search");
-  await page.getByLabel("Plate number, phone number or reference").fill(plate);
-  await page.getByRole("button", { name: "Find car" }).click();
+  await page.getByLabel("Vehicle plate number").fill(plate);
+  await page.getByRole("button", { name: "Search" }).click();
   await expect(page.getByText("GUEST")).toBeVisible();
   await expect(page.getByText("Test", { exact: true })).toBeVisible();
   await expect(page.locator("body")).not.toContainText("Test Guest");
@@ -66,8 +66,8 @@ test("guest checks in, staff releases, second release is refused", async ({ page
 
   // Searching again shows it was already released
   await page.getByRole("button", { name: "Done" }).click();
-  await page.getByLabel("Plate number, phone number or reference").fill(plate);
-  await page.getByRole("button", { name: "Find car" }).click();
+  await page.getByLabel("Vehicle plate number").fill(plate);
+  await page.getByRole("button", { name: "Search" }).click();
   await expect(page.getByText(/ALREADY RELEASED/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Release car" })).toHaveCount(0);
 });

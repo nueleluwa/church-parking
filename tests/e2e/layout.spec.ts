@@ -82,9 +82,9 @@ async function expectHeaderAndTabsFit(page: Page, label: string) {
     const header = document.querySelector("header");
     const group = header?.querySelectorAll<HTMLElement>("a, span[aria-hidden], span:not([aria-hidden])");
     const boxes = [...(group ?? [])]
-      .filter((el) => el.getBoundingClientRect().width > 0 && !el.closest("form"))
+      .filter((el) => el.getBoundingClientRect().width > 0 && !el.closest("[data-header-right]"))
       .map((el) => el.getBoundingClientRect());
-    const button = header?.querySelector<HTMLElement>("form button")?.getBoundingClientRect();
+    const button = header?.querySelector<HTMLElement>("[data-header-right]")?.getBoundingClientRect();
     const overlaps =
       button !== undefined &&
       boxes.some((b) => b.right > button.left + 0.5 && b.left < button.right - 0.5 && b.bottom > button.top && b.top < button.bottom);
@@ -113,8 +113,8 @@ test("attendant screens keep plates and facts on one line at every phone width",
       await page.setViewportSize({ width, height: 800 });
 
       await page.goto("/staff/search");
-      await page.getByLabel("Plate number, phone number or reference").fill(LONG_PLATE);
-      await page.getByRole("button", { name: "Find car" }).click();
+      await page.getByLabel("Vehicle plate number").fill(LONG_PLATE);
+      await page.getByRole("button", { name: "Search" }).click();
       await expect(page.getByText("VALID PASS").first()).toBeVisible({ timeout: 60_000 });
       await expectPlatesWhole(page, `scan card (long plate) at ${width}px`);
       await expectNoOverflow(page, `scan card at ${width}px`);
@@ -197,7 +197,7 @@ test("admin header and all six tabs fit at every phone width", async ({ page }) 
   await adminSignIn(page);
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 800 });
-    for (const path of ["/staff/scan", "/admin", "/admin/areas"]) {
+    for (const path of ["/staff", "/staff/scan", "/admin", "/admin/areas"]) {
       await page.goto(path);
       await expect(page.locator("nav a")).toHaveCount(6, { timeout: 60_000 });
       await expectHeaderAndTabsFit(page, `admin ${path} at ${width}px`);

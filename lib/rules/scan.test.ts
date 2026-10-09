@@ -44,6 +44,22 @@ describe("buildScanCard", () => {
   });
 });
 
+describe("how long a car has been parked", () => {
+  const withTime = { ...base, checkedInAt: "2026-10-11T07:00:00Z" };
+  test("counts from check-in to now while the car is still here", () => {
+    expect(buildScanCard(withTime, today, new Date("2026-10-11T09:14:00Z")).minutesParked).toBe(134);
+  });
+  test("stops at the release once the car has left", () => {
+    const left = { ...withTime, status: "released" as const, releasedAt: "2026-10-11T08:30:00Z" };
+    expect(buildScanCard(left, today, new Date("2026-10-11T12:00:00Z")).minutesParked).toBe(90);
+  });
+  test("is unknown without a check-in time, and carries the car's make and colour", () => {
+    expect(buildScanCard(base, today).minutesParked).toBeNull();
+    const card = buildScanCard({ ...base, make: "Toyota Corolla", colour: "Silver" }, today);
+    expect(card).toMatchObject({ make: "Toyota Corolla", colour: "Silver" });
+  });
+});
+
 describe("who the attendant checks", () => {
   test("a guest is checked", () => {
     expect(buildScanCard(base, today).askForDetails).toBe(true);

@@ -205,3 +205,61 @@ export async function renameArea(areaId: number, staffId: string, name: string):
   if (error) fail(error.message);
   return data as RenameResult;
 }
+
+export type ActivityEvent = {
+  key: string;
+  /** entry: the driver checked in. exit: an attendant released the car. closed: the visit was closed (sweep or midnight). */
+  kind: "entry" | "exit" | "closed";
+  at: string;
+  plate: string;
+  make: string | null;
+  colour: string | null;
+  areaName: string;
+  serviceName: string;
+  /** A staff-only link to the pass, so a tapped row opens that car. */
+  passToken: string;
+};
+
+/**
+ * Today's check-ins and releases, newest first, for the Recent Scans screen. Each visit gives
+ * one "entry" event, and a second event when it was released or closed. Real records only.
+ */
+export async function listRecentActivity(today: string, limit = 40): Promise<ActivityEvent[]> {
+  const { data, error } = await db()
+    .from("visits")
+    .select(
+      "id, checked_in_at, released_at, status, pass_token, vehicles(plate, make, colour), areas(name), services(name)",
+    )
+    .eq("service_date", today)
+    .order("checked_in_at", { ascending: false })
+    .limit(200);
+  if (error) fail(error.message);
+
+  const rows = (data ?? []) as unknown as {
+    id: string;
+    checked_in_at: string;
+    released_at: string | null;
+    status: "parked" | "released" | "missed";
+    pass_token: string;
+    vehicles: { plate: string; make: string | null; colour: string | null };
+    areas: { name: string };
+    services: { name: string };
+  }[];
+
+  const events: ActivityEvent[] = [];
+  for (const r of rows) {
+    const base = {
+      plate: r.vehicles.plate,
+      make: r.vehicles.make,
+      colour: r.vehicles.colour,
+      areaName: r.areas.name,
+      serviceName: r.services.name,
+      passToken: r.pass_token,
+    };
+    events.push({ ...base, key: `${r.id}-in`, kind: "entry", at: r.checked_in_at });
+    if (r.released_at && r.status !== "parked") {
+      events.push({ ...base, key: `${r.id}-out`, kind: r.status === "released" ? "exit" : "closed", at: r.released_at });
+    }
+  }
+  return events.sort((a, b) => b.at.localeCompare(a.at)).slice(0, limit);
+}

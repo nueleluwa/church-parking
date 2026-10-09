@@ -4,6 +4,9 @@ export type ScanDetail = {
   reference: string;
   serviceDate: string;
   plate: string;
+  make?: string | null;
+  colour?: string | null;
+  checkedInAt?: string;
   areaName: string;
   serviceName: string;
   isGuest: boolean;
@@ -21,6 +24,11 @@ export type ScanCard = {
   visitId: string;
   state: ScanState;
   plate: string;
+  make: string | null;
+  colour: string | null;
+  checkedInAt: string | null;
+  /** Whole minutes since check-in (or until the car was released). */
+  minutesParked: number | null;
   areaName: string;
   serviceName: string;
   reference: string;
@@ -38,7 +46,7 @@ export type ScanCard = {
  * What the scanner shows an attendant (EX-2, EX-6). Only the first name and
  * the last 4 phone digits ever leave the server (R-9).
  */
-export function buildScanCard(d: ScanDetail, today: string): ScanCard {
+export function buildScanCard(d: ScanDetail, today: string, now: Date = new Date()): ScanCard {
   let state: ScanState = "ready";
   if (d.status === "released") state = "already_released";
   else if (d.status === "missed") state = "closed";
@@ -48,6 +56,12 @@ export function buildScanCard(d: ScanDetail, today: string): ScanCard {
     visitId: d.visitId,
     state,
     plate: d.plate,
+    make: d.make ?? null,
+    colour: d.colour ?? null,
+    checkedInAt: d.checkedInAt ?? null,
+    minutesParked: d.checkedInAt
+      ? Math.max(0, Math.round(((d.releasedAt ? new Date(d.releasedAt) : now).getTime() - new Date(d.checkedInAt).getTime()) / 60_000))
+      : null,
     areaName: d.areaName,
     serviceName: d.serviceName,
     reference: d.reference,

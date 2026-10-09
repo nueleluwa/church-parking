@@ -6,7 +6,7 @@ import { SignInForm } from "./SignInForm";
 export const dynamic = "force-dynamic";
 
 export default async function StaffSignInPage() {
-  if (await currentStaff()) redirect("/staff/scan");
+  if (await currentStaff()) redirect("/staff");
   return (
     <>
       <AppHeader />

@@ -106,3 +106,29 @@ export function defaultDashboardService<T extends ServiceWindow>(now: Date, serv
   const finished = today.filter((s) => toMinutes(s.ends_at) <= minutes);
   return finished.length ? finished[finished.length - 1] : today[0];
 }
+
+export type ServiceStanding = "active" | "next" | "finished";
+
+/**
+ * How each of today's services stands right now: active (running now), next (the first one still
+ * to come), finished, or later (not the first still to come). Used for the attendant's service
+ * card and the Service Information screen.
+ */
+export function serviceStandings<T extends ServiceWindow>(
+  now: Date,
+  services: T[],
+): { service: T; standing: ServiceStanding | "later" }[] {
+  const { minutes } = lagosParts(now);
+  let nextFound = false;
+  return servicesToday(now, services).map((service) => {
+    if (toMinutes(service.starts_at) <= minutes && minutes < toMinutes(service.ends_at)) {
+      return { service, standing: "active" as const };
+    }
+    if (toMinutes(service.ends_at) <= minutes) return { service, standing: "finished" as const };
+    if (!nextFound) {
+      nextFound = true;
+      return { service, standing: "next" as const };
+    }
+    return { service, standing: "later" as const };
+  });
+}

@@ -78,14 +78,14 @@ test("an admin renames a car park: it shows everywhere, persists, and no record 
     try {
       await staffSignIn(aPage, attendant.phone, attendant.password);
       await aPage.goto("/staff/search");
-      await aPage.getByLabel("Plate number, phone number or reference").fill(plate);
-      await aPage.getByRole("button", { name: "Find car" }).click();
+      await aPage.getByLabel("Vehicle plate number").fill(plate);
+      await aPage.getByRole("button", { name: "Search" }).click();
       await expect(aPage.getByText(NEW_NAME, { exact: true })).toBeVisible({ timeout: 60_000 });
       await expect(aPage.getByText(original, { exact: true })).toHaveCount(0);
 
       // Attendants cannot reach the admin screens
       await aPage.goto("/admin/areas");
-      await expect(aPage).toHaveURL(/\/staff\/scan$/);
+      await expect(aPage).toHaveURL(/\/staff$/);
       await expect(aPage.getByRole("link", { name: "Admin" })).toHaveCount(0);
 
       // The add-car list of areas uses the new name too
@@ -147,9 +147,9 @@ test("only an administrator can reach the car park names", async ({ page }) => {
     await staffSignIn(page, coordinator.phone, coordinator.password);
     await expect(page.getByRole("link", { name: "Admin" })).toHaveCount(0);
     await page.goto("/admin");
-    await expect(page).toHaveURL(/\/staff\/scan$/);
+    await expect(page).toHaveURL(/\/staff$/);
     await page.goto("/admin/areas");
-    await expect(page).toHaveURL(/\/staff\/scan$/);
+    await expect(page).toHaveURL(/\/staff$/);
   } finally {
     await coordinator.remove();
   }

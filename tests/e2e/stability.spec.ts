@@ -75,15 +75,16 @@ test.describe("background updates never interrupt the user", () => {
     const attendant = await createStaff("attendant");
     try {
       await staffSignIn(page, attendant.phone, attendant.password);
-      await expect(page.getByRole("heading", { name: "Scan pass" })).toBeVisible({ timeout: 60_000 });
+      await page.goto("/staff/scan");
+      await expect(page.getByRole("heading", { name: "Scan Pass" })).toBeVisible({ timeout: 60_000 });
       expectCalm(await observe(page, WATCH_SECONDS), "attendant scanner");
 
       await page.goto("/staff/search");
-      await expect(page.getByRole("heading", { name: "Find car" })).toBeVisible({ timeout: 60_000 });
-      await page.getByLabel("Plate number, phone number or reference").fill("PARTIAL");
+      await expect(page.getByRole("heading", { name: "Manual Lookup" })).toBeVisible({ timeout: 60_000 });
+      await page.getByLabel("Vehicle plate number").fill("PARTIAL");
       const search = await observe(page, WATCH_SECONDS);
       expectCalm(search, "attendant search");
-      await expect(page.getByLabel("Plate number, phone number or reference")).toHaveValue("PARTIAL");
+      await expect(page.getByLabel("Vehicle plate number")).toHaveValue("PARTIAL");
       expect(search.requests).toEqual([]);
 
       await page.goto("/staff/register");
@@ -257,19 +258,19 @@ test.describe("moving between pages never makes the header or tab bar disappear"
 
   test("staff: tapping the tabs keeps the header and the tab bar in place", async ({ page }) => {
     await adminSignIn(page);
-    await expect(page.getByRole("heading", { name: "Scan pass" })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole("navigation", { name: "Parking team" })).toBeVisible({ timeout: 60_000 });
     await watchForGaps(page);
 
-    for (const [tab, heading] of [
-      ["Find car", "Find car"],
-      ["Add car", "Add car"],
-      ["Live board", "Live board"],
-      ["Sweep", "Sweep"],
-      ["Admin", "Admin"],
-      ["Scan pass", "Scan pass"],
+    for (const [tab, url] of [
+      ["Recent scans", /\/staff\/history$/],
+      ["Live board", /\/staff\/dashboard$/],
+      ["Sweep", /\/staff\/sweep$/],
+      ["Admin", /\/admin$/],
+      ["More", /\/staff\/more$/],
+      ["Scan pass", /\/staff$/],
     ] as const) {
       await page.getByRole("link", { name: tab, exact: true }).click();
-      await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible({ timeout: 60_000 });
+      await expect(page).toHaveURL(url, { timeout: 60_000 });
     }
     const g = await gaps(page);
     expect(g.header, "the header disappeared while moving between staff pages").toBe(0);

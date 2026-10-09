@@ -20,7 +20,6 @@ export default async function SweepPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <h1 className="text-2xl font-bold">Sweep</h1>
       <p className="text-ink-soft">
         About 30 minutes after a service ends, walk round and mark each car that is still on the list.
       </p>

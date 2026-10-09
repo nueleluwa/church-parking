@@ -40,8 +40,8 @@ test("a valid pass is green with white text and a tick, a released one is not gr
   try {
     await staffSignIn(page, attendant.phone, attendant.password);
     await page.goto("/staff/search");
-    await page.getByLabel("Plate number, phone number or reference").fill(plate);
-    await page.getByRole("button", { name: "Find car" }).click();
+    await page.getByLabel("Vehicle plate number").fill(plate);
+    await page.getByRole("button", { name: "Search" }).click();
     const validBar = page.getByRole("status").filter({ hasText: "VALID PASS" });
     await expect(validBar).toBeVisible({ timeout: 60_000 });
     expect(await bg(validBar)).toBe(GREEN);
@@ -59,8 +59,8 @@ test("a valid pass is green with white text and a tick, a released one is not gr
 
     // Searching again: "already released" is a problem for the scanner, so it is red
     await page.goto("/staff/search");
-    await page.getByLabel("Plate number, phone number or reference").fill(plate);
-    await page.getByRole("button", { name: "Find car" }).click();
+    await page.getByLabel("Vehicle plate number").fill(plate);
+    await page.getByRole("button", { name: "Search" }).click();
     const problem = page.getByRole("status").filter({ hasText: "ALREADY RELEASED" });
     await expect(problem).toBeVisible({ timeout: 60_000 });
     expect(await bg(problem)).toBe(RED);
@@ -117,8 +117,8 @@ test("a member's history shows a parked car in green and a finished visit in neu
   const admin = await (await browser.newContext()).newPage();
   await adminSignIn(admin);
   await admin.goto("/staff/search");
-  await admin.getByLabel("Plate number, phone number or reference").fill(plate);
-  await admin.getByRole("button", { name: "Find car" }).click();
+  await admin.getByLabel("Vehicle plate number").fill(plate);
+  await admin.getByRole("button", { name: "Search" }).click();
   await admin.getByRole("button", { name: "Release car" }).click();
   await expect(admin.getByText("Car released")).toBeVisible({ timeout: 60_000 });
 

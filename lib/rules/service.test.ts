@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { hasServiceToday, lagosDate, pickService, servicesForCheckIn, type ServiceWindow } from "./service";
+import { hasServiceToday, lagosDate, pickService, servicesForCheckIn, serviceStandings, type ServiceWindow } from "./service";
 
 const services: (ServiceWindow & { name: string })[] = [
   { id: 1, name: "Service 1", weekday: 0, starts_at: "07:30:00", ends_at: "09:30:00" },
@@ -66,5 +66,26 @@ describe("servicesForCheckIn", () => {
   test("tells a finished Sunday from a day with no service", () => {
     expect(hasServiceToday(sunday("13:45"), services)).toBe(true);
     expect(hasServiceToday(new Date("2026-10-12T08:45:00+01:00"), services)).toBe(false);
+  });
+});
+
+describe("serviceStandings", () => {
+  const standing = (time: string) =>
+    serviceStandings(sunday(time), services).map((s) => `${s.service.name}:${s.standing}`);
+
+  test("one service is active while it runs, the one after is next", () => {
+    expect(standing("08:45")).toEqual(["Service 1:active", "Service 2:next", "Service 3:later"]);
+  });
+  test("before the first service the first is next", () => {
+    expect(standing("06:00")).toEqual(["Service 1:next", "Service 2:later", "Service 3:later"]);
+  });
+  test("finished services are marked, and the last one running has nothing next", () => {
+    expect(standing("12:00")).toEqual(["Service 1:finished", "Service 2:finished", "Service 3:active"]);
+  });
+  test("after the last service everything is finished", () => {
+    expect(standing("13:45")).toEqual(["Service 1:finished", "Service 2:finished", "Service 3:finished"]);
+  });
+  test("a day with no service has nothing to show", () => {
+    expect(serviceStandings(new Date("2026-10-12T08:45:00+01:00"), services)).toEqual([]);
   });
 });

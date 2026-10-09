@@ -22,7 +22,7 @@ export async function staffSignIn(page: Page, phone: string, password: string) {
   await page.getByLabel("Phone number").fill(phone);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/staff\/scan$/, { timeout: 60_000 });
+  await expect(page).toHaveURL(/\/staff$/, { timeout: 60_000 });
 }
 
 export async function adminSignIn(page: Page) {

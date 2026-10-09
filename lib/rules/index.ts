@@ -5,6 +5,8 @@ export {
   pickService,
   servicesForCheckIn,
   servicesToday,
+  serviceStandings,
+  type ServiceStanding,
   defaultDashboardService,
   hasServiceToday,
   lagosDate,

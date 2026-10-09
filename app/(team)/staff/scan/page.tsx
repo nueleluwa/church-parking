@@ -6,10 +6,5 @@ export const metadata = { title: "Scan pass" };
 
 export default async function ScanPage() {
   const staff = await requireStaff("attendant");
-  return (
-    <>
-      <h1 className="text-2xl font-bold">Scan pass</h1>
-      <Scanner corrections={await correctionContext(staff)} />
-    </>
-  );
+  return <Scanner corrections={await correctionContext(staff)} />;
 }

@@ -32,8 +32,8 @@ async function releaseCar(browser: Browser, plate: string) {
   try {
     await staffSignIn(page, attendant.phone, attendant.password);
     await page.goto("/staff/search");
-    await page.getByLabel("Plate number, phone number or reference").fill(plate);
-    await page.getByRole("button", { name: "Find car" }).click();
+    await page.getByLabel("Vehicle plate number").fill(plate);
+    await page.getByRole("button", { name: "Search" }).click();
     await page.getByRole("button", { name: "Release car" }).click();
     await expect(page.getByText("Car released")).toBeVisible({ timeout: 60_000 });
   } finally {

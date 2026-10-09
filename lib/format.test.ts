@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatLagosDate, formatLagosTime, formatVisitTime } from "./format";
+import { formatDuration, formatLagosDate, formatLagosTime, formatVisitTime } from "./format";
 
 // Lagos is UTC+1 all year, so 08:12Z is 09:12 in Lagos.
 describe("Lagos time formatting", () => {
@@ -26,5 +26,14 @@ describe("formatVisitTime", () => {
   });
   test("counts a day by Lagos time: 23:30Z on Saturday is Sunday morning", () => {
     expect(formatVisitTime("2026-10-10T23:30:00Z", now)).toBe("Today, 00:30");
+  });
+});
+
+describe("formatDuration", () => {
+  test("shows hours and minutes", () => {
+    expect(formatDuration(134)).toBe("2h 14m");
+    expect(formatDuration(60)).toBe("1h 0m");
+    expect(formatDuration(45)).toBe("45m");
+    expect(formatDuration(0)).toBe("Less than a minute");
   });
 });

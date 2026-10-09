@@ -56,5 +56,5 @@ export async function signInStaff(_prev: SignInState, formData: FormData): Promi
 
   await clearAttempts(phoneKey);
   await startStaffSession(staff.id);
-  redirect("/staff/scan");
+  redirect("/staff");
 }

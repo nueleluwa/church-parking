@@ -2,12 +2,11 @@
 
 import { useActionState, useRef, useState } from "react";
 import { flushSync } from "react-dom";
+import { IconCheck } from "@/components/icons";
+import { errorBox, field, outlineButton, redButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import { Plate } from "@/components/Plate";
 import { registerCar, type RegisterState } from "../actions";
-
-const field =
-  "mt-1 w-full rounded-xl border-2 border-edge/40 bg-white px-4 py-3 text-lg focus:border-edge focus:outline-none";
 
 export function RegisterForm({ areas }: { areas: { slug: string; name: string }[] }) {
   const [state, action, pending] = useActionState<RegisterState, FormData>(registerCar, {});
@@ -24,11 +23,17 @@ export function RegisterForm({ areas }: { areas: { slug: string; name: string }[
 
   if (state.reference) {
     return (
-      <div className="rounded-card bg-card p-6 text-center shadow-sm">
-        <Plate plate={state.plate ?? ""} size="lg" />
-        <p className="mt-4 text-ink-soft">Tell the driver to remember this reference</p>
-        <p className="text-4xl font-extrabold tracking-widest">{state.reference}</p>
-        <a href="/staff/register" className="mt-5 block rounded-full bg-action px-6 py-4 text-lg font-semibold text-white">
+      <div className="space-y-4">
+        <section role="status" className="rounded-card border-2 border-success bg-success-soft p-5 text-center">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success text-white">
+            <IconCheck className="h-8 w-8" />
+          </span>
+          <h2 className="mt-2 text-2xl font-extrabold">Car added</h2>
+          <p className="mt-1 text-ink-soft">Tell the driver to remember this reference.</p>
+          <Plate plate={state.plate ?? ""} size="lg" variant="plain" className="mt-3" />
+          <p className="mt-2 text-4xl font-extrabold tracking-widest">{state.reference}</p>
+        </section>
+        <a href="/staff/register" className={redButton}>
           Add another car
         </a>
       </div>
@@ -59,14 +64,11 @@ export function RegisterForm({ areas }: { areas: { slug: string; name: string }[
         <input {...bind("name")} maxLength={80} className={field} />
       </label>
       {state.error && (
-        <p role="alert" className="rounded-xl border-2 border-danger bg-white p-3 font-medium text-danger">
+        <p role="alert" className={errorBox}>
           {state.error}
         </p>
       )}
-      <button
-        disabled={pending}
-        className="w-full rounded-full bg-action px-6 py-4 text-lg font-semibold text-white hover:bg-action-dark disabled:opacity-60"
-      >
+      <button disabled={pending} className={redButton}>
         {pending ? "Please wait..." : "Add car"}
       </button>
       {state.memberPlate && (
@@ -74,7 +76,7 @@ export function RegisterForm({ areas }: { areas: { slug: string; name: string }[
           type="button"
           onClick={registerForMember}
           disabled={pending}
-          className="w-full rounded-full border-2 border-edge bg-white px-6 py-4 text-lg font-semibold disabled:opacity-60"
+          className={outlineButton}
         >
           Register for the member
         </button>

@@ -39,11 +39,11 @@ export async function currentStaff(): Promise<StaffSession | null> {
 
 /**
  * For pages: send people who aren't signed in to sign in, and people who are
- * signed in but lack the role straight back to the scanner.
+ * signed in but lack the role straight back to the attendant home.
  */
 export async function requireStaff(minimum: StaffRole = "attendant"): Promise<StaffSession> {
   const staff = await currentStaff();
   if (!staff) redirect("/staff/signin");
-  if (!hasRole(staff.role, minimum)) redirect("/staff/scan");
+  if (!hasRole(staff.role, minimum)) redirect("/staff");
   return staff;
 }
