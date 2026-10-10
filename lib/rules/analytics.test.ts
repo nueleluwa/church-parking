@@ -31,6 +31,36 @@ describe("lagosMinutes", () => {
   });
 });
 
+describe("buildAnalytics: stays, days and members", () => {
+  test("average stay and the stay lengths come from released cars only", () => {
+    const a = buildAnalytics([
+      visit("08:00", { releasedAt: "2026-10-04T08:20:00Z" }), // 20 min
+      visit("08:00", { releasedAt: "2026-10-04T10:00:00Z" }), // 2 h
+      visit("08:00", { status: "parked" }),
+    ]);
+    expect(a.averageStay).toBe(70);
+    expect(a.stayLengths.find((s) => s.label === "Under 30 min")?.count).toBe(1);
+    expect(a.stayLengths.find((s) => s.label === "2 to 3 hours")?.count).toBe(1);
+  });
+  test("no released cars means no average", () => {
+    expect(buildAnalytics([visit("08:00", { status: "parked" })]).averageStay).toBeNull();
+    expect(buildAnalytics([]).averageStay).toBeNull();
+  });
+  test("check-ins by day are in date order, and members and guests add up", () => {
+    const a = buildAnalytics([
+      visit("08:00", { serviceDate: "2026-10-11" }),
+      visit("08:00", { serviceDate: "2026-10-04", isGuest: false }),
+      visit("09:00", { serviceDate: "2026-10-04" }),
+    ]);
+    expect(a.byDay).toEqual([
+      { date: "2026-10-04", count: 2 },
+      { date: "2026-10-11", count: 1 },
+    ]);
+    expect(a.members).toBe(1);
+    expect(a.guests).toBe(2);
+  });
+});
+
 describe("buildAnalytics", () => {
   test("counts the outcomes", () => {
     const a = buildAnalytics([

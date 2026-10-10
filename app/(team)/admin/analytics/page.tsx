@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Bars, Donut, TimeChart } from "@/components/charts";
 import { field, primaryButton } from "@/components/ui";
 import { listActiveAreas, listReportVisits } from "@/lib/db";
-import { formatLagosDate } from "@/lib/format";
+import { IconDownload } from "@/components/icons";
+import { formatDuration, formatLagosDate } from "@/lib/format";
 import { buildAnalytics, lagosDate, parseRange, percentChange, previousRange } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
 
@@ -37,8 +38,20 @@ function Kpi({ label, value, change, id, lowerIsBetter, partial }: { label: stri
   );
 }
 
+function Plain({ label, value, note, id }: { label: string; value: string; note: string; id: string }) {
+  return (
+    <div className="rounded-2xl bg-card p-4 shadow-sm">
+      <p className="text-sm font-medium text-ink-soft">{label}</p>
+      <p data-testid={id} className="text-3xl font-extrabold">
+        {value}
+      </p>
+      <p className="text-xs text-ink-soft">{note}</p>
+    </div>
+  );
+}
+
 /** AD-5: peak arrival times, which car park fills first, and how visits ended. All from the visit records. */
-export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string; area?: string }> }) {
+export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string; area?: string; service?: string }> }) {
   await requireStaff("admin");
   const sp = await searchParams;
   const today = lagosDate(new Date());
@@ -51,10 +64,14 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
     listActiveAreas(),
   ]);
   const area = areas.find((x) => x.slug === sp.area);
-  const visits = area ? everyVisit.filter((v) => v.areaName === area.name) : everyVisit;
-  const earlier = area ? everyEarlier.filter((v) => v.areaName === area.name) : everyEarlier;
+  const services = [...new Map(everyVisit.map((v) => [v.serviceId, v.serviceName])).entries()].map(([id, name]) => ({ id, name }));
+  const service = services.find((x) => String(x.id) === sp.service) ?? null;
+  const pick = (list: typeof everyVisit) =>
+    list.filter((v) => (!area || v.areaName === area.name) && (!service || v.serviceId === service.id));
+  const visits = pick(everyVisit);
+  const earlier = pick(everyEarlier);
   const partial = range.to >= today;
-  const areaQuery = area ? `&area=${area.slug}` : "";
+  const areaQuery = `${area ? `&area=${area.slug}` : ""}${service ? `&service=${service.id}` : ""}`;
   const a = buildAnalytics(visits);
   const b = buildAnalytics(earlier);
   const single = range.from === range.to;
@@ -95,6 +112,19 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
               ))}
             </select>
           </label>
+          {services.length > 1 && (
+            <label className="col-span-2 block font-medium">
+              Service
+              <select name="service" defaultValue={service ? String(service.id) : ""} className={field}>
+                <option value="">All services</option>
+                {services.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </div>
         <button className={primaryButton}>Show analytics</button>
         <p className="flex flex-wrap gap-x-4 gap-y-1">
@@ -104,6 +134,10 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
             </Link>
           ))}
         </p>
+        <a href={`/admin/reports/export?from=${range.from}&to=${range.to}${area ? `&area=${area.slug}` : ""}`} className="inline-flex items-center gap-2 font-semibold text-accent underline">
+          <IconDownload className="h-5 w-5" />
+          Export these visits (CSV)
+        </a>
       </form>
 
       <section aria-label="Totals" className="grid gap-3 sm:grid-cols-3">
@@ -111,6 +145,37 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         <Kpi label="Total releases" value={a.released} change={percentChange(a.released, b.released)} id="a-released" partial={partial} />
         <Kpi label="Missed check-outs" value={a.missed} change={percentChange(a.missed, b.missed)} id="a-missed" lowerIsBetter partial={partial} />
       </section>
+
+      <section aria-label="Stay and mix" className="grid gap-3 sm:grid-cols-3">
+        <Plain
+          id="a-average-stay"
+          label="Average stay"
+          value={a.averageStay === null ? "None yet" : formatDuration(a.averageStay)}
+          note={`of ${a.released} released ${a.released === 1 ? "car" : "cars"}`}
+        />
+        <Plain
+          id="a-missed-rate"
+          label="Missed rate"
+          value={`${a.checkedIn ? Math.round((a.missed / a.checkedIn) * 100) : 0}%`}
+          note="of check-ins were never released"
+        />
+        <Plain
+          id="a-members"
+          label="Members' cars"
+          value={`${a.checkedIn ? Math.round((a.members / a.checkedIn) * 100) : 0}%`}
+          note={`${a.members} members · ${a.guests} guests`}
+        />
+      </section>
+
+      {a.byDay.length > 1 && (
+        <section aria-label="Check-ins by day" className="rounded-card bg-card p-4 shadow-sm">
+          <h2 className="text-lg font-bold">Check-ins by day</h2>
+          <p className="mb-3 text-sm text-ink-soft">
+            Busiest: {[...a.byDay].sort((x, y) => y.count - x.count || x.date.localeCompare(y.date))[0].date}.
+          </p>
+          <Bars rows={a.byDay.map((d) => ({ label: formatLagosDate(`${d.date}T12:00:00+01:00`), value: d.count }))} />
+        </section>
+      )}
 
       <section aria-label="Check-ins by time of day" className="rounded-card bg-card p-4 shadow-sm">
         <h2 className="text-lg font-bold">Check-ins by time of day</h2>
@@ -143,6 +208,16 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
           />
         </section>
       </div>
+
+      <section aria-label="How long cars stay" className="rounded-card bg-card p-4 shadow-sm">
+        <h2 className="text-lg font-bold">How long cars stay</h2>
+        <p className="mb-3 text-sm text-ink-soft">From check-in to release, for cars already released.</p>
+        {a.released === 0 ? (
+          <p className="text-ink-soft">No cars released in this period.</p>
+        ) : (
+          <Bars rows={a.stayLengths.map((s) => ({ label: s.label, value: s.count }))} />
+        )}
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section aria-label="Peak periods" className="rounded-card bg-card p-4 shadow-sm">

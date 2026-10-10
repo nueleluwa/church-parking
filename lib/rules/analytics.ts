@@ -17,6 +17,15 @@ export type Analytics = {
   /** The three busiest half-hours, busiest first. */
   peaks: Bucket[];
   areaUsage: AreaShare[];
+  /** Minutes from check-in to release, averaged over the released cars, or null when none were released. */
+  averageStay: number | null;
+  /** How many released cars stayed for each length of time. */
+  stayLengths: { label: string; count: number }[];
+  /** Check-ins on each service date, oldest first. */
+  byDay: { date: string; count: number }[];
+  /** Members' cars and guests' cars. */
+  members: number;
+  guests: number;
   /** Per car park: when its first car arrived and when half of its cars had arrived. Earlier half = fills first. */
   areaTiming: AreaTiming[];
 };
@@ -81,8 +90,28 @@ export function buildAnalytics(visits: ReportVisit[]): Analytics {
     })
     .sort((a, b) => a.half.localeCompare(b.half) || a.areaId - b.areaId);
 
-  return { checkedIn, released, missed, stillParked, byTime, peaks, areaUsage, areaTiming };
+  const stays = visits
+    .filter((v) => v.status === "released" && v.releasedAt)
+    .map((v) => Math.max(0, Math.round((Date.parse(v.releasedAt!) - Date.parse(v.checkedInAt)) / 60_000)));
+  const averageStay = stays.length ? Math.round(stays.reduce((a, b) => a + b, 0) / stays.length) : null;
+  const stayLengths = STAY_BANDS.map((band) => ({ label: band.label, count: stays.filter((m) => m >= band.from && m < band.to).length }));
+
+  const days = new Map<string, number>();
+  for (const v of visits) days.set(v.serviceDate, (days.get(v.serviceDate) ?? 0) + 1);
+  const byDay = [...days.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, count]) => ({ date, count }));
+
+  const guests = visits.filter((v) => v.isGuest).length;
+
+  return { checkedIn, released, missed, stillParked, byTime, peaks, areaUsage, averageStay, stayLengths, byDay, members: checkedIn - guests, guests, areaTiming };
 }
+
+const STAY_BANDS = [
+  { label: "Under 30 min", from: 0, to: 30 },
+  { label: "30 min to 1 hour", from: 30, to: 60 },
+  { label: "1 to 2 hours", from: 60, to: 120 },
+  { label: "2 to 3 hours", from: 120, to: 180 },
+  { label: "3 hours or more", from: 180, to: Number.POSITIVE_INFINITY },
+];
 
 /** Change against the period before, as a whole percentage, or null when there is nothing to compare with. */
 export function percentChange(now: number, before: number): number | null {
