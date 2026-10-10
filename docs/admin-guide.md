@@ -6,7 +6,13 @@ What each admin screen is for. Admins see every screen below. Coordinators (team
 Today's numbers for the chosen service: checked in, released, still parked, and exceptions. Checked in and Released show an arrow for up or down against the same service last time. Tap a number, or a car park card, to see those visits. Recent activity lists the latest entries and exits.
 
 ## Live Parking and Sweep
-The live board updates every few seconds: counts per car park and the open alerts (a car that does not match, a second check-in of the same car, and so on). **See every parked car** opens Visits. The sweep, after each service, lists the cars still here so the team can mark each as still here or gone.
+The live board updates every few seconds without reloading, and shows when it last did (**Live · Updated 10:42:08**). Choose the service from the list (the real services and their times) or press **Refresh** to ask straight away.
+
+- **Four numbers:** cars checked in, cars left, still parked (every car on site now, including any left from an earlier service) and active alerts. The still-parked number always equals the sum of the car park cards.
+- **Parking Areas:** one text-only card for each car park with its checked in, left and still parked counts. There is no capacity or "percent full" because the church has not set capacities. Tap a card to see the cars parked there, or **View all vehicles** for every parked car.
+- **Alerts:** each one shows what happened, the time, the car park and service, the number plate and the car's make and colour when known. **Investigate** opens that visit (or, for a second check-in that has no visit of its own, today's visits for that plate). **Mark as dealt with** removes it from the list; the record stays.
+
+Attendants cannot open the live board. The sweep, after each service, lists the cars still here so the team can mark each as still here or gone.
 
 ## Visits
 Every visit on one day, newest first. Search by plate, choose a car park, service or status, and move between days. Each row shows the car's stay (so far, if it is still parked) and flags a held car. Open a visit for its details. Admins can **Export CSV** for the day.

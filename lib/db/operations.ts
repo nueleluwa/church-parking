@@ -23,13 +23,17 @@ export type AlertRow = {
   created_at: string;
   areaName: string | null;
   serviceName: string | null;
+  /** The visit the alert is about, when it has one (a conflict alert has none). */
+  visitId: string | null;
+  make: string | null;
+  colour: string | null;
 };
 
 /** Open (unresolved) alerts, newest first. Never returns names or phone numbers. */
 export async function listOpenAlerts(limit = 30): Promise<AlertRow[]> {
   const { data, error } = await db()
     .from("alerts")
-    .select("id, kind, plate, detail, created_at, visits(areas(name), services(name))")
+    .select("id, kind, plate, detail, created_at, visit_id, visits(areas(name), services(name), vehicles(make, colour))")
     .is("resolved_at", null)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -41,7 +45,8 @@ export async function listOpenAlerts(limit = 30): Promise<AlertRow[]> {
     plate: string | null;
     detail: { area_id?: number; service_id?: number } | null;
     created_at: string;
-    visits: { areas: { name: string }; services: { name: string } } | null;
+    visit_id: string | null;
+    visits: { areas: { name: string }; services: { name: string }; vehicles: { make: string | null; colour: string | null } | null } | null;
   }[];
 
   // Conflict alerts have no visit of their own, only the area and service ids in the detail.
@@ -49,6 +54,10 @@ export async function listOpenAlerts(limit = 30): Promise<AlertRow[]> {
     db().from("areas").select("id, name"),
     db().from("services").select("id, name"),
   ]);
+  // A conflict alert has no visit, so the car's details come from its plate
+  const plates = [...new Set(rows.filter((r) => !r.visits && r.plate).map((r) => r.plate as string))];
+  const cars = plates.length ? await db().from("vehicles").select("plate, make, colour").in("plate", plates) : { data: [] };
+  const carByPlate = new Map((cars.data ?? []).map((c) => [c.plate as string, c as { make: string | null; colour: string | null }]));
   const areaName = new Map((areas.data ?? []).map((a) => [a.id as number, a.name as string]));
   const serviceName = new Map((services.data ?? []).map((s) => [s.id as number, s.name as string]));
 
@@ -60,6 +69,9 @@ export async function listOpenAlerts(limit = 30): Promise<AlertRow[]> {
     areaName: r.visits?.areas.name ?? (r.detail?.area_id ? (areaName.get(r.detail.area_id) ?? null) : null),
     serviceName:
       r.visits?.services.name ?? (r.detail?.service_id ? (serviceName.get(r.detail.service_id) ?? null) : null),
+    visitId: r.visit_id,
+    make: r.visits?.vehicles?.make ?? (r.plate ? (carByPlate.get(r.plate)?.make ?? null) : null),
+    colour: r.visits?.vehicles?.colour ?? (r.plate ? (carByPlate.get(r.plate)?.colour ?? null) : null),
   }));
 }
 

@@ -227,7 +227,7 @@ test("a coordinator can see the Visits list from the live board, but not the adm
     const page = await (await browser.newContext()).newPage();
     await staffSignIn(page, lead.phone, lead.password);
     await page.goto("/staff/dashboard");
-    await page.getByRole("link", { name: "See every parked car" }).click();
+    await page.getByRole("link", { name: "View all vehicles" }).click();
     await expect(page).toHaveURL(/\/admin\/visits\?status=parked/, { timeout: 60_000 });
     await expect(page.getByRole("heading", { name: "Visits", exact: true })).toBeVisible();
     await page.goto("/admin/vehicles");

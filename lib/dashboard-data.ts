@@ -2,6 +2,7 @@ import { listActiveAreas, listActiveServices, listOpenAlerts, listTodaysVisitRow
 import {
   defaultDashboardService,
   describeAlert,
+  describeVehicle,
   formatPlate,
   lagosDate,
   servicesToday,
@@ -16,6 +17,12 @@ export type AlertItem = {
   plate: string;
   when: string; // HH:MM, Lagos time
   where: string; // "Car Park 1 · Service 2"
+  area: string;
+  service: string;
+  /** Where Investigate goes: the visit if there is one, otherwise today's visits for the plate. */
+  investigateHref: string;
+  /** "Toyota Corolla · Silver", when known. */
+  vehicle: string;
 };
 
 export type DashboardData = {
@@ -24,6 +31,8 @@ export type DashboardData = {
   serviceId: number | null;
   summary: DashboardSummary | null;
   alerts: AlertItem[];
+  /** Each car park's address name, so a card can open its visits. */
+  areaSlugs: Record<number, string>;
   updatedAt: string;
 };
 
@@ -51,11 +60,15 @@ export async function loadDashboard(requestedServiceId?: number): Promise<Dashbo
       plate: a.plate ? formatPlate(a.plate) : "",
       when: lagosTime(a.created_at),
       where: [a.areaName, a.serviceName].filter(Boolean).join(" · "),
+      area: a.areaName ?? "",
+      service: a.serviceName ?? "",
+      investigateHref: a.visitId ? `/admin/visits/${a.visitId}` : `/admin/visits?q=${encodeURIComponent(a.plate ?? "")}`,
+      vehicle: describeVehicle({ make: a.make, colour: a.colour }) ?? "",
     };
   });
 
   if (todays.length === 0) {
-    return { noServiceToday: true, services: [], serviceId: null, summary: null, alerts, updatedAt };
+    return { noServiceToday: true, services: [], serviceId: null, summary: null, alerts, areaSlugs: {}, updatedAt };
   }
 
   const selected =
@@ -72,6 +85,7 @@ export async function loadDashboard(requestedServiceId?: number): Promise<Dashbo
     serviceId: selected.id,
     summary: summariseVisits(rows, areas, todays, selected.id),
     alerts,
+    areaSlugs: Object.fromEntries(areas.map((a) => [a.id, a.slug])),
     updatedAt,
   };
 }
