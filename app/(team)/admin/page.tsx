@@ -18,9 +18,9 @@ import { MenuRow } from "@/components/MenuRow";
 import { StatusBadge } from "@/components/StatusBadge";
 import { VehicleImage } from "@/components/VehicleImage";
 import { loadDashboard } from "@/lib/dashboard-data";
-import { listActiveAreas, listRecentActivity } from "@/lib/db";
+import { listActiveAreas, listRecentActivity, previousServiceCounts } from "@/lib/db";
 import { formatLagosTime } from "@/lib/format";
-import { formatPlate, lagosDate } from "@/lib/rules";
+import { formatPlate, lagosDate, percentChange } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
 
 export const metadata = { title: "Admin" };
@@ -32,7 +32,8 @@ const KIND = {
   closed: { word: "Closed", badge: "Missed", tone: "danger" },
 } as const;
 
-function Stat({ label, value, note, icon, href, tone }: {
+function Stat({ label, value, note, icon, href, tone, trend }: {
+  trend?: number | null;
   label: string;
   value: number;
   note: string;
@@ -49,7 +50,14 @@ function Stat({ label, value, note, icon, href, tone }: {
         {icon}
       </span>
       <p className="mt-2 text-sm font-medium text-ink-soft">{label}</p>
-      <p className={`text-3xl font-extrabold ${tone === "danger" ? "text-danger" : ""}`}>{value}</p>
+      <p className="flex items-baseline gap-2">
+        <span className={`text-3xl font-extrabold ${tone === "danger" ? "text-danger" : ""}`}>{value}</span>
+        {trend ? (
+          <span className={`text-sm font-bold ${trend > 0 ? "text-success" : "text-danger"}`} title="Compared with this service last time">
+            {trend > 0 ? "↑" : "↓"} {Math.abs(trend)}%
+          </span>
+        ) : null}
+      </p>
       <p className="text-xs text-ink-soft">{note}</p>
     </>
   );
@@ -64,10 +72,16 @@ function Stat({ label, value, note, icon, href, tone }: {
 }
 
 /** The admin overview: today's numbers at a glance, the car parks, recent activity, and the way to every admin screen. */
-export default async function AdminHome() {
+export default async function AdminHome({ searchParams }: { searchParams: Promise<{ service?: string }> }) {
   await requireStaff("admin");
+  const requested = Number.parseInt((await searchParams).service ?? "", 10);
   const today = lagosDate(new Date());
-  const [data, activity, areas] = await Promise.all([loadDashboard(), listRecentActivity(today, 6), listActiveAreas()]);
+  const [data, activity, areas] = await Promise.all([
+    loadDashboard(Number.isFinite(requested) ? requested : undefined),
+    listRecentActivity(today, 6),
+    listActiveAreas(),
+  ]);
+  const last = data.serviceId ? await previousServiceCounts(data.serviceId, today) : null;
   const t = data.summary?.totals;
   const service = data.services.find((s) => s.id === data.serviceId);
 
@@ -80,9 +94,26 @@ export default async function AdminHome() {
         </p>
       </div>
 
+      {data.services.length > 1 && (
+        <nav aria-label="Choose a service" className="flex flex-wrap gap-2">
+          {data.services.map((s) => (
+            <Link
+              key={s.id}
+              href={`/admin?service=${s.id}`}
+              aria-current={s.id === data.serviceId ? "true" : undefined}
+              className={`rounded-full border-2 px-4 py-2 font-semibold ${
+                s.id === data.serviceId ? "border-night bg-night text-white" : "border-edge/30 bg-white hover:bg-page"
+              }`}
+            >
+              {s.name} <span className="font-normal opacity-80">· {s.time}</span>
+            </Link>
+          ))}
+        </nav>
+      )}
+
       <section aria-label="Today" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Checked in" value={t?.checkedIn ?? 0} note="This service" icon={<IconCar className="h-5 w-5" />} href="/admin/visits" />
-        <Stat label="Released" value={t?.released ?? 0} note="This service" icon={<IconCheck className="h-5 w-5" />} href="/admin/visits?status=released" />
+        <Stat label="Checked in" value={t?.checkedIn ?? 0} trend={last ? percentChange(t?.checkedIn ?? 0, last.checkedIn) : null} note="This service" icon={<IconCar className="h-5 w-5" />} href="/admin/visits" />
+        <Stat label="Released" value={t?.released ?? 0} trend={last ? percentChange(t?.released ?? 0, last.released) : null} note="This service" icon={<IconCheck className="h-5 w-5" />} href="/admin/visits?status=released" />
         <Stat label="Still parked" value={t?.parked ?? 0} note="From this service" icon={<IconUser className="h-5 w-5" />} href="/admin/visits?status=parked" />
         <Stat
           label="Exceptions"

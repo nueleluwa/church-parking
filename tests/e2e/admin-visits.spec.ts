@@ -114,3 +114,22 @@ test("members can also be found by the plate of a saved car", async ({ page, bro
   await expect(page.locator("li").filter({ hasText: phone.slice(1) })).toHaveCount(1, { timeout: 60_000 });
   await expect(page.locator("li").filter({ hasText: phone.slice(1) })).toContainText("1 saved car");
 });
+
+test("the dashboard lets you pick which service's numbers to see", async ({ page }) => {
+  const db = adminClient();
+  const weekday = new Date().getUTCDay() === 0 ? 0 : new Date().getUTCDay();
+  const name = `Picker test ${Math.floor(Math.random() * 100000)}`;
+  const { data: extra } = await db.from("services").insert({ name, weekday, starts_at: "00:00", ends_at: "23:59", active: true }).select("id").single();
+  try {
+    await adminSignIn(page);
+    await page.goto("/admin");
+    const nav = page.getByRole("navigation", { name: "Choose a service" });
+    await expect(nav).toBeVisible({ timeout: 60_000 });
+    await nav.getByRole("link", { name: new RegExp(name) }).click();
+    await expect(page).toHaveURL(new RegExp(`service=${extra!.id}`), { timeout: 60_000 });
+    await expect(page.getByRole("link", { name: new RegExp(name) })).toHaveAttribute("aria-current", "true");
+    await expect(page.getByText(new RegExp(`${name} · 00:00 to 23:59`)).first()).toBeVisible();
+  } finally {
+    await db.from("services").delete().eq("id", extra!.id);
+  }
+});
