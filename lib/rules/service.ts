@@ -132,3 +132,18 @@ export function serviceStandings<T extends ServiceWindow>(
     return { service, standing: "later" as const };
   });
 }
+
+export type ServiceProgress = "off" | "active" | "upcoming" | "completed" | "other-day";
+
+/**
+ * Where a service stands right now, for the Services screen: on now, still to come today, finished today,
+ * or simply not today (it runs on another weekday). A service that is switched off is just "off".
+ */
+export function serviceProgress(now: Date, s: { weekday: number; starts_at: string; ends_at: string; active: boolean }): ServiceProgress {
+  if (!s.active) return "off";
+  const t = lagosParts(now);
+  if (s.weekday !== t.weekday) return "other-day";
+  if (t.minutes < toMinutes(s.starts_at)) return "upcoming";
+  if (t.minutes >= toMinutes(s.ends_at)) return "completed";
+  return "active";
+}

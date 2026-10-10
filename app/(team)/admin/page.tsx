@@ -13,8 +13,10 @@ import {
   IconUser,
   IconUsers,
 } from "@/components/icons";
+import { AdminTable, cell } from "@/components/AdminTable";
 import { MenuRow } from "@/components/MenuRow";
 import { StatusBadge } from "@/components/StatusBadge";
+import { VehicleImage } from "@/components/VehicleImage";
 import { loadDashboard } from "@/lib/dashboard-data";
 import { listActiveAreas, listRecentActivity } from "@/lib/db";
 import { formatLagosTime } from "@/lib/format";
@@ -92,11 +94,11 @@ export default async function AdminHome() {
         />
       </section>
 
-      <div className="grid items-start gap-4 lg:grid-cols-5">
+      <div className="space-y-4">
       {data.summary && (
-        <section aria-label="Parking areas" className="space-y-2 lg:col-span-3">
+        <section aria-label="Parking areas" className="space-y-2">
           <h2 className="px-1 text-lg font-bold">Parking areas</h2>
-          <ul className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+          <ul className="grid gap-3 sm:grid-cols-3">
             {data.summary.areas.map((a) => (
               <li key={a.areaId} className="rounded-2xl bg-card shadow-sm hover:bg-page">
                 <Link href={`/admin/visits?area=${areas.find((x) => x.name === a.areaName)?.slug ?? ""}`} className="block p-4" aria-label={`${a.areaName}: see its visits`}>
@@ -113,7 +115,7 @@ export default async function AdminHome() {
         </section>
       )}
 
-      <section aria-label="Recent activity" className="rounded-card bg-card p-4 shadow-sm lg:col-span-2">
+      <section aria-label="Recent activity" className="rounded-card bg-card p-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">Recent activity</h2>
           <Link href="/staff/history" className="text-sm font-semibold text-accent underline">
@@ -123,7 +125,8 @@ export default async function AdminHome() {
         {activity.length === 0 ? (
           <p className="mt-2 text-ink-soft">Nothing has happened today yet.</p>
         ) : (
-          <ul className="mt-2 divide-y divide-edge/15">
+          <>
+          <ul className="mt-2 divide-y divide-edge/15 lg:hidden">
             {activity.map((e) => (
               <li key={e.key} className="flex items-center gap-3 py-2">
                 <span className="min-w-0 flex-1">
@@ -139,9 +142,34 @@ export default async function AdminHome() {
               </li>
             ))}
           </ul>
+          <div className="mt-3 hidden lg:block">
+            <AdminTable label="Recent activity" columns={["Vehicle", "Type", "Car park", "Time", "Status"]}>
+              {activity.map((e) => (
+                <tr key={e.key}>
+                  <td className={cell}>
+                    <span className="flex items-center gap-3">
+                      <VehicleImage size="sm" />
+                      <span className="whitespace-nowrap font-bold">{formatPlate(e.plate)}</span>
+                    </span>
+                  </td>
+                  <td className={`${cell} whitespace-nowrap`}>
+                    <span aria-hidden="true" className={e.kind === "entry" ? "text-success" : "text-ink-soft"}>
+                      {e.kind === "entry" ? "↑" : "↓"}{" "}
+                    </span>
+                    {KIND[e.kind].word}
+                  </td>
+                  <td data-area className={`${cell} whitespace-nowrap`}>{e.areaName}</td>
+                  <td className={`${cell} whitespace-nowrap`}>{formatLagosTime(e.at)}</td>
+                  <td className={cell}>
+                    <StatusBadge tone={KIND[e.kind].tone}>{KIND[e.kind].badge}</StatusBadge>
+                  </td>
+                </tr>
+              ))}
+            </AdminTable>
+          </div>
+          </>
         )}
       </section>
-
       </div>
 
       {/* On a wide screen the side menu already lists these, so the list is for phones */}

@@ -1,6 +1,7 @@
 import { StatusBadge } from "@/components/StatusBadge";
 import { field } from "@/components/ui";
 import { listAllServices } from "@/lib/db";
+import { serviceProgress, type ServiceProgress } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
 import { AdminForm } from "../AdminForm";
 import { saveServiceAction } from "../admin-actions";
@@ -10,6 +11,14 @@ export const dynamic = "force-dynamic";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const hhmm = (t: string) => t.slice(0, 5);
+
+const PROGRESS: Record<ServiceProgress, { label: string; tone: "success" | "neutral" | "warning" }> = {
+  active: { label: "Active", tone: "success" },
+  upcoming: { label: "Upcoming", tone: "warning" },
+  completed: { label: "Completed", tone: "neutral" },
+  "other-day": { label: "Not today", tone: "neutral" },
+  off: { label: "Off", tone: "neutral" },
+};
 
 function ServiceFields({
   service,
@@ -55,13 +64,16 @@ function ServiceFields({
 export default async function ServicesPage() {
   await requireStaff("admin");
   const services = await listAllServices();
+  const now = new Date();
   return (
     <>
       <p className="text-ink-soft">
         Change a service&apos;s name or times. Drivers are put into the right service from these times. Switch a service
         off instead of deleting it, so old records keep their service.
       </p>
-      <ul className="grid items-start gap-3 lg:grid-cols-2">
+      <div className="grid items-start gap-4 lg:grid-cols-5">
+      <div className="space-y-4 lg:col-span-3">
+      <ul className="grid items-start gap-3">
         {services.map((s) => (
           <li key={s.id} className="rounded-card bg-card p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
@@ -71,7 +83,7 @@ export default async function ServicesPage() {
                   {DAYS[s.weekday]} {hhmm(s.starts_at)} to {hhmm(s.ends_at)}
                 </p>
               </div>
-              <StatusBadge tone={s.active ? "success" : "neutral"}>{s.active ? "In use" : "Off"}</StatusBadge>
+              <StatusBadge tone={PROGRESS[serviceProgress(now, s)].tone}>{PROGRESS[serviceProgress(now, s)].label}</StatusBadge>
             </div>
             <details className="mt-3">
               <summary className="cursor-pointer font-semibold">Change {s.name}</summary>
@@ -85,7 +97,7 @@ export default async function ServicesPage() {
         ))}
       </ul>
 
-      <section aria-label="Service selection rules" className="rounded-card bg-blush p-4 lg:max-w-xl">
+      <section aria-label="Service selection rules" className="rounded-card bg-blush p-4">
         <h2 className="text-lg font-bold">Service selection rules</h2>
         <ol className="mt-2 list-decimal space-y-1 pl-5">
           <li>Pick the next service that starts within 30 minutes.</li>
@@ -94,8 +106,9 @@ export default async function ServicesPage() {
         </ol>
         <p className="mt-2 text-sm text-ink-soft">Time zone: Africa/Lagos. This is how drivers are put into a service.</p>
       </section>
+      </div>
 
-      <section className="rounded-card bg-card p-4 shadow-sm lg:max-w-xl">
+      <section className="rounded-card bg-card p-4 shadow-sm lg:sticky lg:top-4 lg:col-span-2">
         <h2 className="text-lg font-bold">Add a service</h2>
         <div className="mt-3">
           <AdminForm action={saveServiceAction} submitLabel="Add service" clearOnSuccess>
@@ -103,6 +116,7 @@ export default async function ServicesPage() {
           </AdminForm>
         </div>
       </section>
+      </div>
     </>
   );
 }

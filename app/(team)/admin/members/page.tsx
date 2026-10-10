@@ -2,9 +2,10 @@ import { PasswordField } from "@/components/PasswordField";
 import { StatusBadge } from "@/components/StatusBadge";
 import { field, primaryButton } from "@/components/ui";
 import Link from "next/link";
-import { listRecentMembers, memberCounts, searchMembers } from "@/lib/db";
+import { listRecentMembers, memberCounts, searchMembers, searchMembersByPlate } from "@/lib/db";
 import { formatLagosDate, formatVisitTime } from "@/lib/format";
-import { normalisePhone } from "@/lib/rules";
+import { normalisePhone, normalisePlate } from "@/lib/rules";
+import { initialsOf } from "@/components/StaffChrome";
 import { requireStaff } from "@/lib/staff-auth";
 import { AdminForm } from "../AdminForm";
 import { resetMemberPinAction } from "../admin-actions";
@@ -17,18 +18,25 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
   await requireStaff("admin");
   const q = ((await searchParams).q ?? "").trim().slice(0, 60);
   const phone = q ? normalisePhone(q) : null;
-  const members = q ? await searchMembers({ phone, text: phone ? undefined : q }) : await listRecentMembers(30);
+  // A name, a phone number or a car's plate
+  const found = q
+    ? await Promise.all([
+        searchMembers({ phone, text: phone ? undefined : q }),
+        phone ? Promise.resolve([]) : searchMembersByPlate(normalisePlate(q)),
+      ])
+    : null;
+  const members = found ? [...new Map(found.flat().map((m) => [m.id, m])).values()] : await listRecentMembers(30);
   const counts = await memberCounts(members.map((m) => m.id));
 
   return (
     <>
       <p className="text-ink-soft">
-        Find a member by phone number or name. Setting a new PIN also unlocks the account. Tell the member their new PIN
+        Find a member by phone number, name or car plate. Setting a new PIN also unlocks the account. Tell the member their new PIN
         in person, and check who they are first.
       </p>
       <form className="flex flex-col gap-3 rounded-card bg-card p-4 shadow-sm lg:max-w-2xl lg:flex-row lg:items-end">
         <label className="block flex-1 font-medium">
-          Phone number or name
+          Phone number, name or plate
           <input name="q" defaultValue={q} autoComplete="off" className={field} />
         </label>
         <button className={`${primaryButton} lg:w-40`}>Find member</button>
@@ -44,7 +52,10 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
           return (
             <li key={m.id} className="rounded-card bg-card p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-panel font-extrabold">
+                  {initialsOf(m.full_name)}
+                </span>
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-lg font-bold">{m.full_name}</p>
                   <p className="text-sm text-ink-soft">
                     {m.phone} · joined {formatLagosDate(m.created_at)}

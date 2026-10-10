@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { hasServiceToday, lagosDate, pickService, servicesForCheckIn, serviceStandings, type ServiceWindow } from "./service";
+import { hasServiceToday, lagosDate, pickService, servicesForCheckIn, serviceProgress, serviceStandings, type ServiceWindow } from "./service";
 
 const services: (ServiceWindow & { name: string })[] = [
   { id: 1, name: "Service 1", weekday: 0, starts_at: "07:30:00", ends_at: "09:30:00" },
@@ -87,5 +87,22 @@ describe("serviceStandings", () => {
   });
   test("a day with no service has nothing to show", () => {
     expect(serviceStandings(new Date("2026-10-12T08:45:00+01:00"), services)).toEqual([]);
+  });
+});
+
+describe("serviceProgress", () => {
+  // Sunday 11 Oct 2026, Lagos is UTC+1
+  const sunday = (h: number, m = 0) => new Date(Date.UTC(2026, 9, 11, h - 1, m));
+  const s = { weekday: 0, starts_at: "09:30:00", ends_at: "11:30:00", active: true };
+
+  test("upcoming before it starts, active while it runs, completed after", () => {
+    expect(serviceProgress(sunday(8), s)).toBe("upcoming");
+    expect(serviceProgress(sunday(9, 30), s)).toBe("active");
+    expect(serviceProgress(sunday(11, 29), s)).toBe("active");
+    expect(serviceProgress(sunday(11, 30), s)).toBe("completed");
+  });
+  test("another weekday, and a service that is switched off", () => {
+    expect(serviceProgress(new Date(Date.UTC(2026, 9, 12, 9)), s)).toBe("other-day");
+    expect(serviceProgress(sunday(10), { ...s, active: false })).toBe("off");
   });
 });

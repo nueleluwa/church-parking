@@ -98,3 +98,19 @@ test("reports and analytics can be limited to one car park, and the CSV follows 
   await expect(page.getByText(other.name, { exact: false }).first()).toBeVisible({ timeout: 60_000 });
   await expect(page.getByText("(today is not over yet)").first()).toBeVisible();
 });
+
+test("members can also be found by the plate of a saved car", async ({ page, browser }) => {
+  const db = adminClient();
+  const plate = randomPlate("MP");
+  const memberPage = await (await browser.newContext()).newPage();
+  const phone = await memberSignUp(memberPage, "4821");
+  await expect(memberPage).toHaveURL(/\/account\?welcome=1$/, { timeout: 60_000 });
+  const { data: member } = await db.from("members").select("id").eq("phone", `+234${phone.slice(1)}`).single();
+  const { data: car } = await db.from("vehicles").insert({ plate }).select("id").single();
+  await db.from("member_vehicles").insert({ member_id: member!.id, vehicle_id: car!.id });
+
+  await adminSignIn(page);
+  await page.goto(`/admin/members?q=${plate}`);
+  await expect(page.locator("li").filter({ hasText: phone.slice(1) })).toHaveCount(1, { timeout: 60_000 });
+  await expect(page.locator("li").filter({ hasText: phone.slice(1) })).toContainText("1 saved car");
+});

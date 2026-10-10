@@ -135,6 +135,31 @@ export async function searchMembers(query: { phone?: string | null; text?: strin
   return (data ?? []) as MemberRecord[];
 }
 
+/** Members who have saved a car whose plate matches (0/O and 1/I look-alikes included). */
+export async function searchMembersByPlate(plate: string): Promise<MemberRecord[]> {
+  if (plate.length < 3) return [];
+  const { data: cars, error } = await db()
+    .from("vehicles")
+    .select("id")
+    .like("plate", `%${plate.replace(/[0O1I]/g, "_")}%`)
+    .limit(30);
+  if (error) fail(error.message);
+  const carIds = (cars ?? []).map((c) => c.id as string);
+  if (carIds.length === 0) return [];
+  const { data: links, error: linkError } = await db().from("member_vehicles").select("member_id").in("vehicle_id", carIds);
+  if (linkError) fail(linkError.message);
+  const memberIds = [...new Set((links ?? []).map((l) => l.member_id as string))];
+  if (memberIds.length === 0) return [];
+  const { data, error: memberError } = await db()
+    .from("members")
+    .select("id, full_name, phone, locked_until, last_seen_at, created_at")
+    .in("id", memberIds)
+    .order("full_name")
+    .limit(20);
+  if (memberError) fail(memberError.message);
+  return (data ?? []) as MemberRecord[];
+}
+
 /** The members seen most recently (or, if none has signed in again, the newest). */
 export async function listRecentMembers(limit = 30): Promise<MemberRecord[]> {
   const { data, error } = await db()
