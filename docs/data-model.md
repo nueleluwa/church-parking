@@ -136,3 +136,7 @@ create table audit_events (
 - `visits.check_in_key` (unique where set): the one-time key of a check-in attempt, so a repeat of the same attempt returns the same pass (D-26). Only counts as a repeat for 30 minutes.
 - Check-in is done by the database functions `claim_guest_visit` and `claim_member_visit` (D-21), not by several separate queries.
 - `ops.applied_migrations`: on the church's own server, the list of database changes already applied (D-23).
+- `audit_events` also records staff and admin actions that are not about one visit (a role change, a report export, a name or phone change). The Settings screen and each person's recent activity read it.
+- Guest data older than 24 months is deleted daily by `delete_expired_guest_data`, run by pg_cron (D-20).
+- `release_visit(visit, staff, method, today)` is the single release function. It refuses a held visit, a visit from another day and a visit already released. `hold_visit`, `clear_hold` and `correct_visit` (change car park, undo a release and so on) keep the audit row in the same transaction.
+- Production data starts with only the car parks and the three Sunday services (`deploy/db/seed-production.sql` in the private repository). There is no sample data in production.

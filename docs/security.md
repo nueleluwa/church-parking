@@ -43,6 +43,16 @@ The app replaces a physical security check: the paper tally that stops a car lea
 
 ## Deployment requirements
 
-- **Client IP.** Rate limits read `x-vercel-forwarded-for`, then `x-real-ip`, then `x-forwarded-for`. On a self-hosted server the reverse proxy in front must set one of them itself and overwrite any value the client sends. With no address the IP limit is skipped, and the phone limits still apply.
+- **Client IP.** Rate limits read `x-vercel-forwarded-for`, then `x-real-ip`, then `x-forwarded-for`. On the church's server nginx sets `X-Real-IP` itself (from Cloudflare's address, and only for requests that really come from Cloudflare) and throws away any value the client sends. With no address the IP limit is skipped, and the phone limits still apply.
 - **Logs.** Pass links (`/p/{token}`) hold a secret token. Turn off request-path logging for `/p/*` on the host, or redact the token, so rule 6 holds. Pass pages already send `Referrer-Policy: no-referrer` and `Cache-Control: no-store`.
-- **Production database.** Use a paid or kept-alive Supabase project: the free tier pauses after about a week without use.
+- **Production database.** Production runs its own PostgreSQL on the church's server (D-23), reachable only from the same machine, with the app using a restricted role and the public role seeing nothing. It is backed up nightly. Copy backups off the server too. If a hosted Supabase project is used instead, use a paid or kept-alive one: the free tier pauses after about a week without use.
+- **Test accounts.** Test staff and test services created for field testing must be switched off afterwards. A service that is switched on lets drivers check in.
+- **Deploys.** The server accepts a deploy only for a commit on `main`, and holds it while a service is on (D-28).
+
+## Admin screens
+
+- Every admin page and action checks the role on the server. Visits and a visit's details are open to coordinators; every other admin screen is admin only. Attendants are sent to the team home page.
+- Lists never show names or phone numbers. A visit shows a first name and the last four digits; **Show number** reveals the full number and writes an audit row.
+- A staff member cannot switch off their own account, remove their own admin access, or leave the church without an active admin.
+- Releasing or marking a car from the visit page uses the same server functions and audit rows as the scanner.
+- Report and visit exports are admin only and logged.

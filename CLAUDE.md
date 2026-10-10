@@ -2,7 +2,7 @@
 
 A mobile web app that replaces paper parking tallies at church. Drivers scan a QR code to register their car and get a digital pass. At the exit, an attendant scans the pass, checks the plate against the real car and releases it.
 
-The project is in the planning stage: there's no code yet. Build it in the order set out in `docs/roadmap.md`.
+The app is built and live at https://churchparking.online. `docs/roadmap.md` says what is done and what is next. Work in small steps, keep the tests green, and read `docs/architecture.md` for how it fits together.
 
 ## Read before working
 
@@ -10,7 +10,9 @@ The project is in the planning stage: there's no code yet. Build it in the order
 - `docs/security.md` lists the security rules. Never break them.
 - `docs/data-model.md` has the database schema.
 - `docs/decisions.md` records decisions already made, with reasons. Don't reopen one without asking the user.
-- `docs/roadmap.md` is the build plan, broken into milestones.
+- `docs/roadmap.md` is the build plan, with the current status and what is next.
+- `docs/architecture.md` explains the folders, data access, check-in, passes and testing.
+- `docs/admin-guide.md` and `docs/attendant-guide.md` describe the screens for the team.
 
 ## Stack
 
@@ -20,12 +22,12 @@ The project is in the planning stage: there's no code yet. Build it in the order
 - `zod` to validate every input on the server
 - `html5-qrcode` to scan passes, `qrcode` to generate QR codes
 - Vitest for unit tests, Playwright for end-to-end flows
-- Hosted on Vercel. PM2 on a VPS is the alternative if the church self-hosts (decision D-09).
-- No Docker. Development uses a free hosted Supabase project, not local Supabase.
+- Production runs on the church's own server with PM2, its own PostgreSQL and PostgREST (decision D-23). A push to `main` deploys it automatically, except while a service is on (D-28). Do not push without being asked, because a push deploys.
+- No Docker. Development and tests use a hosted Supabase project, not local Supabase.
 
 ## Commands
 
-These will be valid once milestone M0 has scaffolded the app:
+Run these from the project folder (stop any other dev server first for the end-to-end tests):
 
 ```bash
 pnpm dev          # local dev server
@@ -33,6 +35,8 @@ pnpm test         # vitest
 pnpm test:e2e     # playwright
 pnpm lint
 pnpm typecheck
+pnpm test:perf    # slow-network and 300-check-in load tests
+pnpm db:seed-admin   # create or update the first admin from .env.local
 pnpm db:reset     # reset the hosted dev database (supabase db reset --linked) and load seed data
 pnpm dev:test-service on|off   # dev only: open or hide the all-day test service, so check-in works on a weekday
 ```
@@ -49,7 +53,9 @@ pnpm dev:test-service on|off   # dev only: open or hide the all-day test service
 | Term | Meaning |
 |---|---|
 | Area | Where a car parks: Car Park 1, Car Park 2 or Roadside. Each area has its own QR sign. |
-| Service | One of three Sunday services: 07:30, 09:30 and 11:30, each 2 hours long. |
+| Service | One of three Sunday services: 07:30, 09:30 and 11:30, each 2 hours long. Admins can add others. |
+| Station | The car park an attendant says they are standing at, kept on their phone (D-27). |
+| Hold | A visit put on hold by **Does not match**; only a coordinator clears it (D-18). |
 | Visit | One car parked for one service. Status is `parked`, `released` or `missed`. |
 | Pass | What the driver shows at the exit: a QR code holding a random `pass_token`, plus a short reference like `PK-7Q4M`. |
 | Release | An attendant confirms the plate matches and lets the car leave. |
@@ -63,11 +69,14 @@ pnpm dev:test-service on|off   # dev only: open or hide the all-day test service
 - Design mobile first. Pages that drivers or attendants use must load in under 150 KB of JavaScript and be readable in bright sunlight.
 - Store times in UTC. Display them in Africa/Lagos time. Calculate "today" and service windows in Africa/Lagos time.
 - Mask phone numbers to the last 4 digits in staff screens, unless staff tap "Show number". Log every reveal.
+- The product is called **Church Parking**. The live car parks are Domino's, AA and Roadside.
+- Admin lists are tables on wide screens and cards on phones; filters, sorting and paging live in the address (D-29).
+- Tests: every new rule gets a unit test, every new screen gets an end-to-end test, and new screens are added to the accessibility and layout checks.
 - Never put names or phone numbers in URLs, QR codes or logs.
 
 ## Visual direction
 
-`references/original-*.webp` is the user's style reference: a parking-booking dashboard. Take its look, not its features.
+`references/original-*.webp` (kept in the private repository, not in the public copy) is the user's style reference: a parking-booking dashboard. Take its look, not its features.
 
 - **Use:** the church palette from decision D-10: near-black (`#141414`) header and tab bar with the CCI logo, church red (`#B3121B`) as the accent, black main buttons, a warm off-white page, white rounded cards, a pale red tint for the selected state, the Inter font and a "P" mark.
 - **Ignore:** choosing a vehicle type, choosing a parking spot, time slots, prices, maps and the driving view. None of these are in the spec.

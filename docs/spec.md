@@ -1,6 +1,8 @@
 # Product spec
 
-Version 0.3. Last updated 9 October 2026.
+Version 0.4. Last updated 10 October 2026.
+
+This is the original spec. Where a later decision in [decisions.md](decisions.md) differs (for example the front door in D-24, passes in D-25, the exit in D-27 and the admin screens in D-29 to D-31), the decision wins.
 
 ## 1. Problem
 
@@ -135,6 +137,9 @@ Priority: **MVP** must ship for the pilot. **v1.1** comes soon after. **Later** 
 
 | Route | Screen | Used by |
 |---|---|---|
+| `/` | Home: Check in, Scan a car park sign, member sign-in | Everyone |
+| `/c` | Where are you parking? (the list of car parks) | Member, guest |
+| `/scan` | Scan a car park sign | Member, guest |
 | `/c/[area]` | Check-in | Member, guest |
 | `/p/[token]` | Pass. Staff see full details. Anyone else sees only plate and status. | Everyone |
 | `/account`, `/account/signin`, `/account/signup` | Member account | Member |
@@ -142,7 +147,8 @@ Priority: **MVP** must ship for the pilot. **v1.1** comes soon after. **Later** 
 | `/staff/scan` | Scanner and release | Attendant and above |
 | `/staff/search`, `/staff/register` | Search and manual registration | Attendant and above |
 | `/staff/dashboard`, `/staff/sweep` | Dashboard and sweep | Coordinator and above |
-| `/admin/*` | Services, areas, signs, staff, members, reports | Admin |
+| `/admin/visits` | Every visit by day | Coordinator and above |
+| `/admin/*` | Dashboard, vehicles, members, staff, services, car parks, QR signs, reports, analytics, settings | Admin |
 
 ## 9. Non-functional requirements
 

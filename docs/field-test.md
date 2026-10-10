@@ -9,8 +9,10 @@ Before you start: the test service is not on in production, so ask the parking l
 ## Drivers
 - [ ] Scan a car park sign with the phone's own camera app. It opens the check-in for that car park (the name on screen is right).
 - [ ] On the home page, tap **Check in**, then choose a car park. It opens the same page as the sign.
-- [ ] On the home page, tap **Scan a car park sign**, allow the camera, and scan a sign. It opens that car park.
-- [ ] Scan something that is not a sign (a pass QR, or any other QR). It is refused with a plain message.
+- [ ] On the home page, tap **Scan a car park sign**. It opens its own page with the camera (no car park list). Allow the camera and scan a sign: the car park's name appears, then its check-in opens.
+- [ ] On the scan page, deny the camera (or turn it off in the browser settings). A plain message appears with **Try again**; allow the camera and tap it: the camera starts.
+- [ ] On the scan page, tap **Go back**. You are on the home page.
+- [ ] Scan something that is not a sign (a pass QR, or any other QR). It is refused with a plain message and the camera keeps looking.
 - [ ] Check in as a guest with a real plate. A pass with a QR appears. Turn the brightness down and up: the QR is easy to read.
 - [ ] Close the browser, open `churchparking.online/c/<car park>` again. The pass is offered ("You already have a pass").
 - [ ] Turn on aeroplane mode, tap Check in, turn it off, and tap again. You get the same pass, not an error.

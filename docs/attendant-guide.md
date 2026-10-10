@@ -2,6 +2,11 @@
 
 Print this page. Keep a copy at each exit.
 
+## Before you start
+
+1. Sign in at **churchparking.online/staff** (add it to your home screen: it is called Church Parking Team).
+2. **Choose the car park you are standing at.** The app remembers it for your shift. Each car park has its own exit.
+
 ## Your job at the exit
 
 1. Open the app and tap **Scan pass**. Ask the driver to show their pass.
@@ -9,7 +14,11 @@ Print this page. Keep a copy at each exit.
 3. **Look at the car.** Does the plate on the screen match the plate on the car?
 4. **If the card says GUEST or NEW CAR:** ask the driver for their name and phone number. Do not read them out first. Check the first name and the last 4 digits on the screen.
 5. Everything matches: tap **Release car**.
-6. Anything does not match: tap **Does not match**. Stay with the car. **Do not release it.** Call the coordinator. Only a coordinator can clear the hold.
+6. Anything does not match: tap **Does not match**. Stay with the car. **Do not release it.** Call the coordinator. Only a coordinator can clear the hold, and they must give a reason.
+
+## If the car is from a different car park
+
+A yellow warning names both car parks. This is usually a driver who scanned the wrong sign, not a thief. Check the car as normal. If it is the right car and it is still here, tap **Move to this car park**, then release it as usual. Only attendants and team leads can move a car; drivers cannot.
 
 ## If the screen shows a warning
 
@@ -42,3 +51,4 @@ Tap **Add car**. Enter the plate and phone number (name is optional) and choose 
 - You have your own account. Never share it. Sign out when you finish.
 - Phone numbers are hidden except the last 4 digits. Tapping **Show number** is recorded.
 - The coordinator's screen shows every **Does not match** straight away.
+- If a driver says they cannot check in, send them to the home page: **Check in** (choose the car park) or **Scan a car park sign**. A team lead can also register the car for them with **Add car**.

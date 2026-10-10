@@ -2,6 +2,8 @@
 
 Audit date: 9 October 2026. Audited commit: `45c1e1b` on `main` (plus no uncommitted changes). Spec: `docs/spec.md` v0.3. Machine-readable register: `docs/audit/findings.json` (finding IDs below match it).
 
+> Historical record. This audit was written before the workflow review fixes (D-24 to D-28) and the admin upgrades (D-29 to D-31); several findings below have since been fixed. See `docs/decisions.md` and `docs/roadmap.md` for the current state.
+
 Evidence labels used throughout: **[Tested]** I ran it and saw the result. **[Inspected]** I read the code or SQL but did not run it. **[Estimated]** worked out from measured or inspected facts, not timed end to end. **[Unverified]** no evidence either way.
 
 ---

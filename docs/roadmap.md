@@ -2,6 +2,24 @@
 
 Build one milestone at a time. Each one ends with working, tested code and passing acceptance checks.
 
+## Where things stand (10 October 2026)
+
+| Milestone | Status |
+|---|---|
+| M0 Project setup | Done |
+| M1 Database and rules | Done |
+| M2 Guest check-in and pass | Done |
+| M3 Staff sign-in, scanner and release | Done |
+| M4 Member accounts | Done |
+| M5 Dashboard and sweep | Done |
+| M6 Admin | Done, then upgraded (D-29 to D-31) |
+| M7 Reports and retention | Done |
+| M8 Pilot readiness | Mostly done: the app is live at https://churchparking.online with its own database, backups and automatic deploys, the load and slow-network tests pass, and the attendant guide is written. **Still to do:** the real-phone checklist (`docs/field-test.md`), printing and testing the signs, and the staff run-through. |
+
+Work done after the first plan, with the decision that records each: the one-call check-in (D-21), production on the church's own server (D-23), a front door with **Check in** and a separate **Scan a car park sign** page (D-24), passes that belong to the phone or member (D-25), safe repeats of a check-in (D-26), one exit per car park with a warning for a car from elsewhere (D-27), no deploys during a service (D-28), and the admin screens for desktop and the design reference (D-29 to D-31).
+
+The milestone detail below is the original plan, kept for the acceptance checks.
+
 ## M0 Project setup
 - Scaffold Next.js with TypeScript in strict mode, Tailwind, ESLint, Vitest and Playwright. Use pnpm.
 - Link the Supabase CLI to a free hosted dev project (no Docker). Add `.env.example` with `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SESSION_SECRET`, `ADMIN_PHONE`, `ADMIN_PASSWORD` and `APP_URL`.
@@ -64,6 +82,15 @@ Build one milestone at a time. Each one ends with working, tested code and passi
 - Load test: 300 check-ins in 20 minutes.
 - Practise the 09:30 changeover with two attendants at one exit.
 - Write a one-page guide for attendants. Print the QR signs.
-- Deploy to Vercel, or to a VPS with PM2 (D-09), with a separate production Supabase project and backups.
+- Deploy to a VPS with PM2 (D-09, D-23), with its own production database and backups. **Done.**
 
 **Acceptance:** the staff run-through goes smoothly, and the parking lead signs off for the one-service pilot.
+
+## Next
+
+- Run the real-phone checklist (`docs/field-test.md`) and fix what it finds.
+- Print the QR signs and check they scan from 1.5 m in daylight.
+- Run the staff through the 09:30 changeover with two attendants at one exit.
+- Copy backups off the server (an `offsite.sh` script), and re-run the restore practice.
+- Open decisions: whether the Members list should mask phone numbers as the design reference does; whether a driver who scans a sign should skip the welcome step; which licence to use if the code is shared.
+- Ideas, not planned: SMS or WhatsApp messages, number-plate cameras, an offline mode (see the spec's "Not in v1").
