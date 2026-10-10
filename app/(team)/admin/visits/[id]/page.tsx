@@ -12,6 +12,7 @@ import { formatDuration, formatLagosDate, formatLagosTime } from "@/lib/format";
 import { describeVehicle } from "@/lib/rules/vehicle";
 import { requireStaff } from "@/lib/staff-auth";
 import { RevealPhone } from "./RevealPhone";
+import { VisitActions } from "./VisitActions";
 
 export const metadata = { title: "Visit details" };
 export const dynamic = "force-dynamic";
@@ -29,10 +30,24 @@ const METHOD: Record<string, string> = {
   midnight: "Closed at midnight",
 };
 
-/** One visit in full: the facts, the driver (masked), and everything that happened to it, in order. */
-export default async function VisitDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+const TABS = [
+  { value: "details", label: "Details" },
+  { value: "timeline", label: "Timeline" },
+  { value: "driver", label: "Member / guest" },
+] as const;
+
+/** One visit in full: the facts, what you can do with it, the driver (masked), and everything that happened to it, in order. */
+export default async function VisitDetailsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
+}) {
   await requireStaff("coordinator");
   const { id } = await params;
+  const asked = (await searchParams).tab;
+  const tab = TABS.some((t) => t.value === asked) ? (asked as (typeof TABS)[number]["value"]) : "details";
   if (!z.string().uuid().safeParse(id).success) notFound();
   const v = await getVisitDetail(id);
   if (!v) notFound();
@@ -58,8 +73,22 @@ export default async function VisitDetailsPage({ params }: { params: Promise<{ i
         </div>
       </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section aria-label="Details" className="rounded-card bg-card p-4 shadow-sm">
+      <nav aria-label="Visit" className="flex flex-wrap gap-2 border-b border-edge/20 pb-2">
+        {TABS.map((t) => (
+          <Link
+            key={t.value}
+            href={`/admin/visits/${v.id}${t.value === "details" ? "" : `?tab=${t.value}`}`}
+            aria-current={t.value === tab ? "page" : undefined}
+            className={`rounded-full px-4 py-2 font-semibold ${t.value === tab ? "bg-accent text-white" : "text-ink hover:bg-panel"}`}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </nav>
+
+      {tab === "details" && (
+        <div className="grid items-start gap-4 lg:grid-cols-3">
+        <section aria-label="Details" className="rounded-card bg-card p-4 shadow-sm lg:col-span-2">
           <h2 className="text-lg font-bold">Details</h2>
           <FactList className="mt-1 divide-y divide-edge/15">
             <FactRow icon={<IconClock className="h-5 w-5" />} label="Service">
@@ -89,6 +118,24 @@ export default async function VisitDetailsPage({ params }: { params: Promise<{ i
           </FactList>
         </section>
 
+
+          <section aria-label="Actions" className="space-y-3 rounded-card bg-card p-4 shadow-sm">
+            <h2 className="text-lg font-bold">Actions</h2>
+            {v.status === "parked" && !v.held ? (
+              <VisitActions visitId={v.id} plate={v.plate} />
+            ) : (
+              <p className="text-ink-soft">
+                {v.held ? "This car is on hold. A coordinator clears the hold from the scanner view." : "This visit has ended, so there is nothing to release."}
+              </p>
+            )}
+            <Link href={`/p/${v.passToken}`} className={outlineButton}>
+              Open in the scanner view
+            </Link>
+          </section>
+        </div>
+      )}
+
+      {tab === "driver" && (
         <section aria-label="Driver" className="rounded-card bg-card p-4 shadow-sm">
           <h2 className="text-lg font-bold">Driver</h2>
           <FactList className="mt-1 divide-y divide-edge/15">
@@ -107,14 +154,10 @@ export default async function VisitDetailsPage({ params }: { params: Promise<{ i
               </FactRow>
             )}
           </FactList>
-          <div className="mt-3">
-            <Link href={`/p/${v.passToken}`} className={outlineButton}>
-              Open in the scanner view (release, hold or correct)
-            </Link>
-          </div>
         </section>
-      </div>
+      )}
 
+      {tab === "timeline" && (
       <section aria-label="Timeline" className="rounded-card bg-card p-4 shadow-sm">
         <h2 className="text-lg font-bold">Timeline</h2>
         <ol className="mt-2 divide-y divide-edge/15">
@@ -133,6 +176,7 @@ export default async function VisitDetailsPage({ params }: { params: Promise<{ i
           ))}
         </ol>
       </section>
+      )}
     </>
   );
 }

@@ -114,6 +114,7 @@ test("visit details: the facts, the driver masked until Show number (which is lo
     await expect(page.locator("[data-area]")).toHaveText(/Car Park 1|Roadside|Car Park 2/);
 
     // The driver: first name and last four only; the number is shown on request and the request is logged
+    await page.goto(`/admin/visits/${id}?tab=driver`);
     await expect(page.getByText("GUEST", { exact: true })).toBeVisible();
     await expect(page.getByText("Stability", { exact: true })).toBeVisible();
     await expect(page.locator("main")).not.toContainText("Stability Guest");
@@ -130,12 +131,13 @@ test("visit details: the facts, the driver masked until Show number (which is lo
     await a.getByRole("button", { name: "Release car" }).click();
     await expect(a.getByRole("heading", { name: "Car released" })).toBeVisible({ timeout: 60_000 });
 
-    await page.reload();
+    await page.goto(`/admin/visits/${id}`);
     await expect(page.getByText("Released", { exact: true }).first()).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText("Scanned pass").or(page.getByText("Looked up by hand (no pass)"))).toBeVisible();
+    await page.goto(`/admin/visits/${id}?tab=timeline`);
     const events = await page.locator("section[aria-label='Timeline'] li span.min-w-0 > span.font-semibold").allInnerTexts();
     expect(events).toEqual(["Checked in", "Put on hold (Does not match)", "Phone number was shown", "Hold cleared", "Released"]);
     await expect(page.getByText("Reason: Driver showed their licence")).toBeVisible();
-    await expect(page.getByText("Scanned pass").or(page.getByText("Looked up by hand (no pass)"))).toBeVisible();
 
     // Coordinators can open it; attendants cannot; a made-up id is not found
     const c = await (await browser.newContext()).newPage();

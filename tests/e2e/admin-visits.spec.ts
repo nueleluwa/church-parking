@@ -154,3 +154,49 @@ test("reports have four views: service, car park, exceptions and the visitor lis
   await tabs.getByRole("link", { name: "Visitor list" }).click();
   await expect(page.getByRole("heading", { name: "Transactions" })).toBeVisible({ timeout: 60_000 });
 });
+
+async function visitIdOf(plate: string) {
+  const { data } = await adminClient().from("visits").select("id, vehicles!inner(plate)").eq("vehicles.plate", plate).single();
+  return data!.id as string;
+}
+
+test("a visit has Details, Timeline and Member / guest tabs, and a coordinator can release the car from it after one confirmation", async ({ page, browser }) => {
+  const plate = randomPlate("VA");
+  await guestCheckIn(browser, plate);
+  const id = await visitIdOf(plate);
+  await adminSignIn(page);
+  await page.goto(`/admin/visits/${id}`);
+
+  const tabs = page.getByRole("navigation", { name: "Visit" });
+  await expect(tabs.getByRole("link", { name: "Details" })).toHaveAttribute("aria-current", "page", { timeout: 60_000 });
+  await tabs.getByRole("link", { name: "Timeline" }).click();
+  await expect(page.getByText("Checked in", { exact: true }).first()).toBeVisible({ timeout: 60_000 });
+  await tabs.getByRole("link", { name: "Member / guest" }).click();
+  await expect(page.getByText("GUEST", { exact: true })).toBeVisible({ timeout: 60_000 });
+  await tabs.getByRole("link", { name: "Details" }).click();
+
+  // Cancel does nothing; confirming releases
+  await page.getByRole("button", { name: "Release car" }).click();
+  await page.getByRole("button", { name: "Cancel" }).click();
+  expect((await adminClient().from("visits").select("status").eq("id", id).single()).data!.status).toBe("parked");
+  await page.getByRole("button", { name: "Release car" }).click();
+  await page.getByRole("button", { name: "Yes, continue" }).click();
+  await expect(page.getByText("Released", { exact: true }).first()).toBeVisible({ timeout: 60_000 });
+  const { data: done } = await adminClient().from("visits").select("status, release_method").eq("id", id).single();
+  expect(done).toMatchObject({ status: "released", release_method: "search" });
+  await expect(page.getByRole("button", { name: "Release car" })).toHaveCount(0);
+});
+
+test("Mark as mismatch holds the car and raises an alert", async ({ page, browser }) => {
+  const plate = randomPlate("VM");
+  await guestCheckIn(browser, plate);
+  const id = await visitIdOf(plate);
+  await adminSignIn(page);
+  await page.goto(`/admin/visits/${id}`);
+  await page.getByRole("button", { name: "Mark as mismatch" }).click();
+  await page.getByRole("button", { name: "Yes, continue" }).click();
+  await expect(page.getByText("ON HOLD", { exact: true })).toBeVisible({ timeout: 60_000 });
+  const { data: alert } = await adminClient().from("alerts").select("kind").eq("visit_id", id);
+  expect(alert!.map((a) => a.kind)).toContain("no_match");
+  await expect(page.getByRole("button", { name: "Release car" })).toHaveCount(0);
+});
