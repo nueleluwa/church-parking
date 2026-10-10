@@ -80,7 +80,7 @@ test("reports and analytics can be limited to one car park, and the CSV follows 
   const { data: areas } = await adminClient().from("areas").select("name, slug").eq("active", true).order("sort");
   const [first, other] = [areas![0], areas![1]];
 
-  await page.goto(`/admin/reports?area=${first.slug}`);
+  await page.goto(`/admin/reports?area=${first.slug}&view=visitors`);
   await expect(page.getByRole("heading", { name: "Transactions" })).toBeVisible({ timeout: 60_000 });
   await expect(page.getByRole("link", { name: new RegExp(`Visit details for ${plate.slice(0, 3)}`) }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Print" })).toBeVisible();
@@ -132,4 +132,25 @@ test("the dashboard lets you pick which service's numbers to see", async ({ page
   } finally {
     await db.from("services").delete().eq("id", extra!.id);
   }
+});
+
+test("reports have four views: service, car park, exceptions and the visitor list, and the summary stays above them", async ({ page }) => {
+  const { data: areas } = await adminClient().from("areas").select("name").eq("active", true);
+  await adminSignIn(page);
+  await page.goto("/admin/reports");
+  const tabs = page.getByRole("navigation", { name: "Report" });
+  await expect(tabs.getByRole("link", { name: "Service report" })).toHaveAttribute("aria-current", "page", { timeout: 60_000 });
+  await expect(page.getByTestId("r-checked-in")).toBeVisible();
+
+  await tabs.getByRole("link", { name: "Car park report" }).click();
+  await expect(page).toHaveURL(/view=area/, { timeout: 60_000 });
+  for (const a of areas!) await expect(page.locator("li").filter({ hasText: a.name }).first()).toBeVisible();
+  await expect(page.getByTestId("r-checked-in")).toBeVisible();
+
+  await tabs.getByRole("link", { name: "Exceptions" }).click();
+  await expect(page.getByRole("heading", { name: "Released without a pass" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: "Missed check-outs" })).toBeVisible();
+
+  await tabs.getByRole("link", { name: "Visitor list" }).click();
+  await expect(page.getByRole("heading", { name: "Transactions" })).toBeVisible({ timeout: 60_000 });
 });

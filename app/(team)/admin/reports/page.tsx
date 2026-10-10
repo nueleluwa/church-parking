@@ -15,6 +15,13 @@ export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 40;
 
+const VIEWS = [
+  { value: "service", label: "Service report" },
+  { value: "area", label: "Car park report" },
+  { value: "exceptions", label: "Exceptions" },
+  { value: "visitors", label: "Visitor list" },
+] as const;
+
 const addDays = (date: string, n: number) => {
   const d = new Date(`${date}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
@@ -39,7 +46,7 @@ const STATUS = {
 } as const;
 
 /** AD-4: counts per Sunday, service and car park, missed check-outs, releases without a pass, and a CSV. */
-export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string; area?: string; page?: string }> }) {
+export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string; area?: string; page?: string; view?: string }> }) {
   await requireStaff("admin");
   const sp = await searchParams;
   const today = lagosDate(new Date());
@@ -59,12 +66,37 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const pages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const page = Math.min(pages, Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1));
   const rows = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const reportHref = (next: { page?: string }) =>
-    `/admin/reports?${new URLSearchParams({ from: range.from, to: range.to, ...(area ? { area: area.slug } : {}), ...(next.page ? { page: next.page } : {}) })}`;
+  const view = VIEWS.some((v) => v.value === sp.view) ? (sp.view as (typeof VIEWS)[number]["value"]) : "service";
+  const reportHref = (next: { page?: string; view?: string }) =>
+    `/admin/reports?${new URLSearchParams({
+      from: range.from,
+      to: range.to,
+      ...(area ? { area: area.slug } : {}),
+      ...((next.view ?? view) !== "service" ? { view: next.view ?? view } : {}),
+      ...(next.page ? { page: next.page } : {}),
+    })}`;
+  // Each active car park, even one with no visits in these dates
+  const byArea = areas
+    .filter((a) => !area || a.slug === area.slug)
+    .map((a) => {
+      const mine = visits.filter((v) => v.areaName === a.name);
+      const missed = mine.filter((v) => v.status === "missed").length;
+      return {
+        name: a.name,
+        checkedIn: mine.length,
+        released: mine.filter((v) => v.status === "released").length,
+        parked: mine.filter((v) => v.status === "parked").length,
+        missed,
+        missedPercent: mine.length ? Math.round((missed / mine.length) * 100) : 0,
+      };
+    });
+  const noPass = sorted.filter((v) => v.status === "released" && v.releaseMethod === "search").slice(0, 40);
+  const missedList = sorted.filter((v) => v.status === "missed").slice(0, 40);
 
   return (
     <>
       <form className="space-y-3 rounded-card bg-card p-4 shadow-sm">
+        {view !== "service" && <input type="hidden" name="view" value={view} />}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           <label className="block font-medium">
             From
@@ -114,7 +146,81 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <Stat label="Does not match" value={report.alerts.noMatch} id="r-no-match" />
       </section>
 
-      {report.days.length === 0 ? (
+      <nav aria-label="Report" className="flex flex-wrap gap-2 border-b border-edge/20 pb-2">
+        {VIEWS.map((v) => (
+          <Link
+            key={v.value}
+            href={reportHref({ view: v.value })}
+            aria-current={v.value === view ? "page" : undefined}
+            className={`rounded-full px-4 py-2 font-semibold ${v.value === view ? "bg-accent text-white" : "text-ink hover:bg-panel"}`}
+          >
+            {v.label}
+          </Link>
+        ))}
+      </nav>
+
+      {view === "area" && (
+        <section aria-label="By car park" className="space-y-3">
+          <h2 className="px-1 text-lg font-bold">By car park</h2>
+          <ul className="grid gap-3 lg:hidden">
+            {byArea.map((a) => (
+              <li key={a.name} className="rounded-card bg-card p-4 shadow-sm">
+                <p data-area className="font-bold">{a.name}</p>
+                <p className="text-sm text-ink-soft">
+                  in {a.checkedIn} · out {a.released} · parked {a.parked} · missed {a.missed} ({a.missedPercent}%)
+                </p>
+              </li>
+            ))}
+          </ul>
+          <AdminTable label="By car park" columns={["Car park", "Checked in", "Released", "Still parked", "Missed", "Missed %"]}>
+            {byArea.map((a) => (
+              <tr key={a.name}>
+                <td data-area className={`${cell} font-bold`}>{a.name}</td>
+                <td className={cell}>{a.checkedIn}</td>
+                <td className={cell}>{a.released}</td>
+                <td className={cell}>{a.parked}</td>
+                <td className={cell}>{a.missed}</td>
+                <td className={cell}>{a.missedPercent}%</td>
+              </tr>
+            ))}
+          </AdminTable>
+        </section>
+      )}
+
+      {view === "exceptions" && (
+        <section aria-label="Exception lists" className="grid items-start gap-4 lg:grid-cols-2">
+          {[
+            { title: "Released without a pass", empty: "None in these dates.", list: noPass },
+            { title: "Missed check-outs", empty: "None in these dates.", list: missedList },
+          ].map((group) => (
+            <div key={group.title} className="space-y-2 rounded-card bg-card p-4 shadow-sm">
+              <h2 className="text-lg font-bold">{group.title}</h2>
+              {group.list.length === 0 ? (
+                <p className="text-ink-soft">{group.empty}</p>
+              ) : (
+                <ul className="divide-y divide-edge/15">
+                  {group.list.map((v) => (
+                    <li key={v.reference + v.serviceDate}>
+                      <Link href={`/admin/visits/${v.id}`} aria-label={`Visit details for ${formatPlate(v.plate)}`} className="flex items-center justify-between gap-3 py-2 hover:bg-page">
+                        <span className="min-w-0">
+                          <span data-plate className="block whitespace-nowrap font-bold">{formatPlate(v.plate)}</span>
+                          <span className="block text-sm text-ink-soft">
+                            <span data-area>{v.areaName}</span> · {v.serviceDate} · {v.serviceName}
+                          </span>
+                        </span>
+                        <span className="shrink-0 text-sm font-semibold">{formatLagosTime(v.checkedInAt)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+
+      {view === "service" &&
+        (report.days.length === 0 ? (
         <p className="rounded-card bg-card p-5 font-medium shadow-sm">No visits between these dates.</p>
       ) : (
         <section aria-label="By day" className="space-y-3">
@@ -143,9 +249,12 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             </article>
           ))}
         </section>
-      )}
+      ))}
 
-      {rows.length > 0 && (
+      {view === "visitors" && rows.length === 0 && (
+        <p className="rounded-card bg-card p-5 font-medium shadow-sm">No visits between these dates.</p>
+      )}
+      {view === "visitors" && rows.length > 0 && (
         <section aria-label="Transactions" className="space-y-3">
           <div>
             <h2 className="px-1 text-lg font-bold">Transactions</h2>

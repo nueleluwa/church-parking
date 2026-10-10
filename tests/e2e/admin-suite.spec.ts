@@ -230,7 +230,7 @@ test("reports count real visits, export a CSV with no names or phone numbers, an
   const plate = randomPlate("RP");
   await guestCheckIn(browser, plate);
   await adminSignIn(page);
-  await page.goto("/admin/reports");
+  await page.goto("/admin/reports?view=visitors");
   await expect(page.getByRole("heading", { name: "Transactions" })).toBeVisible({ timeout: 60_000 });
 
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" });
