@@ -200,3 +200,23 @@ test("Mark as mismatch holds the car and raises an alert", async ({ page, browse
   expect(alert!.map((a) => a.kind)).toContain("no_match");
   await expect(page.getByRole("button", { name: "Release car" })).toHaveCount(0);
 });
+
+test("signs: the QR code can be downloaded, and a sign can be set for A4 or A5 paper", async ({ page }) => {
+  const { data: areas } = await adminClient().from("areas").select("name, slug").eq("active", true).order("sort");
+  const first = areas![0];
+  await adminSignIn(page);
+  await page.goto("/admin/signs");
+  const card = page.locator("li").filter({ hasText: first.name }).first();
+  const download = card.getByRole("link", { name: "Download the QR code" });
+  await expect(download).toHaveAttribute("download", `qr-${first.slug}.svg`, { timeout: 60_000 });
+  expect(decodeURIComponent((await download.getAttribute("href"))!)).toContain("<svg");
+
+  await page.goto(`/admin/signs/${first.slug}`);
+  const size = page.getByRole("navigation", { name: "Paper size" });
+  await expect(size.getByRole("link", { name: "A4 (portrait)" })).toHaveAttribute("aria-current", "true", { timeout: 60_000 });
+  expect(await page.locator("style").evaluateAll((els) => els.map((e) => e.textContent).join(" "))).toContain("size: A4 portrait");
+  await size.getByRole("link", { name: "A5 (portrait)" }).click();
+  await expect(page).toHaveURL(/size=a5/, { timeout: 60_000 });
+  await expect(size.getByRole("link", { name: "A5 (portrait)" })).toHaveAttribute("aria-current", "true");
+  expect(await page.locator("style").evaluateAll((els) => els.map((e) => e.textContent).join(" "))).toContain("size: A5 portrait");
+});

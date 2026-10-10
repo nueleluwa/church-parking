@@ -31,9 +31,18 @@ export default async function SignsPage() {
               dangerouslySetInnerHTML={{ __html: s.svg }}
             />
             <p className="mb-3 truncate text-center text-sm text-ink-soft">/c/{s.slug}</p>
-            <Link href={`/admin/signs/${s.slug}`} className={primaryButton}>
-              Open the sign to print
-            </Link>
+            <div className="grid gap-2">
+              <Link href={`/admin/signs/${s.slug}`} className={primaryButton}>
+                Open the sign to print
+              </Link>
+              <a
+                href={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(s.svg)}`}
+                download={`qr-${s.slug}.svg`}
+                className={outlineButton}
+              >
+                Download the QR code
+              </a>
+            </div>
           </li>
         ))}
       </ul>
