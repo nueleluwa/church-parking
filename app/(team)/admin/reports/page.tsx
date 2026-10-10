@@ -1,14 +1,19 @@
 import Link from "next/link";
+import { AdminTable, cell } from "@/components/AdminTable";
 import { IconDownload } from "@/components/icons";
+import { Pager } from "@/components/Pager";
 import { StatusBadge } from "@/components/StatusBadge";
 import { field, outlineButton, primaryButton } from "@/components/ui";
-import { listAlertKinds, listReportVisits } from "@/lib/db";
+import { listActiveAreas, listAlertKinds, listReportVisits } from "@/lib/db";
 import { formatLagosDate, formatLagosTime } from "@/lib/format";
 import { buildReport, formatPlate, lagosDate, parseRange } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
+import { PrintButton } from "./PrintButton";
 
 export const metadata = { title: "Reports" };
 export const dynamic = "force-dynamic";
+
+const PAGE_SIZE = 40;
 
 const addDays = (date: string, n: number) => {
   const d = new Date(`${date}T00:00:00Z`);
@@ -34,24 +39,33 @@ const STATUS = {
 } as const;
 
 /** AD-4: counts per Sunday, service and car park, missed check-outs, releases without a pass, and a CSV. */
-export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string }> }) {
+export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string; area?: string; page?: string }> }) {
   await requireStaff("admin");
   const sp = await searchParams;
   const today = lagosDate(new Date());
   const range = parseRange(sp.from, sp.to) ?? { from: addDays(today, -27), to: today };
 
-  const [visits, alertKinds] = await Promise.all([
+  const [everyVisit, alertKinds, areas] = await Promise.all([
     listReportVisits(range.from, range.to),
     listAlertKinds(range.from, range.to),
+    listActiveAreas(),
   ]);
+  // One car park, or all of them. The CSV follows the same choice.
+  const area = areas.find((a) => a.slug === sp.area);
+  const visits = area ? everyVisit.filter((v) => v.areaName === area.name) : everyVisit;
   const report = buildReport(visits, alertKinds);
   const t = report.totals;
-  const recent = [...visits].sort((a, b) => b.checkedInAt.localeCompare(a.checkedInAt)).slice(0, 50);
+  const sorted = [...visits].sort((a, b) => b.checkedInAt.localeCompare(a.checkedInAt));
+  const pages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const page = Math.min(pages, Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1));
+  const rows = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const reportHref = (next: { page?: string }) =>
+    `/admin/reports?${new URLSearchParams({ from: range.from, to: range.to, ...(area ? { area: area.slug } : {}), ...(next.page ? { page: next.page } : {}) })}`;
 
   return (
     <>
       <form className="space-y-3 rounded-card bg-card p-4 shadow-sm">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           <label className="block font-medium">
             From
             <input type="date" name="from" defaultValue={range.from} required className={field} />
@@ -60,13 +74,25 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             To
             <input type="date" name="to" defaultValue={range.to} required className={field} />
           </label>
+          <label className="col-span-2 block font-medium lg:col-span-1">
+            Car park
+            <select name="area" defaultValue={area?.slug ?? ""} className={field}>
+              <option value="">All car parks</option>
+              {areas.map((a) => (
+                <option key={a.slug} value={a.slug}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <button className={primaryButton}>Show report</button>
-          <a href={`/admin/reports/export?from=${range.from}&to=${range.to}`} className={outlineButton}>
+          <a href={`/admin/reports/export?from=${range.from}&to=${range.to}${area ? `&area=${area.slug}` : ""}`} className={outlineButton}>
             <IconDownload className="h-5 w-5" />
             Export CSV
           </a>
+          <PrintButton />
         </div>
       </form>
 
@@ -119,45 +145,61 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         </section>
       )}
 
-      {recent.length > 0 && (
-        <section aria-label="Transactions" className="rounded-card bg-card p-4 shadow-sm">
-          <h2 className="text-lg font-bold">Transactions</h2>
-          <p className="text-sm text-ink-soft">
-            Showing {recent.length} of {visits.length}. Export the CSV for all of them.
-          </p>
-          <div className="mt-2 overflow-x-auto" role="region" aria-label="Transactions table, scroll sideways on a small screen" tabIndex={0}>
-            <table className="w-full min-w-[34rem] text-left text-sm">
-              <thead className="text-ink-soft">
-                <tr>
-                  <th className="py-2 pr-3 font-medium">Vehicle</th>
-                  <th className="py-2 pr-3 font-medium">Service</th>
-                  <th className="py-2 pr-3 font-medium">Car park</th>
-                  <th className="py-2 pr-3 font-medium">Checked in</th>
-                  <th className="py-2 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-edge/15">
-                {recent.map((v) => (
-                  <tr key={v.reference + v.serviceDate}>
-                    <td className="whitespace-nowrap py-2 pr-3 font-bold">
-                      <Link href={`/admin/visits/${v.id}`} className="underline" aria-label={`Visit details for ${formatPlate(v.plate)}`}>
-                        {formatPlate(v.plate)}
-                      </Link>
-                    </td>
-                    <td className="py-2 pr-3">{v.serviceName}</td>
-                    <td className="py-2 pr-3">{v.areaName}</td>
-                    <td className="whitespace-nowrap py-2 pr-3">{formatLagosTime(v.checkedInAt)}</td>
-                    <td className="py-2">
-                      <StatusBadge tone={STATUS[v.status].tone}>{STATUS[v.status].label}</StatusBadge>
-                      {v.releaseMethod === "search" && v.status === "released" && (
-                        <span className="ml-1 text-xs text-ink-soft">no pass</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {rows.length > 0 && (
+        <section aria-label="Transactions" className="space-y-3">
+          <div>
+            <h2 className="px-1 text-lg font-bold">Transactions</h2>
+            <p className="px-1 text-sm text-ink-soft">
+              {visits.length} {visits.length === 1 ? "visit" : "visits"}, newest first. Export the CSV for all of them.
+            </p>
           </div>
+          <ul className="grid gap-3 lg:hidden">
+            {rows.map((v) => (
+              <li key={v.reference + v.serviceDate}>
+                <Link
+                  href={`/admin/visits/${v.id}`}
+                  aria-label={`Visit details for ${formatPlate(v.plate)}`}
+                  className="flex items-center gap-3 rounded-card bg-card p-3 shadow-sm hover:bg-page"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span data-plate className="block whitespace-nowrap font-extrabold">
+                      {formatPlate(v.plate)}
+                    </span>
+                    <span className="block text-sm text-ink-soft">
+                      <span data-area>{v.areaName}</span> · {v.serviceName}
+                    </span>
+                    <span className="block text-sm text-ink-soft">
+                      {v.serviceDate} · in {formatLagosTime(v.checkedInAt)}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 flex-col items-end gap-1">
+                    <StatusBadge tone={STATUS[v.status].tone}>{STATUS[v.status].label}</StatusBadge>
+                    {v.releaseMethod === "search" && v.status === "released" && <span className="text-xs text-ink-soft">no pass</span>}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <AdminTable label="Transactions" columns={["Vehicle", "Day", "Service", "Car park", "Checked in", "Status"]}>
+            {rows.map((v) => (
+              <tr key={v.reference + v.serviceDate} className="hover:bg-page">
+                <td className={cell}>
+                  <Link href={`/admin/visits/${v.id}`} aria-label={`Visit details for ${formatPlate(v.plate)}`} className="whitespace-nowrap font-bold underline">
+                    {formatPlate(v.plate)}
+                  </Link>
+                </td>
+                <td className={`${cell} whitespace-nowrap`}>{v.serviceDate}</td>
+                <td className={cell}>{v.serviceName}</td>
+                <td data-area className={`${cell} whitespace-nowrap`}>{v.areaName}</td>
+                <td className={`${cell} whitespace-nowrap`}>{formatLagosTime(v.checkedInAt)}</td>
+                <td className={cell}>
+                  <StatusBadge tone={STATUS[v.status].tone}>{STATUS[v.status].label}</StatusBadge>
+                  {v.releaseMethod === "search" && v.status === "released" && <span className="ml-1 text-xs text-ink-soft">no pass</span>}
+                </td>
+              </tr>
+            ))}
+          </AdminTable>
+          <Pager page={page} pages={pages} href={(p) => reportHref({ page: String(p) })} />
         </section>
       )}
     </>

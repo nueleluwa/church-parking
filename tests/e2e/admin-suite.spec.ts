@@ -236,7 +236,7 @@ test("reports count real visits, export a CSV with no names or phone numbers, an
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" });
   const { count } = await db.from("visits").select("id", { count: "exact", head: true }).gte("service_date", new Date(Date.now() - 27 * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" })).lte("service_date", today);
   await expect(page.getByTestId("r-checked-in")).toHaveText(String(count));
-  await expect(page.getByRole("cell", { name: new RegExp(plate.slice(0, 3)) }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: new RegExp(`Visit details for ${plate.slice(0, 3)}`) }).first()).toBeVisible();
   for (const id of ["r-released", "r-parked", "r-missed", "r-no-pass", "r-conflicts", "r-member-claims", "r-no-match"]) {
     await expect(page.getByTestId(id)).toBeVisible();
   }

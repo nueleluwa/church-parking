@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listReportVisits, logAudit } from "@/lib/db";
+import { listActiveAreas, listReportVisits, logAudit } from "@/lib/db";
 import { hasRole, parseRange, visitsToCsv } from "@/lib/rules";
 import { currentStaff } from "@/lib/staff-auth";
 
@@ -15,13 +15,15 @@ export async function GET(request: Request) {
   const range = parseRange(url.searchParams.get("from"), url.searchParams.get("to"));
   if (!range) return NextResponse.json({ error: "Choose a start and end date." }, { status: 400 });
 
-  const visits = await listReportVisits(range.from, range.to);
-  await logAudit(staff.id, null, "export_report", { after: { from: range.from, to: range.to, rows: visits.length } });
+  const area = (await listActiveAreas()).find((a) => a.slug === url.searchParams.get("area"));
+  const all = await listReportVisits(range.from, range.to);
+  const visits = area ? all.filter((v) => v.areaName === area.name) : all;
+  await logAudit(staff.id, null, "export_report", { after: { from: range.from, to: range.to, rows: visits.length, ...(area ? { area: area.slug } : {}) } });
 
   return new NextResponse(visitsToCsv(visits), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="parking-${range.from}-to-${range.to}.csv"`,
+      "Content-Disposition": `attachment; filename="parking-${range.from}-to-${range.to}${area ? `-${area.slug}` : ""}.csv"`,
       "Cache-Control": "no-store",
     },
   });

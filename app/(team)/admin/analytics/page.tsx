@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Bars, Donut, TimeChart } from "@/components/charts";
 import { field, primaryButton } from "@/components/ui";
-import { listReportVisits } from "@/lib/db";
+import { listActiveAreas, listReportVisits } from "@/lib/db";
 import { formatLagosDate } from "@/lib/format";
 import { buildAnalytics, lagosDate, parseRange, percentChange, previousRange } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
@@ -15,7 +15,7 @@ const addDays = (date: string, n: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-function Kpi({ label, value, change, id, lowerIsBetter }: { label: string; value: number; change: number | null; id: string; lowerIsBetter?: boolean }) {
+function Kpi({ label, value, change, id, lowerIsBetter, partial }: { label: string; value: number; change: number | null; id: string; lowerIsBetter?: boolean; partial?: boolean }) {
   const good = change === null ? null : lowerIsBetter ? change <= 0 : change >= 0;
   return (
     <div className="rounded-2xl bg-card p-4 shadow-sm">
@@ -30,23 +30,31 @@ function Kpi({ label, value, change, id, lowerIsBetter }: { label: string; value
           </span>
         )}
       </p>
-      {change !== null && <p className="text-xs text-ink-soft">compared with the period before</p>}
+      {change !== null && <p className="text-xs text-ink-soft">
+          compared with the period before{partial ? " (today is not over yet)" : ""}
+        </p>}
     </div>
   );
 }
 
 /** AD-5: peak arrival times, which car park fills first, and how visits ended. All from the visit records. */
-export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string }> }) {
+export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string; area?: string }> }) {
   await requireStaff("admin");
   const sp = await searchParams;
   const today = lagosDate(new Date());
   const range = parseRange(sp.from, sp.to) ?? { from: today, to: today };
   const before = previousRange(range.from, range.to);
 
-  const [visits, earlier] = await Promise.all([
+  const [everyVisit, everyEarlier, areas] = await Promise.all([
     listReportVisits(range.from, range.to),
     listReportVisits(before.from, before.to),
+    listActiveAreas(),
   ]);
+  const area = areas.find((x) => x.slug === sp.area);
+  const visits = area ? everyVisit.filter((v) => v.areaName === area.name) : everyVisit;
+  const earlier = area ? everyEarlier.filter((v) => v.areaName === area.name) : everyEarlier;
+  const partial = range.to >= today;
+  const areaQuery = area ? `&area=${area.slug}` : "";
   const a = buildAnalytics(visits);
   const b = buildAnalytics(earlier);
   const single = range.from === range.to;
@@ -61,8 +69,8 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
       <div>
         <h1 className="text-2xl font-extrabold">Parking analytics</h1>
         <p className="text-ink-soft">
-          {single ? formatLagosDate(`${range.from}T12:00:00+01:00`) : `${range.from} to ${range.to}`} · counted from the
-          visit records
+          {single ? formatLagosDate(`${range.from}T12:00:00+01:00`) : `${range.from} to ${range.to}`} · {area ? area.name : "all car parks"} ·
+          counted from the visit records
         </p>
       </div>
 
@@ -76,11 +84,22 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
             To
             <input type="date" name="to" defaultValue={range.to} required className={field} />
           </label>
+          <label className="col-span-2 block font-medium">
+            Car park
+            <select name="area" defaultValue={area?.slug ?? ""} className={field}>
+              <option value="">All car parks</option>
+              {areas.map((x) => (
+                <option key={x.slug} value={x.slug}>
+                  {x.name}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         <button className={primaryButton}>Show analytics</button>
         <p className="flex flex-wrap gap-x-4 gap-y-1">
           {presets.map((p) => (
-            <Link key={p.label} href={`/admin/analytics?from=${p.from}&to=${p.to}`} className="font-semibold text-accent underline">
+            <Link key={p.label} href={`/admin/analytics?from=${p.from}&to=${p.to}${areaQuery}`} className="font-semibold text-accent underline">
               {p.label}
             </Link>
           ))}
@@ -88,9 +107,9 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
       </form>
 
       <section aria-label="Totals" className="grid gap-3 sm:grid-cols-3">
-        <Kpi label="Total check-ins" value={a.checkedIn} change={percentChange(a.checkedIn, b.checkedIn)} id="a-checked-in" />
-        <Kpi label="Total releases" value={a.released} change={percentChange(a.released, b.released)} id="a-released" />
-        <Kpi label="Missed check-outs" value={a.missed} change={percentChange(a.missed, b.missed)} id="a-missed" lowerIsBetter />
+        <Kpi label="Total check-ins" value={a.checkedIn} change={percentChange(a.checkedIn, b.checkedIn)} id="a-checked-in" partial={partial} />
+        <Kpi label="Total releases" value={a.released} change={percentChange(a.released, b.released)} id="a-released" partial={partial} />
+        <Kpi label="Missed check-outs" value={a.missed} change={percentChange(a.missed, b.missed)} id="a-missed" lowerIsBetter partial={partial} />
       </section>
 
       <section aria-label="Check-ins by time of day" className="rounded-card bg-card p-4 shadow-sm">
