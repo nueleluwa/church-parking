@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { AdminTable, cell } from "@/components/AdminTable";
 import { IconChevronRight } from "@/components/icons";
+import { Pager } from "@/components/Pager";
 import { StatusBadge } from "@/components/StatusBadge";
 import { VehicleImage } from "@/components/VehicleImage";
 import { field, primaryButton } from "@/components/ui";
-import { listVehicles } from "@/lib/db";
+import { listActiveAreas, listVehicles } from "@/lib/db";
 import { formatVisitTime } from "@/lib/format";
 import { formatPlate, normalisePlate } from "@/lib/rules";
 import { describeVehicle } from "@/lib/rules/vehicle";
@@ -26,16 +27,57 @@ const FILTERS = [
   { value: "missed", label: "Missed" },
 ] as const;
 
-/** Every car the church has seen, newest first. Search by plate, or show only one kind of last visit. Owners' names and numbers are never listed. */
-export default async function VehiclesPage({ searchParams }: { searchParams: Promise<{ q?: string; status?: string }> }) {
+const TYPES = [
+  { value: "", label: "All types" },
+  { value: "member", label: "Members" },
+  { value: "guest", label: "Guests" },
+] as const;
+
+const SORTS = [
+  { value: "recent", label: "Last seen" },
+  { value: "visits", label: "Most visits" },
+  { value: "plate", label: "Plate" },
+] as const;
+
+const PAGE_SIZE = 30;
+
+/** Every car the church has seen. Search by plate; filter by type, car park or last visit; sort; page. Owners' names and numbers are never listed. */
+type Search = { q?: string; status?: string; type?: string; area?: string; sort?: string; page?: string };
+
+export default async function VehiclesPage({ searchParams }: { searchParams: Promise<Search> }) {
   await requireStaff("admin");
   const sp = await searchParams;
   const q = normalisePlate((sp.q ?? "").slice(0, 20));
   const status = FILTERS.some((f) => f.value && f.value === sp.status) ? (sp.status as keyof typeof STATUS) : "";
-  // A filter looks further back, so a short list of matches is not just the latest few cars
-  const all = await listVehicles(q, status ? 150 : 60);
-  const vehicles = status ? all.filter((v) => v.lastStatus === status) : all;
-  const href = (s: string) => `/admin/vehicles?${new URLSearchParams({ ...(q ? { q } : {}), ...(s ? { status: s } : {}) }).toString()}`;
+  const type = TYPES.some((t) => t.value && t.value === sp.type) ? (sp.type as "member" | "guest") : "";
+  const sort = SORTS.some((s) => s.value === sp.sort) ? (sp.sort as (typeof SORTS)[number]["value"]) : "recent";
+  const areas = await listActiveAreas();
+  const area = areas.find((a) => a.slug === sp.area);
+
+  // The latest cars (or the plate matches), then narrowed down and sorted here
+  const all = await listVehicles(q, 300);
+  const narrowed = all.filter(
+    (v) =>
+      (!status || v.lastStatus === status) &&
+      (!type || (type === "member" ? v.isMember : !v.isMember)) &&
+      (!area || v.lastAreaName === area.name),
+  );
+  const vehicles = [...narrowed].sort((a, b) =>
+    sort === "visits" ? b.visits - a.visits || (b.lastSeen ?? "").localeCompare(a.lastSeen ?? "") : sort === "plate" ? a.plate.localeCompare(b.plate) : (b.lastSeen ?? "").localeCompare(a.lastSeen ?? ""),
+  );
+  const pages = Math.max(1, Math.ceil(vehicles.length / PAGE_SIZE));
+  const page = Math.min(pages, Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1));
+  const pageRows = vehicles.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const href = (next: Partial<Search>) => {
+    const merged = { q, status, type, area: area?.slug ?? "", sort: sort === "recent" ? "" : sort, page: "", ...next };
+    const qs = new URLSearchParams(Object.entries(merged).filter(([, v]) => v) as [string, string][]).toString();
+    return `/admin/vehicles${qs ? `?${qs}` : ""}`;
+  };
+  const pill = (on: boolean) =>
+    `rounded-full border-2 px-4 py-2 font-semibold ${on ? "border-night bg-night text-white" : "border-edge/30 bg-white hover:bg-page"}`;
+
+  const members = vehicles.filter((v) => v.isMember).length;
+  const repeat = vehicles.filter((v) => v.visits > 1).length;
 
   return (
     <>
@@ -44,27 +86,67 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
         numbers are not shown here.
       </p>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-        <form className="flex flex-col gap-3 rounded-card bg-card p-4 shadow-sm lg:w-full lg:max-w-md lg:flex-row lg:items-end">
-          {status && <input type="hidden" name="status" value={status} />}
-          <label className="block flex-1 font-medium">
-            Plate number
-            <input name="q" defaultValue={q} autoComplete="off" autoCapitalize="characters" className={`${field} uppercase`} />
-          </label>
-          <button className={`${primaryButton} lg:w-32`}>Search</button>
-        </form>
+      <section aria-label="Summary" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          { label: "Cars shown", value: vehicles.length },
+          { label: "Members' cars", value: members },
+          { label: "Guest cars", value: vehicles.length - members },
+          { label: "Seen more than once", value: repeat },
+        ].map((c) => (
+          <div key={c.label} className="rounded-2xl bg-card p-4 shadow-sm">
+            <p className="text-sm font-medium text-ink-soft">{c.label}</p>
+            <p className="text-3xl font-extrabold">{c.value}</p>
+          </div>
+        ))}
+      </section>
 
+      <form className="flex flex-col gap-3 rounded-card bg-card p-4 shadow-sm lg:max-w-xl lg:flex-row lg:items-end">
+        {status && <input type="hidden" name="status" value={status} />}
+        {type && <input type="hidden" name="type" value={type} />}
+        {area && <input type="hidden" name="area" value={area.slug} />}
+        {sort !== "recent" && <input type="hidden" name="sort" value={sort} />}
+        <label className="block flex-1 font-medium">
+          Plate number
+          <input name="q" defaultValue={q} autoComplete="off" autoCapitalize="characters" className={`${field} uppercase`} />
+        </label>
+        <button className={`${primaryButton} lg:w-32`}>Search</button>
+      </form>
+
+      <div className="space-y-2">
         <nav aria-label="Show cars by their last visit" className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
-            <Link
-              key={f.value}
-              href={href(f.value)}
-              aria-current={f.value === status ? "true" : undefined}
-              className={`rounded-full border-2 px-4 py-2 font-semibold ${
-                f.value === status ? "border-night bg-night text-white" : "border-edge/30 bg-white hover:bg-page"
-              }`}
-            >
+            <Link key={f.value} href={href({ status: f.value })} aria-current={f.value === status ? "true" : undefined} className={pill(f.value === status)}>
               {f.label}
+            </Link>
+          ))}
+        </nav>
+        <nav aria-label="Type" className="flex flex-wrap gap-2">
+          {TYPES.map((t) => (
+            <Link key={t.value} href={href({ type: t.value })} aria-current={t.value === type ? "true" : undefined} className={pill(t.value === type)}>
+              {t.label}
+            </Link>
+          ))}
+        </nav>
+        <nav aria-label="Last car park" className="flex flex-wrap gap-2">
+          <Link href={href({ area: "" })} aria-current={!area ? "true" : undefined} className={pill(!area)}>
+            All car parks
+          </Link>
+          {areas.map((a) => (
+            <Link key={a.slug} href={href({ area: a.slug })} aria-current={a.slug === area?.slug ? "true" : undefined} className={pill(a.slug === area?.slug)}>
+              {a.name}
+            </Link>
+          ))}
+        </nav>
+        <nav aria-label="Sort" className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-semibold text-ink-soft">Sort:</span>
+          {SORTS.map((o) => (
+            <Link
+              key={o.value}
+              href={href({ sort: o.value === "recent" ? "" : o.value })}
+              aria-current={o.value === sort ? "true" : undefined}
+              className={`rounded-full px-3 py-1 font-semibold ${o.value === sort ? "bg-panel text-ink" : "text-accent underline"}`}
+            >
+              {o.label}
             </Link>
           ))}
         </nav>
@@ -77,7 +159,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
       ) : (
         <>
           <ul className="grid items-start gap-3 lg:hidden">
-            {vehicles.map((v) => {
+            {pageRows.map((v) => {
               const details = describeVehicle({ make: v.make, colour: v.colour });
               const body = (
                 <>
@@ -116,7 +198,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
           </ul>
 
           <AdminTable label="Cars" columns={["Plate", "Car", "Type", "Visits", "Last seen", "Car park", "Last visit"]}>
-            {vehicles.map((v) => (
+            {pageRows.map((v) => (
               <tr key={v.id} className="hover:bg-page">
                 <td className={cell}>
                   {v.lastVisitId ? (
@@ -145,6 +227,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
               </tr>
             ))}
           </AdminTable>
+          <Pager page={page} pages={pages} href={(p) => href({ page: String(p) })} />
         </>
       )}
     </>

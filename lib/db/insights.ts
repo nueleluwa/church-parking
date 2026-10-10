@@ -60,7 +60,7 @@ export async function listVehicles(search: string, limit = 40): Promise<VehicleS
       .select("id, vehicle_id, status, checked_in_at, areas(name)")
       .in("vehicle_id", vehicleIds)
       .order("checked_in_at", { ascending: false })
-      .limit(2000),
+      .limit(6000),
     db().from("member_vehicles").select("vehicle_id").in("vehicle_id", vehicleIds),
   ]);
   if (vehicles.error) fail(vehicles.error.message);
@@ -234,6 +234,7 @@ const MORE_WORDS: Record<string, string> = {
   staff_activate: "Staff account switched on",
   staff_deactivate: "Staff account switched off",
   staff_password_reset: "Staff password reset",
+  staff_edit: "Staff name or phone changed",
   member_pin_reset: "Member PIN reset",
   export_report: "Report exported",
 };
@@ -306,4 +307,26 @@ export async function listVisitsOn(date: string, limit = 1000): Promise<DayVisit
     member: r.member_id !== null,
     held: r.held_at !== null,
   }));
+}
+
+// ---------- What each person on the team did lately (admin) ----------
+
+/** For each member of staff, their most recent recorded actions (newest first). Staff only: no driver details. */
+export async function recentActivityByStaff(perPerson = 4): Promise<Map<string, { at: string; what: string }[]>> {
+  const { data, error } = await db()
+    .from("audit_events")
+    .select("staff_id, action, created_at")
+    .not("staff_id", "is", null)
+    .order("id", { ascending: false })
+    .limit(1500);
+  if (error) fail(error.message);
+  const out = new Map<string, { at: string; what: string }[]>();
+  for (const e of (data ?? []) as { staff_id: string; action: string; created_at: string }[]) {
+    const list = out.get(e.staff_id) ?? [];
+    if (list.length < perPerson) {
+      list.push({ at: e.created_at, what: MORE_WORDS[e.action] ?? ACTION_WORDS[e.action] ?? e.action.replace(/_/g, " ") });
+      out.set(e.staff_id, list);
+    }
+  }
+  return out;
 }

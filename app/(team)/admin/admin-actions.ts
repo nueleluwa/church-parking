@@ -105,7 +105,9 @@ export async function createStaffAction(fd: FormData): Promise<AdminState> {
 
 const manageSchema = z.object({
   staffId: z.string().uuid(),
-  intent: z.enum(["set_role", "deactivate", "activate", "reset_password"]),
+  intent: z.enum(["set_role", "deactivate", "activate", "reset_password", "edit_details"]),
+  name: z.string().trim().min(2).max(80).optional(),
+  phone: z.string().optional(),
   role: roleSchema.optional(),
   password: z.string().optional(),
 });
@@ -144,6 +146,14 @@ export async function manageStaffAction(fd: FormData): Promise<AdminState> {
       await updateStaffAccount(target.id, { active: true });
       await logAudit(staff.id, null, "staff_activate", { after: { staff_id: target.id } });
       break;
+    case "edit_details": {
+      const phone = normalisePhone(p.data.phone ?? "");
+      if (!p.data.name || !phone) return { error: "Please give a name and a phone number." };
+      const result = await updateStaffAccount(target.id, { full_name: p.data.name, phone });
+      if (result === "phone_taken") return { error: "Someone already has an account with that phone number." };
+      await logAudit(staff.id, null, "staff_edit", { after: { staff_id: target.id } });
+      break;
+    }
     case "reset_password": {
       const pw = password.safeParse(p.data.password ?? "");
       if (!pw.success) return { error: pw.error.issues[0].message };

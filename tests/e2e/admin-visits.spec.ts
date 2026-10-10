@@ -286,3 +286,81 @@ test("visits: summary, search by plate, day buttons, sorting, hold flag, and the
     await lead.remove();
   }
 });
+
+test("staff accounts: summary, search and role filter, editing a name and phone, and recent activity", async ({ page }) => {
+  const db = adminClient();
+  const first = await createStaff("attendant");
+  const second = await createStaff("attendant");
+  try {
+    await adminSignIn(page);
+    await page.goto("/admin/staff");
+    const summary = page.getByRole("region", { name: "Summary" });
+    await expect(summary).toContainText("Attendants", { timeout: 60_000 });
+    await expect(summary).toContainText("Admins");
+
+    // Role filter and search
+    const attendantsOnly = page.getByRole("navigation", { name: "Role" }).getByRole("link", { name: "Attendants" });
+    await attendantsOnly.click();
+    await expect(page).toHaveURL(/role=attendant/, { timeout: 60_000 });
+    await expect(page.locator("li").filter({ hasText: /\(you\)/ })).toHaveCount(0);
+    await page.goto("/admin/staff?q=zzzz-nobody");
+    await expect(page.getByText("No one matches.")).toBeVisible({ timeout: 60_000 });
+
+    // Change a name and phone number; a number already in use is refused
+    await page.goto(`/admin/staff?q=${encodeURIComponent(first.phone.slice(-7))}`);
+    const card = page.locator("li").filter({ hasText: /Manage / }).first();
+    await card.getByText(/^Manage /).click();
+    const newName = `Renamed ${Math.floor(Math.random() * 100000)}`;
+    await card.getByLabel("Full name").fill(newName);
+    await card.getByLabel("Phone number").fill(second.phone);
+    await card.getByRole("button", { name: "Save name and phone" }).click();
+    await expect(card.getByText("Someone already has an account with that phone number.")).toBeVisible({ timeout: 30_000 });
+    const freshPhone = `080${Math.floor(10000000 + Math.random() * 89999999)}`;
+    await card.getByLabel("Phone number").fill(freshPhone);
+    await card.getByRole("button", { name: "Save name and phone" }).click();
+    await expect(card.getByText("Saved.").first()).toBeVisible({ timeout: 30_000 });
+    const { data: row } = await db.from("staff").select("full_name, phone").eq("id", first.id).single();
+    expect(row).toMatchObject({ full_name: newName, phone: `+234${freshPhone.slice(1)}` });
+
+    // The change shows in that person's recent activity on the next look
+    await page.goto(`/admin/staff?q=${encodeURIComponent(newName)}`);
+    const again = page.locator("li").filter({ hasText: newName });
+    await again.getByText(/^Manage /).click();
+    await expect(again.getByRole("region", { name: new RegExp(`Recent activity of ${newName}`) })).toBeVisible();
+  } finally {
+    await first.remove();
+    await second.remove();
+  }
+});
+
+test("vehicles: summary, type and car park filters, sorting, and paging keep the choice in the address", async ({ page, browser }) => {
+  const plate = randomPlate("VF");
+  await guestCheckIn(browser, plate); // a guest car, in the first car park
+  const { data: areas } = await adminClient().from("areas").select("name, slug").eq("active", true).order("sort");
+  await adminSignIn(page);
+
+  await page.goto(`/admin/vehicles?q=${plate}`);
+  const summary = page.getByRole("region", { name: "Summary" });
+  await expect(summary).toContainText("Cars shown", { timeout: 60_000 });
+  await expect(summary).toContainText("Guest cars");
+  const row = page.locator("li").filter({ hasText: `${plate.slice(0, 3)} ${plate.slice(3, 6)}` });
+  await expect(row).toHaveCount(1);
+
+  // Guests only: still there. Members only: gone. The right car park keeps it; another does not
+  await page.goto(`/admin/vehicles?q=${plate}&type=guest`);
+  await expect(row).toHaveCount(1, { timeout: 60_000 });
+  await page.goto(`/admin/vehicles?q=${plate}&type=member`);
+  await expect(page.getByText("No car found with that plate.")).toBeVisible({ timeout: 60_000 });
+  await page.goto(`/admin/vehicles?q=${plate}&area=${areas![0].slug}`);
+  await expect(row).toHaveCount(1, { timeout: 60_000 });
+  await page.goto(`/admin/vehicles?q=${plate}&area=${areas![1].slug}`);
+  await expect(page.getByText("No car found with that plate.")).toBeVisible({ timeout: 60_000 });
+
+  // Sorting is a link; a filter keeps the others
+  await page.goto("/admin/vehicles?type=guest");
+  await page.getByRole("navigation", { name: "Sort" }).getByRole("link", { name: "Most visits" }).click();
+  await expect(page).toHaveURL(/type=guest.*sort=visits|sort=visits.*type=guest/, { timeout: 60_000 });
+  await page.getByRole("navigation", { name: "Type" }).getByRole("link", { name: "Members" }).click();
+  await expect(page).toHaveURL(/type=member/);
+  await expect(page).toHaveURL(/sort=visits/);
+});

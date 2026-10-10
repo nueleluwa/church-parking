@@ -103,10 +103,12 @@ export async function countActiveAdmins(): Promise<number> {
 
 export async function updateStaffAccount(
   id: string,
-  patch: { role?: StaffRole; active?: boolean; password_hash?: string },
-): Promise<void> {
+  patch: { role?: StaffRole; active?: boolean; password_hash?: string; full_name?: string; phone?: string },
+): Promise<"ok" | "phone_taken"> {
   const { error } = await db().from("staff").update(patch).eq("id", id);
+  if (error?.code === UNIQUE_VIOLATION) return "phone_taken";
   if (error) fail(error.message);
+  return "ok";
 }
 
 // ---------- Members (AD-3: PIN resets) ----------
