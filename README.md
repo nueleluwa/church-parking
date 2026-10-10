@@ -2,7 +2,7 @@
 
 A digital replacement for paper parking tallies at church. Drivers check in on their phone and keep a digital pass; the parking team checks the pass against the real car at the exit.
 
-Live at **https://churchparking.online** (used by Christ Church International).
+Live at **https://churchparking.online** (used by CCI).
 
 - **Drivers** open the site and tap **Check in** (then choose their car park) or **Scan a car park sign**, then register their car and get a pass. Members have an account, so they check in with two taps.
 - **Attendants** scan the pass at the exit, check that the plate matches the car, and release it. With no pass, they look the car up by plate, phone or reference.
