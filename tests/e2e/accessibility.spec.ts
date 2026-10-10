@@ -45,7 +45,7 @@ test("coordinator and admin screens have no automatically detectable accessibili
   }
   // The analytics, vehicles, visit details and settings screens, on a phone and on a wide screen
   const { data: visit } = await adminClient().from("visits").select("id").limit(1).single();
-  const extra = ["/admin/analytics", "/admin/vehicles", `/admin/visits/${visit!.id}`, "/admin/settings"];
+  const extra = ["/admin/analytics", "/admin/vehicles", "/admin/visits", `/admin/visits/${visit!.id}`, "/admin/settings"];
   for (const path of extra) await scan(page, path);
   await page.setViewportSize({ width: 320, height: 800 });
   for (const path of extra) {

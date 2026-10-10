@@ -4,6 +4,7 @@ import {
   IconCalendar,
   IconCar,
   IconCheck,
+  IconClock,
   IconPin,
   IconQr,
   IconReport,
@@ -15,7 +16,7 @@ import {
 import { MenuRow } from "@/components/MenuRow";
 import { StatusBadge } from "@/components/StatusBadge";
 import { loadDashboard } from "@/lib/dashboard-data";
-import { listRecentActivity } from "@/lib/db";
+import { listActiveAreas, listRecentActivity } from "@/lib/db";
 import { formatLagosTime } from "@/lib/format";
 import { formatPlate, lagosDate } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
@@ -64,7 +65,7 @@ function Stat({ label, value, note, icon, href, tone }: {
 export default async function AdminHome() {
   await requireStaff("admin");
   const today = lagosDate(new Date());
-  const [data, activity] = await Promise.all([loadDashboard(), listRecentActivity(today, 6)]);
+  const [data, activity, areas] = await Promise.all([loadDashboard(), listRecentActivity(today, 6), listActiveAreas()]);
   const t = data.summary?.totals;
   const service = data.services.find((s) => s.id === data.serviceId);
 
@@ -78,13 +79,13 @@ export default async function AdminHome() {
       </div>
 
       <section aria-label="Today" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Checked in" value={t?.checkedIn ?? 0} note="This service" icon={<IconCar className="h-5 w-5" />} />
-        <Stat label="Released" value={t?.released ?? 0} note="This service" icon={<IconCheck className="h-5 w-5" />} />
-        <Stat label="Still parked" value={t?.parked ?? 0} note="From this service" icon={<IconUser className="h-5 w-5" />} />
+        <Stat label="Checked in" value={t?.checkedIn ?? 0} note="This service" icon={<IconCar className="h-5 w-5" />} href="/admin/visits" />
+        <Stat label="Released" value={t?.released ?? 0} note="This service" icon={<IconCheck className="h-5 w-5" />} href="/admin/visits?status=released" />
+        <Stat label="Still parked" value={t?.parked ?? 0} note="From this service" icon={<IconUser className="h-5 w-5" />} href="/admin/visits?status=parked" />
         <Stat
           label="Exceptions"
           value={data.alerts.length}
-          note={data.alerts.length ? "Need attention" : "None open"}
+          note={data.alerts.length ? "Need attention · view" : "None open"}
           icon={<IconAlert className="h-5 w-5" />}
           href="/staff/dashboard"
           tone={data.alerts.length ? "danger" : undefined}
@@ -97,13 +98,15 @@ export default async function AdminHome() {
           <h2 className="px-1 text-lg font-bold">Parking areas</h2>
           <ul className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
             {data.summary.areas.map((a) => (
-              <li key={a.areaId} className="rounded-2xl bg-card p-4 shadow-sm">
+              <li key={a.areaId} className="rounded-2xl bg-card shadow-sm hover:bg-page">
+                <Link href={`/admin/visits?area=${areas.find((x) => x.name === a.areaName)?.slug ?? ""}`} className="block p-4" aria-label={`${a.areaName}: see its visits`}>
                 <p data-area className="font-bold">{a.areaName}</p>
                 <p className="text-3xl font-extrabold">{a.parked}</p>
                 <p className="text-sm text-ink-soft">Currently parked</p>
                 <p className="mt-2 text-sm text-ink-soft">
                   {a.checkedIn} checked in · {a.released} released
                 </p>
+                </Link>
               </li>
             ))}
           </ul>
@@ -151,6 +154,7 @@ export default async function AdminHome() {
           <li><MenuRow href="/admin/signs" icon={<IconQr className="h-5 w-5" />} title="QR Signs" subtitle="Print a sign for each car park" /></li>
           <li><MenuRow href="/admin/staff" icon={<IconUsers className="h-5 w-5" />} title="Staff Accounts" subtitle="Add people, change roles, switch accounts off" /></li>
           <li><MenuRow href="/admin/members" icon={<IconUser className="h-5 w-5" />} title="Members" subtitle="Find a member and reset their PIN" /></li>
+          <li><MenuRow href="/admin/visits" icon={<IconClock className="h-5 w-5" />} title="Visits" subtitle="Every visit by day, car park and status" /></li>
           <li><MenuRow href="/admin/vehicles" icon={<IconCar className="h-5 w-5" />} title="Vehicles" subtitle="Every car seen, and its latest visit" /></li>
           <li><MenuRow href="/admin/areas" icon={<IconPin className="h-5 w-5" />} title="Car Parks" subtitle="Add, rename or switch off a car park" /></li>
           <li><MenuRow href="/admin/settings" icon={<IconSettings className="h-5 w-5" />} title="Settings" subtitle="The rules in force, and the activity log" /></li>
