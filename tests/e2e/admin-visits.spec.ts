@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { adminClient, adminSignIn, guestCheckIn, live, memberSignUp, randomPlate } from "./helpers";
+import { adminClient, adminSignIn, createStaff, guestCheckIn, live, memberSignUp, randomPlate, staffSignIn } from "./helpers";
 
 test.skip(!live, "needs .env.local with the Supabase key and admin login");
 test.setTimeout(300_000);
@@ -69,7 +69,7 @@ test("members: a recent list to begin with, counts on each card, and a page with
 test("staff accounts show when each person last did something", async ({ page }) => {
   await adminSignIn(page);
   await page.goto("/admin/staff");
-  await expect(page.getByText(/Last activity|No recorded activity yet/).first()).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator("li").getByText(/Last activity|No recorded activity yet/).first()).toBeVisible({ timeout: 60_000 });
 });
 
 test("reports and analytics can be limited to one car park, and the CSV follows the choice", async ({ page, browser }) => {
@@ -219,4 +219,20 @@ test("signs: the QR code can be downloaded, and a sign can be set for A4 or A5 p
   await expect(page).toHaveURL(/size=a5/, { timeout: 60_000 });
   await expect(size.getByRole("link", { name: "A5 (portrait)" })).toHaveAttribute("aria-current", "true");
   expect(await page.locator("style").evaluateAll((els) => els.map((e) => e.textContent).join(" "))).toContain("size: A5 portrait");
+});
+
+test("a coordinator can see the Visits list from the live board, but not the admin-only screens", async ({ browser }) => {
+  const lead = await createStaff("coordinator");
+  try {
+    const page = await (await browser.newContext()).newPage();
+    await staffSignIn(page, lead.phone, lead.password);
+    await page.goto("/staff/dashboard");
+    await page.getByRole("link", { name: "See every parked car" }).click();
+    await expect(page).toHaveURL(/\/admin\/visits\?status=parked/, { timeout: 60_000 });
+    await expect(page.getByRole("heading", { name: "Visits", exact: true })).toBeVisible();
+    await page.goto("/admin/vehicles");
+    await expect(page).toHaveURL(/\/staff$/, { timeout: 60_000 });
+  } finally {
+    await lead.remove();
+  }
 });

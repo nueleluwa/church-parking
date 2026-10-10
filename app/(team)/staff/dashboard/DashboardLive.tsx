@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IconAlert, IconCheck } from "@/components/icons";
@@ -171,6 +172,12 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
           </ul>
         </>
       )}
+
+      <p>
+        <Link href="/admin/visits?status=parked" className="font-semibold text-accent underline">
+          See every parked car
+        </Link>
+      </p>
 
       <section aria-label="Alerts">
         <h2 className="mb-2 flex items-center gap-2 text-lg font-bold">

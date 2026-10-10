@@ -27,7 +27,7 @@ const ITEMS: Item[] = [
   { href: "/staff/sweep", label: "Sweep", icon: <IconCheck />, match: (p) => p === "/staff/sweep" },
   { href: "/admin/analytics", label: "Analytics", icon: <IconTrend />, admin: true, match: (p) => p.startsWith("/admin/analytics") },
   { href: "/admin/reports", label: "Reports", icon: <IconReport />, admin: true, match: (p) => p.startsWith("/admin/reports") },
-  { href: "/admin/visits", label: "Visits", icon: <IconClock />, admin: true, match: (p) => p.startsWith("/admin/visits") },
+  { href: "/admin/visits", label: "Visits", icon: <IconClock />, match: (p) => p.startsWith("/admin/visits") },
   { href: "/admin/vehicles", label: "Vehicles", icon: <IconCar />, admin: true, match: (p) => p.startsWith("/admin/vehicles") },
   { href: "/admin/services", label: "Services", icon: <IconCalendar />, admin: true, match: (p) => p.startsWith("/admin/services") },
   { href: "/admin/signs", label: "QR Signs", icon: <IconQr />, admin: true, match: (p) => p.startsWith("/admin/signs") },

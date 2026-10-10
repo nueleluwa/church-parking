@@ -31,7 +31,7 @@ type Search = { date?: string; area?: string; status?: string; page?: string };
 
 /** Every visit on one day (today to begin with), by car park and status. Open a visit for its details, or to release, hold or correct it. */
 export default async function VisitsPage({ searchParams }: { searchParams: Promise<Search> }) {
-  await requireStaff("admin");
+  await requireStaff("coordinator");
   const sp = await searchParams;
   const today = lagosDate(new Date());
   const date = /^\d{4}-\d{2}-\d{2}$/.test(sp.date ?? "") ? sp.date! : today;

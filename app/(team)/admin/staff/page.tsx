@@ -31,23 +31,32 @@ export default async function StaffPage() {
       </p>
       <div className="grid items-start gap-4 lg:grid-cols-3">
       <div className="space-y-4 lg:col-span-2">
-      <ul className="grid items-start gap-3 xl:grid-cols-2">
+      <div aria-hidden="true" className="hidden px-4 text-sm font-semibold text-ink-soft lg:grid lg:grid-cols-[2fr_1fr_1.2fr_1.6fr_auto] lg:gap-3">
+        <span>Name</span>
+        <span>Role</span>
+        <span>Phone</span>
+        <span>Last activity</span>
+        <span className="w-16 text-right">Status</span>
+      </div>
+      <ul className="grid items-start gap-3">
         {staff.map((s) => (
-          <li key={s.id} className="rounded-card bg-card p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate text-lg font-bold">
-                  {s.full_name}
-                  {s.id === me.id && <span className="font-normal text-ink-soft"> (you)</span>}
-                </p>
-                <p className="text-sm text-ink-soft">
-                  {roleLabel(s.role)} · {s.phone}
-                </p>
-                <p className="text-sm text-ink-soft">
-                  {lastActive.has(s.id) ? `Last activity ${formatVisitTime(lastActive.get(s.id)!)}` : "No recorded activity yet"}
-                </p>
-              </div>
-              <StatusBadge tone={s.active ? "success" : "neutral"}>{s.active ? "Active" : "Off"}</StatusBadge>
+          <li key={s.id} className="relative rounded-card bg-card p-4 shadow-sm">
+            <div className="grid gap-0.5 pr-24 lg:grid-cols-[2fr_1fr_1.2fr_1.6fr_auto] lg:items-center lg:gap-3 lg:pr-0">
+              <p className="truncate text-lg font-bold">
+                {s.full_name}
+                {s.id === me.id && <span className="font-normal text-ink-soft"> (you)</span>}
+              </p>
+              <p className="text-sm text-ink-soft lg:text-base lg:text-ink">
+                {roleLabel(s.role)}
+                <span className="lg:hidden"> · {s.phone}</span>
+              </p>
+              <p className="hidden lg:block">{s.phone}</p>
+              <p className="text-sm text-ink-soft lg:text-base lg:text-ink">
+                {lastActive.has(s.id) ? `Last activity ${formatVisitTime(lastActive.get(s.id)!)}` : "No recorded activity yet"}
+              </p>
+              <span className="absolute right-4 top-4 lg:static lg:w-16 lg:text-right">
+                <StatusBadge tone={s.active ? "success" : "neutral"}>{s.active ? "Active" : "Off"}</StatusBadge>
+              </span>
             </div>
 
             <details className="mt-3">
