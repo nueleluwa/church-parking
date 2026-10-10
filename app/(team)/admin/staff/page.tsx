@@ -1,7 +1,8 @@
 import { PasswordField } from "@/components/PasswordField";
 import { StatusBadge } from "@/components/StatusBadge";
 import { field } from "@/components/ui";
-import { listStaff } from "@/lib/db";
+import { listStaff, staffLastActive } from "@/lib/db";
+import { formatVisitTime } from "@/lib/format";
 import { requireStaff } from "@/lib/staff-auth";
 import { AdminForm } from "../AdminForm";
 import { createStaffAction, manageStaffAction } from "../admin-actions";
@@ -19,7 +20,7 @@ const roleLabel = (r: string) => ROLES.find((x) => x.value === r)?.label ?? r;
 /** AD-3: staff accounts. Everyone has their own account, so every action is traceable. */
 export default async function StaffPage() {
   const me = await requireStaff("admin");
-  const all = await listStaff();
+  const [all, lastActive] = await Promise.all([listStaff(), staffLastActive()]);
   const staff = all.filter((s) => s.active);
   const off = all.filter((s) => !s.active);
   return (
@@ -41,6 +42,9 @@ export default async function StaffPage() {
                 </p>
                 <p className="text-sm text-ink-soft">
                   {roleLabel(s.role)} · {s.phone}
+                </p>
+                <p className="text-sm text-ink-soft">
+                  {lastActive.has(s.id) ? `Last activity ${formatVisitTime(lastActive.get(s.id)!)}` : "No recorded activity yet"}
                 </p>
               </div>
               <StatusBadge tone={s.active ? "success" : "neutral"}>{s.active ? "Active" : "Off"}</StatusBadge>

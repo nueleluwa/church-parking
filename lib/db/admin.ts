@@ -41,6 +41,20 @@ export type StaffRecord = {
   created_at: string;
 };
 
+/** When each person on the team last did something that was recorded (a release, a correction, a change). */
+export async function staffLastActive(): Promise<Map<string, string>> {
+  const { data, error } = await db()
+    .from("audit_events")
+    .select("staff_id, created_at")
+    .not("staff_id", "is", null)
+    .order("id", { ascending: false })
+    .limit(3000);
+  if (error) fail(error.message);
+  const out = new Map<string, string>();
+  for (const e of data ?? []) if (!out.has(e.staff_id as string)) out.set(e.staff_id as string, e.created_at as string);
+  return out;
+}
+
 export async function listStaff(): Promise<StaffRecord[]> {
   const { data, error } = await db()
     .from("staff")
@@ -119,6 +133,33 @@ export async function searchMembers(query: { phone?: string | null; text?: strin
   const { data, error } = await request;
   if (error) fail(error.message);
   return (data ?? []) as MemberRecord[];
+}
+
+/** The members seen most recently (or, if none has signed in again, the newest). */
+export async function listRecentMembers(limit = 30): Promise<MemberRecord[]> {
+  const { data, error } = await db()
+    .from("members")
+    .select("id, full_name, phone, locked_until, last_seen_at, created_at")
+    .order("last_seen_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) fail(error.message);
+  return (data ?? []) as MemberRecord[];
+}
+
+/** How many visits and saved cars each of these members has. */
+export async function memberCounts(ids: string[]): Promise<Map<string, { visits: number; cars: number }>> {
+  const out = new Map<string, { visits: number; cars: number }>(ids.map((id) => [id, { visits: 0, cars: 0 }]));
+  if (ids.length === 0) return out;
+  const [visits, cars] = await Promise.all([
+    db().from("visits").select("member_id").in("member_id", ids).limit(20000),
+    db().from("member_vehicles").select("member_id").in("member_id", ids).limit(5000),
+  ]);
+  if (visits.error) fail(visits.error.message);
+  if (cars.error) fail(cars.error.message);
+  for (const v of visits.data ?? []) out.get(v.member_id as string)!.visits++;
+  for (const c of cars.data ?? []) out.get(c.member_id as string)!.cars++;
+  return out;
 }
 
 /** A new PIN and an end to any lock. The caller also clears the failed-attempt records. */
