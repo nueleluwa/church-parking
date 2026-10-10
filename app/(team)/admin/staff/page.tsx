@@ -28,7 +28,9 @@ export default async function StaffPage() {
         Everyone on the team has their own account. Switch an account off when someone leaves: they are signed out at
         once.
       </p>
-      <ul className="grid items-start gap-3 lg:grid-cols-2">
+      <div className="grid items-start gap-4 lg:grid-cols-3">
+      <div className="space-y-4 lg:col-span-2">
+      <ul className="grid items-start gap-3 xl:grid-cols-2">
         {staff.map((s) => (
           <li key={s.id} className="rounded-card bg-card p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
@@ -105,8 +107,9 @@ export default async function StaffPage() {
           </ul>
         </details>
       )}
+      </div>
 
-      <section className="rounded-card bg-card p-4 shadow-sm lg:max-w-xl">
+      <section className="rounded-card bg-card p-4 shadow-sm lg:sticky lg:top-4">
         <h2 className="text-lg font-bold">Add a team member</h2>
         <div className="mt-3">
           <AdminForm action={createStaffAction} submitLabel="Create account" clearOnSuccess>
@@ -132,6 +135,7 @@ export default async function StaffPage() {
           </AdminForm>
         </div>
       </section>
+      </div>
     </>
   );
 }

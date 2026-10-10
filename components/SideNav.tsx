@@ -52,7 +52,7 @@ export function SideNav({ admin, name, role, initials }: { admin: boolean; name:
       aria-label="Menu"
       className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-night text-white lg:flex print:hidden"
     >
-      <p className="px-6 pb-4 pt-6 text-lg font-extrabold">Christ Church Parking</p>
+      <p className="px-6 pb-4 pt-6 text-lg font-extrabold">Church Parking</p>
       <nav aria-label="Parking team, desktop" className="flex-1 overflow-y-auto px-3">
         <ul className="space-y-1">
           {ITEMS.filter((i) => admin || !i.admin).map((i) => {

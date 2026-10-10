@@ -91,10 +91,11 @@ export default async function AdminHome() {
         />
       </section>
 
+      <div className="grid items-start gap-4 lg:grid-cols-5">
       {data.summary && (
-        <section aria-label="Parking areas" className="space-y-2">
+        <section aria-label="Parking areas" className="space-y-2 lg:col-span-3">
           <h2 className="px-1 text-lg font-bold">Parking areas</h2>
-          <ul className="grid gap-3 sm:grid-cols-3">
+          <ul className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
             {data.summary.areas.map((a) => (
               <li key={a.areaId} className="rounded-2xl bg-card p-4 shadow-sm">
                 <p data-area className="font-bold">{a.areaName}</p>
@@ -109,7 +110,7 @@ export default async function AdminHome() {
         </section>
       )}
 
-      <section aria-label="Recent activity" className="rounded-card bg-card p-4 shadow-sm">
+      <section aria-label="Recent activity" className="rounded-card bg-card p-4 shadow-sm lg:col-span-2">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">Recent activity</h2>
           <Link href="/staff/history" className="text-sm font-semibold text-accent underline">
@@ -138,7 +139,10 @@ export default async function AdminHome() {
         )}
       </section>
 
-      <section aria-label="Manage">
+      </div>
+
+      {/* On a wide screen the side menu already lists these, so the list is for phones */}
+      <section aria-label="Manage" className="lg:hidden">
         <h2 className="px-1 pb-2 text-lg font-bold">Manage</h2>
         <ul className="divide-y divide-edge/15 overflow-hidden rounded-card bg-card shadow-sm">
           <li><MenuRow href="/admin/analytics" icon={<IconTrend className="h-5 w-5" />} title="Analytics" subtitle="Peak times, car park usage and how visits ended" /></li>
