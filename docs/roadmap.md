@@ -92,5 +92,5 @@ The milestone detail below is the original plan, kept for the acceptance checks.
 - Print the QR signs and check they scan from 1.5 m in daylight.
 - Run the staff through the 09:30 changeover with two attendants at one exit.
 - Copy backups off the server (an `offsite.sh` script), and re-run the restore practice.
-- Open decisions: whether the Members list should mask phone numbers as the design reference does; whether a driver who scans a sign should skip the welcome step; which licence to use if the code is shared.
+- Open decisions: whether the Members list should mask phone numbers as the design reference does; whether a driver who scans a sign should skip the welcome step. (The code is licensed MIT.)
 - Ideas, not planned: SMS or WhatsApp messages, number-plate cameras, an offline mode (see the spec's "Not in v1").

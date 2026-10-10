@@ -87,4 +87,4 @@ Drivers give a name, phone number and plate. Staff screens show only the last fo
 
 ## Licence
 
-No licence has been chosen yet, so all rights are reserved by the project owner. Ask before reusing the code.
+MIT. See [LICENSE](LICENSE). The church's name, logo and design images are not covered by the licence.

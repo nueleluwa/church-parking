@@ -1,6 +1,7 @@
 {
   "name": "church-parking",
   "version": "1.0.0",
+  "license": "MIT",
   "description": "Church Parking: digital parking passes for CCI",
   "scripts": {
     "dev": "next dev",
