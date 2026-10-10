@@ -263,18 +263,20 @@ export type DayVisit = {
   plate: string;
   areaName: string;
   areaSlug: string;
+  serviceId: number;
   serviceName: string;
   status: "parked" | "released" | "missed";
   checkedInAt: string;
   releasedAt: string | null;
   member: boolean;
+  held: boolean;
 };
 
 /** Every visit on a service date, newest first. No names or phone numbers: those stay behind "Show number" on the visit. */
 export async function listVisitsOn(date: string, limit = 1000): Promise<DayVisit[]> {
   const { data, error } = await db()
     .from("visits")
-    .select("id, status, checked_in_at, released_at, member_id, vehicles(plate), areas(name, slug), services(name)")
+    .select("id, status, checked_in_at, released_at, held_at, member_id, service_id, vehicles(plate), areas(name, slug), services(name)")
     .eq("service_date", date)
     .order("checked_in_at", { ascending: false })
     .limit(limit);
@@ -284,7 +286,9 @@ export async function listVisitsOn(date: string, limit = 1000): Promise<DayVisit
     status: DayVisit["status"];
     checked_in_at: string;
     released_at: string | null;
+    held_at: string | null;
     member_id: string | null;
+    service_id: number;
     vehicles: { plate: string } | null;
     areas: { name: string; slug: string } | null;
     services: { name: string } | null;
@@ -294,10 +298,12 @@ export async function listVisitsOn(date: string, limit = 1000): Promise<DayVisit
     plate: r.vehicles?.plate ?? "",
     areaName: r.areas?.name ?? "",
     areaSlug: r.areas?.slug ?? "",
+    serviceId: r.service_id,
     serviceName: r.services?.name ?? "",
     status: r.status,
     checkedInAt: r.checked_in_at,
     releasedAt: r.released_at,
     member: r.member_id !== null,
+    held: r.held_at !== null,
   }));
 }

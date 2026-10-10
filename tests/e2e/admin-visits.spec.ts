@@ -236,3 +236,53 @@ test("a coordinator can see the Visits list from the live board, but not the adm
     await lead.remove();
   }
 });
+
+test("visits: summary, search by plate, day buttons, sorting, hold flag, and the export for admins only", async ({ page, browser }) => {
+  const plate = randomPlate("VU");
+  await guestCheckIn(browser, plate);
+  const id = await visitIdOf(plate);
+  await adminSignIn(page);
+
+  await page.goto(`/admin/visits?q=${plate}`);
+  await expect(page.getByRole("heading", { name: "Visits", exact: true })).toBeVisible({ timeout: 60_000 });
+  const summary = page.getByRole("region", { name: "Summary" });
+  await expect(summary).toContainText("Parked now");
+  await expect(page.locator("li").filter({ hasText: `${plate.slice(0, 3)} ${plate.slice(3, 6)}` })).toHaveCount(1);
+  await expect(page.locator("li").filter({ hasText: /so far/ })).toHaveCount(1); // a parked car's stay so far
+
+  // A look-alike letter finds it too, and a plate that is not there lists nothing
+  await page.goto(`/admin/visits?q=${plate.replace(/[0-9]/, (d) => (d === "0" ? "O" : d))}`);
+  await expect(page.locator("li").filter({ hasText: `${plate.slice(0, 3)} ${plate.slice(3, 6)}` })).toHaveCount(1);
+  await page.goto("/admin/visits?q=ZZZ999ZZ");
+  await expect(page.getByText("No visits match.")).toBeVisible({ timeout: 60_000 });
+
+  // Sorting is chosen by a link and kept in the address
+  await page.goto("/admin/visits");
+  await page.getByRole("navigation", { name: "Sort" }).getByRole("link", { name: "Oldest first" }).click();
+  await expect(page).toHaveURL(/sort=old/, { timeout: 60_000 });
+
+  // Yesterday, then back to today
+  await page.getByRole("link", { name: "Previous day" }).click();
+  await expect(page).toHaveURL(/date=\d{4}-\d{2}-\d{2}/, { timeout: 60_000 });
+  await page.getByRole("link", { name: "Today" }).click();
+  await expect(page).not.toHaveURL(/date=/);
+
+  // A held car says so in the list
+  await adminClient().rpc("hold_visit", { p_visit: id, p_staff: (await adminClient().from("staff").select("id").eq("phone", process.env.ADMIN_PHONE!).single()).data!.id });
+  await page.goto(`/admin/visits?q=${plate}`);
+  await expect(page.locator("li").filter({ hasText: "On hold" })).toHaveCount(1, { timeout: 60_000 });
+
+  // The export is for admins: it follows the day and car park, and a coordinator does not see it
+  const href = await page.getByRole("link", { name: "Export CSV" }).getAttribute("href");
+  expect(href).toMatch(/\/admin\/reports\/export\?from=\d{4}-\d{2}-\d{2}&to=\d{4}-\d{2}-\d{2}/);
+  const lead = await createStaff("coordinator");
+  try {
+    const c = await (await browser.newContext()).newPage();
+    await staffSignIn(c, lead.phone, lead.password);
+    await c.goto("/admin/visits");
+    await expect(c.getByRole("heading", { name: "Visits", exact: true })).toBeVisible({ timeout: 60_000 });
+    await expect(c.getByRole("link", { name: "Export CSV" })).toHaveCount(0);
+  } finally {
+    await lead.remove();
+  }
+});
