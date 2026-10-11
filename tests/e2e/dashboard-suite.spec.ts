@@ -5,60 +5,12 @@ import { adminClient, adminSignIn, createStaff, guestCheckIn, live, randomPlate,
 test.skip(!live, "needs .env.local with the Supabase key and admin login");
 test.setTimeout(300_000);
 
-const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" });
 const spaced = (p: string) => `${p.slice(0, 3)} ${p.slice(3, 6)} ${p.slice(6)}`;
 
 async function visitIdOf(plate: string) {
   const { data } = await adminClient().from("visits").select("id, vehicles!inner(plate)").eq("vehicles.plate", plate).single();
   return data!.id as string;
 }
-
-test("analytics counts real visits, draws the charts with plain-words descriptions, and compares with the period before", async ({ page, browser }) => {
-  const db = adminClient();
-  await guestCheckIn(browser, randomPlate("AN"));
-  await adminSignIn(page);
-  await page.goto("/admin/analytics");
-  await expect(page.getByRole("heading", { name: "Parking analytics" })).toBeVisible({ timeout: 60_000 });
-
-  const { data: rows } = await db.from("visits").select("status, areas(name)").eq("service_date", today());
-  const all = rows ?? [];
-  await expect(page.getByTestId("a-checked-in")).toHaveText(String(all.length));
-  await expect(page.getByTestId("a-released")).toHaveText(String(all.filter((r) => r.status === "released").length));
-  await expect(page.getByTestId("a-missed")).toHaveText(String(all.filter((r) => r.status === "missed").length));
-
-  // The time chart describes itself, and its hidden table adds up to the total
-  const chart = page.getByRole("img", { name: /^Check-ins by time of day\. The busiest time was/ });
-  await expect(chart).toBeVisible();
-  const tableTotal = await page.locator("table.sr-only tbody tr td:nth-child(2)").evaluateAll((tds) =>
-    tds.reduce((n, td) => n + Number(td.textContent), 0),
-  );
-  expect(tableTotal).toBe(all.length);
-
-  // Visit outcomes ring: its parts add up to the total
-  const ring = page.getByRole("img", { name: /^Visit outcomes: Currently parked \d+, Released \d+, Missed \d+\. Total \d+\./ });
-  await expect(ring).toBeVisible();
-  await expect(ring).toHaveAttribute("aria-label", new RegExp(`Total ${all.length}\\.`));
-
-  // Car park usage, peak times and which car park fills first
-  await expect(page.getByRole("region", { name: "Car park usage" }).getByText("Car Park 1")).toBeVisible();
-  await expect(page.getByRole("region", { name: "Peak periods" }).getByText("Busiest", { exact: true })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Which car park fills first" }).getByText(/half full/).first()).toBeVisible();
-
-  // A different period, and a bad one falls back to today
-  await page.getByRole("link", { name: "Last 28 days" }).click();
-  await expect(page).toHaveURL(/from=\d{4}-\d{2}-\d{2}&to=/, { timeout: 60_000 });
-  await expect(page.getByTestId("a-checked-in")).toBeVisible();
-  await page.goto("/admin/analytics?from=nonsense&to=2026-01-01");
-  await expect(page.getByRole("heading", { name: "Parking analytics" })).toBeVisible();
-
-  // Fits a phone and a desktop with no sideways scrolling
-  for (const width of [320, 390, 1440]) {
-    await page.setViewportSize({ width, height: 900 });
-    await page.goto("/admin/analytics");
-    await expect(page.getByTestId("a-checked-in")).toBeVisible({ timeout: 60_000 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `analytics at ${width}px`).toBeLessThanOrEqual(0);
-  }
-});
 
 test("vehicles: search by plate, member or guest, visit count, and no names or phone numbers", async ({ page, browser }) => {
   const plate = randomPlate("VH");

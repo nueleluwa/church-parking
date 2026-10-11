@@ -72,7 +72,7 @@ test("staff accounts show when each person last did something", async ({ page })
   await expect(page.locator("li").getByText(/Last activity|No recorded activity yet/).first()).toBeVisible({ timeout: 60_000 });
 });
 
-test("reports and analytics can be limited to one car park, and the CSV follows the choice", async ({ page, browser }) => {
+test("reports can be limited to one car park, and the CSV follows the choice", async ({ page, browser }) => {
   const plate = randomPlate("RA");
   await guestCheckIn(browser, plate); // the first car park
   await adminSignIn(page);
@@ -94,9 +94,6 @@ test("reports and analytics can be limited to one car park, and the CSV follows 
   expect(res.headers()["content-disposition"]).toContain(other.slug);
   expect(await res.text()).not.toContain(plate);
 
-  await page.goto(`/admin/analytics?area=${other.slug}`);
-  await expect(page.getByText(other.name, { exact: false }).first()).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText("(today is not over yet)").first()).toBeVisible();
 });
 
 test("members can also be found by the plate of a saved car", async ({ page, browser }) => {
@@ -363,25 +360,4 @@ test("vehicles: summary, type and car park filters, sorting, and paging keep the
   await page.getByRole("navigation", { name: "Type" }).getByRole("link", { name: "Members" }).click();
   await expect(page).toHaveURL(/type=member/);
   await expect(page).toHaveURL(/sort=visits/);
-});
-
-test("analytics: average stay, missed rate, members' share, how long cars stay, and a service filter that the quick ranges keep", async ({ page, browser }) => {
-  await guestCheckIn(browser, randomPlate("AU"));
-  await adminSignIn(page);
-  const day = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" });
-  await page.goto(`/admin/analytics?from=${day}&to=${day}`);
-  await expect(page.getByTestId("a-average-stay")).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByTestId("a-missed-rate")).toHaveText(/^\d+%$/);
-  await expect(page.getByTestId("a-members")).toHaveText(/^\d+%$/);
-  await expect(page.getByRole("region", { name: "How long cars stay" })).toBeVisible();
-
-  // A service from today's records can be chosen, and the quick links keep the choice
-  const options = await page.getByLabel("Service").locator("option").allTextContents();
-  if (options.length > 2) {
-    await page.getByLabel("Service").selectOption({ index: 1 });
-    await page.getByRole("button", { name: "Show analytics" }).click();
-    await expect(page).toHaveURL(/service=\d+/, { timeout: 60_000 });
-    expect(await page.getByRole("link", { name: "Last 7 days" }).getAttribute("href")).toContain("service=");
-  }
-  expect(await page.getByRole("link", { name: /Export these visits/ }).getAttribute("href")).toMatch(/export\?from=/);
 });

@@ -17,13 +17,15 @@ export async function GET(request: Request) {
 
   const area = (await listActiveAreas()).find((a) => a.slug === url.searchParams.get("area"));
   const all = await listReportVisits(range.from, range.to);
-  const visits = area ? all.filter((v) => v.areaName === area.name) : all;
-  await logAudit(staff.id, null, "export_report", { after: { from: range.from, to: range.to, rows: visits.length, ...(area ? { area: area.slug } : {}) } });
+  const serviceParam = url.searchParams.get("service");
+  const serviceId = serviceParam && /^\d{1,6}$/.test(serviceParam) ? Number(serviceParam) : null;
+  const visits = all.filter((v) => (!area || v.areaName === area.name) && (serviceId === null || v.serviceId === serviceId));
+  await logAudit(staff.id, null, "export_report", { after: { from: range.from, to: range.to, rows: visits.length, ...(area ? { area: area.slug } : {}), ...(serviceId !== null ? { service: serviceId } : {}) } });
 
   return new NextResponse(visitsToCsv(visits), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="parking-${range.from}-to-${range.to}${area ? `-${area.slug}` : ""}.csv"`,
+      "Content-Disposition": `attachment; filename="parking-${range.from}-to-${range.to}${area ? `-${area.slug}` : ""}${serviceId !== null ? `-service-${serviceId}` : ""}.csv"`,
       "Cache-Control": "no-store",
     },
   });

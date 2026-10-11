@@ -38,7 +38,24 @@ Add, rename or switch off a car park. A car park cannot be switched off while a 
 One summary (checked in, released, still parked, missed, exceptions) above four views: **Service report** (by day, service and car park), **Car park report**, **Exceptions** (released without a pass, missed check-outs) and **Visitor list** (every visit, with paging). Choose dates and a car park, then **Export CSV** (each export is logged) or **Print**.
 
 ## Analytics
-Check-ins, releases and missed check-outs with change against the period before (a note says when today is not over yet); average stay, missed rate and members' share; check-ins by day and by time of day; how long cars stay; car park usage; visit outcomes; peak arrival times; and which car park fills first. Choose dates, a car park and a service, or use Today, Last 7 days and Last 28 days.
+Choose a date range (From and To, or Today, Yesterday, Last 7 days, Last 28 days, This month), a service and a parking area, then **Show analytics**. **Reset filters** clears them. **Export CSV** downloads the visits behind the page, with the same dates, service and area. Everything is in Lagos time, and a range is capped at 366 days.
+
+The page shows four numbers, then Vehicle activity (check-ins and check-outs over time) beside Vehicles by parking area, the top car parks and top services by check-ins, the average parking duration by weekday, and the peak hours. What each one means:
+
+| Number | Meaning |
+|---|---|
+| Cars checked in | Visits in the period. A car that came twice counts twice. |
+| Cars left | Visits released at the exit (a recorded check-out). A car that left without being scanned is not counted, because the system never saw it go. |
+| Average parking duration | Check-in to release, over released visits only. A release time that is missing, before the check-in or more than a day after it is left out. Visits with no check-out are not averaged. |
+| Unique vehicles | Different number plates in the period. |
+| Vehicle activity | By the hour for one day, by day for up to 45 days, then by week. The line is cars with no recorded check-out: within one day it is the cars checked in and not yet checked out at the end of each hour; for longer ranges it is each day's or week's cars that were never checked out. |
+| Vehicles by parking area | **Live**: cars parked right now. The date range does not change it; the area and service filters do. Bars are sized against the largest car park shown, not a capacity. |
+| Top parking areas / services | Check-ins in the period, most first. A service filter shows only that service. |
+| Peak hours | The three hours with the most **check-ins**. This is arrivals, not cars on site. |
+
+**Comparison with the period before.** An arrow and percentage appear only for a finished period (one that ends before today) and only when the earlier period has a figure to compare with. A part-finished day is never compared with a whole one, and a zero baseline shows no percentage.
+
+**What is not shown, and why.** There is no occupancy, capacity or "spaces left" figure, because capacities are not set. Cars on site at the same time is not reported as a peak, because a car that leaves without being scanned has no recorded departure time, so the count would overstate how many were there. Historical on-site counts are not reconstructed from today's live numbers.
 
 ## Settings
 The rules in force, and a log of what staff did (who, what, when).

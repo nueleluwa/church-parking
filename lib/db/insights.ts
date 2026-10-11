@@ -330,3 +330,16 @@ export async function recentActivityByStaff(perPerson = 4): Promise<Map<string, 
   }
   return out;
 }
+
+// ---------- Cars parked right now (admin analytics) ----------
+
+/** Every car that is parked at this moment, with its car park and service. A live snapshot, not a historical figure. */
+export async function listParkedNow(): Promise<{ areaId: number; areaName: string; serviceId: number }[]> {
+  const { data, error } = await db().from("visits").select("area_id, service_id, areas(name)").eq("status", "parked").limit(5000);
+  if (error) fail(error.message);
+  return ((data ?? []) as unknown as { area_id: number; service_id: number; areas: { name: string } | null }[]).map((r) => ({
+    areaId: r.area_id,
+    areaName: r.areas?.name ?? "",
+    serviceId: r.service_id,
+  }));
+}
