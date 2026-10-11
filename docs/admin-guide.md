@@ -12,7 +12,19 @@ The live board updates every few seconds without reloading, and shows when it la
 - **Parking Areas:** one text-only card for each car park with its checked in, left and still parked counts. There is no capacity or "percent full" because the church has not set capacities. Tap a card to see the cars parked there, or **View all vehicles** for every parked car.
 - **Alerts:** each one shows what happened, the time, the car park and service, the number plate and the car's make and colour when known. **Investigate** opens that visit (or, for a second check-in that has no visit of its own, today's visits for that plate). **Mark as dealt with** removes it from the list; the record stays.
 
-Attendants cannot open the live board. The sweep, after each service, lists the cars still here so the team can mark each as still here or gone.
+Attendants cannot open the live board.
+
+## Sweep
+Coordinators and admins. Sweep shows every car still recorded as parked and lets you record what you find. **It reconciles; it never releases a car.** A real release happens at the exit, against the pass, by an attendant.
+
+- **Four numbers.** *Vehicles on site* (each car counted once, by plate), *Overstaying* (still recorded as parked 30 or more minutes after the end of the service it checked in for), *No check-in record* (**Not tracked**: the system cannot tell that a car is present without a visit, so there is no count; such a car is registered at the exit with Add car) and *Released today* (cars released at the exit since midnight; cars closed as missed are not counted).
+- **Filters.** Parking area, service, duration (within its service time, or longer than its service lasts), status (on site, overstaying, marked still here) and plate search. **Reset** clears them; changing a filter starts a new selection and page 1. Sort by entry time (oldest or newest first) or parking area.
+- **The table.** Each car with its picture, service and times, parking area, entry time, a duration that counts up by itself, and a status (On site or Overstaying; Marked still here and On hold are shown too). The plate opens the visit.
+- **Still here.** Keeps the visit open; the car is carried forward and checked again after the next service. **Gone** asks first, then closes the visit as a **missed check-out** (not a release). Both are recorded with who and when. A car already released or closed by someone else is refused with a clear message.
+- **Mark selected as still here.** Tick cars (the count shows, across pages), then confirm the list. Each car is its own recorded decision. If some cannot be marked the message says how many worked and why the rest did not. **Gone is only ever done one car at a time**, so no car is closed by mistake.
+- **End-of-service sweep.** Choose a service and **Review cars from this service** to see the cars still parked from that service or an earlier one that you have not yet marked in its sweep. Nothing is marked for you.
+- **Notes.** Cannot find a car? Go to Live Parking, or look it up by plate, phone or reference.
+- **View sweep history.** Every Still here and Gone recorded, newest first, by date and outcome: the car, service, parking area, who recorded it and what it means. To correct a mistake, open the visit: corrections there need a reason and never overwrite the original entry. At midnight (Lagos) any visit still open is closed as missed.
 
 ## Visits
 Every visit, by dates, service, parking area, status and number plate, twenty to a page. A row is one visit (a car's stay), not an entry or an exit. The four numbers: **Total visits**, **Checked in** (open visits) and **Released** count visits in the dates you chose; **Currently parked** is live (every car on site now, whatever the date) and is limited only by the service and parking area. Tap a number to see those visits.

@@ -1,4 +1,4 @@
-import type { CorrectionAction, CorrectionResult, RenameResult, VisitRow } from "@/lib/rules";
+import type { CorrectionAction, CorrectionResult, OnSiteVisit, RenameResult, VisitRow } from "@/lib/rules";
 import { db } from "./client";
 import { logAudit } from "./staff";
 
@@ -294,4 +294,147 @@ export async function previousServiceCounts(
   const date = rows[0].service_date;
   const same = rows.filter((r) => r.service_date === date);
   return { date, checkedIn: same.length, released: same.filter((r) => r.status === "released").length };
+}
+
+// ---------- The Sweep screen ----------
+
+/** Every car recorded as parked right now (each car has at most one open visit), with its service times and any "Still here" marks. */
+export async function listOnSite(): Promise<OnSiteVisit[]> {
+  const { data, error } = await db()
+    .from("visits")
+    .select("id, service_id, area_id, service_date, checked_in_at, held_at, member_id, vehicles(plate, make, colour), areas(name, slug), services(name, starts_at, ends_at)")
+    .eq("status", "parked")
+    .order("checked_in_at", { ascending: true })
+    .limit(5000);
+  if (error) fail(error.message);
+  const rows = (data ?? []) as unknown as {
+    id: string;
+    service_id: number;
+    area_id: number;
+    service_date: string;
+    checked_in_at: string;
+    held_at: string | null;
+    member_id: string | null;
+    vehicles: { plate: string; make: string | null; colour: string | null };
+    areas: { name: string; slug: string };
+    services: { name: string; starts_at: string; ends_at: string };
+  }[];
+  if (rows.length === 0) return [];
+
+  // The "Still here" marks, kept in the audit log: which service's sweep each was for
+  const earliest = rows.map((r) => r.service_date).sort()[0];
+  const marks = new Map<string, number[]>();
+  for (let start = 0; start < 20_000; start += 1000) {
+    const { data: events, error: markError } = await db()
+      .from("audit_events")
+      .select("visit_id, after")
+      .eq("action", "sweep_still_here")
+      .gte("created_at", `${earliest}T00:00:00+01:00`)
+      .order("id", { ascending: true })
+      .range(start, start + 999);
+    if (markError) fail(markError.message);
+    for (const e of (events ?? []) as { visit_id: string; after: { sweep_service_id?: number } | null }[]) {
+      const sweep = e.after?.sweep_service_id;
+      if (typeof sweep === "number") marks.set(e.visit_id, [...(marks.get(e.visit_id) ?? []), sweep]);
+    }
+    if ((events ?? []).length < 1000) break;
+  }
+
+  return rows.map((r) => ({
+    id: r.id,
+    plate: r.vehicles.plate,
+    make: r.vehicles.make,
+    colour: r.vehicles.colour,
+    member: r.member_id !== null,
+    serviceId: r.service_id,
+    serviceName: r.services.name,
+    serviceStart: r.services.starts_at,
+    serviceEnd: r.services.ends_at,
+    serviceDate: r.service_date,
+    areaId: r.area_id,
+    areaName: r.areas.name,
+    areaSlug: r.areas.slug,
+    checkedInAt: r.checked_in_at,
+    held: r.held_at !== null,
+    stillHereIn: marks.get(r.id) ?? [],
+  }));
+}
+
+/** Cars released at the exit since 00:00 today (Lagos). Cars closed as missed are not releases and are not counted. */
+export async function countReleasedToday(today: string): Promise<number> {
+  const next = new Date(Date.parse(`${today}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  const { count, error } = await db()
+    .from("visits")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "released")
+    .gte("released_at", `${today}T00:00:00+01:00`)
+    .lt("released_at", `${next}T00:00:00+01:00`);
+  if (error) fail(error.message);
+  return count ?? 0;
+}
+
+/** The service each of these visits belongs to, for visits still parked. The server looks this up itself rather than trusting the browser. */
+export async function openVisitServices(ids: string[]): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  for (let i = 0; i < ids.length; i += 100) {
+    const { data, error } = await db().from("visits").select("id, service_id").eq("status", "parked").in("id", ids.slice(i, i + 100));
+    if (error) fail(error.message);
+    for (const r of (data ?? []) as { id: string; service_id: number }[]) out.set(r.id, r.service_id);
+  }
+  return out;
+}
+
+export type SweepHistoryRow = {
+  id: number;
+  at: string;
+  outcome: "still_here" | "gone";
+  visitId: string;
+  plate: string;
+  serviceName: string;
+  areaName: string;
+  sweepServiceName: string | null;
+  staff: string | null;
+};
+
+export type SweepHistoryFilter = { from: string; to: string; outcome: "still_here" | "gone" | null };
+
+/** Recorded sweep outcomes (Still here and Gone), newest first, a page at a time. Nothing is invented: only what staff recorded. */
+export async function listSweepHistory(f: SweepHistoryFilter, page: number, size: number): Promise<{ rows: SweepHistoryRow[]; total: number }> {
+  const next = new Date(Date.parse(`${f.to}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  const actions = f.outcome === "still_here" ? ["sweep_still_here"] : f.outcome === "gone" ? ["sweep_gone"] : ["sweep_still_here", "sweep_gone"];
+  const start = (page - 1) * size;
+  const { data, error, count } = await db()
+    .from("audit_events")
+    .select("id, action, created_at, visit_id, after, staff:staff_id(full_name), visits(vehicles(plate), areas(name), services(name))", { count: "exact" })
+    .in("action", actions)
+    .gte("created_at", `${f.from}T00:00:00+01:00`)
+    .lt("created_at", `${next}T00:00:00+01:00`)
+    .order("id", { ascending: false })
+    .range(start, start + size - 1);
+  if (error) fail(error.message);
+  const rows = (data ?? []) as unknown as {
+    id: number;
+    action: string;
+    created_at: string;
+    visit_id: string;
+    after: { sweep_service_id?: number } | null;
+    staff: { full_name: string } | null;
+    visits: { vehicles: { plate: string }; areas: { name: string }; services: { name: string } } | null;
+  }[];
+  const { data: services } = await db().from("services").select("id, name");
+  const serviceName = new Map((services ?? []).map((s) => [s.id as number, s.name as string]));
+  return {
+    total: count ?? 0,
+    rows: rows.map((r) => ({
+      id: r.id,
+      at: r.created_at,
+      outcome: r.action === "sweep_gone" ? "gone" : "still_here",
+      visitId: r.visit_id,
+      plate: r.visits?.vehicles.plate ?? "",
+      serviceName: r.visits?.services.name ?? "",
+      areaName: r.visits?.areas.name ?? "",
+      sweepServiceName: r.after?.sweep_service_id ? (serviceName.get(r.after.sweep_service_id) ?? null) : null,
+      staff: r.staff?.full_name ?? null,
+    })),
+  };
 }

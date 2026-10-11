@@ -68,29 +68,36 @@ test("a car marked Gone in the sweep becomes missed, and Still here carries it o
   await guestCheckIn(browser, herePlate);
 
   await staffSignIn(page, process.env.ADMIN_PHONE!, process.env.ADMIN_PASSWORD!);
-  await page.goto("/staff/sweep");
-  await expect(page.getByRole("heading", { name: "Sweep" })).toBeVisible();
+  await page.goto(`/staff/sweep?q=${gonePlate}`);
+  await expect(page.getByRole("main").getByRole("heading", { name: "Sweep", exact: true })).toBeVisible();
 
   const row = (plate: string) =>
     page.locator("li", { hasText: `${plate.slice(0, 3)} ${plate.slice(3, 6)} ${plate.slice(6)}` });
   await expect(row(gonePlate)).toBeVisible({ timeout: 30_000 });
 
+  // Gone asks first, says it is not a release, and closes the visit as missed
   await row(gonePlate).getByRole("button", { name: "Gone" }).click();
-  await expect(row(gonePlate).getByText("Gone", { exact: true })).toBeVisible({ timeout: 30_000 });
-  await row(herePlate).getByRole("button", { name: "Still here" }).click();
-  await expect(row(herePlate).getByText("Still here", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("alertdialog")).toContainText("not a release");
+  await page.getByRole("button", { name: "Yes, mark as gone" }).click();
+  await expect(page.getByText("Closed as a missed check-out. This is not a release.")).toBeVisible({ timeout: 30_000 });
+  await expect(row(gonePlate)).toHaveCount(0);
+
+  await page.goto(`/staff/sweep?q=${herePlate}`);
+  await row(herePlate).getByRole("button", { name: "Still here", exact: true }).click();
+  await expect(row(herePlate).getByRole("button", { name: "Still here ✓" })).toBeVisible({ timeout: 30_000 });
+  await expect(row(herePlate).getByText("Marked still here")).toBeVisible();
 
   // The Gone car is now closed (missed): the scanner warns and offers no release
   await findCar(page, gonePlate);
   await expect(page.getByText("This visit is closed. Do not release.")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("button", { name: "Release car" })).toHaveCount(0);
 
-  // The Still here car is still open, and no longer on this service's sweep list
+  // The Still here car is still open (it can be released at the exit), and stays on the list, marked
   await findCar(page, herePlate);
   await expect(page.getByRole("button", { name: "Release car" })).toBeVisible({ timeout: 30_000 });
-  await page.goto("/staff/sweep");
-  await expect(page.getByRole("heading", { name: "Sweep" })).toBeVisible();
-  await expect(row(herePlate)).toHaveCount(0);
+  await page.goto(`/staff/sweep?q=${herePlate}`);
+  await expect(page.getByRole("main").getByRole("heading", { name: "Sweep", exact: true })).toBeVisible();
+  await expect(row(herePlate).getByText("Marked still here")).toBeVisible();
 });
 
 test("a coordinator corrects a visit with a reason; undo release, and a reason is required", async ({ page, browser }) => {

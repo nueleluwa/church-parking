@@ -1,12 +1,14 @@
 "use server";
 
 import { z } from "zod";
-import { clearHold, correctVisit, resolveAlert, sweepVisit } from "@/lib/db";
+import { clearHold, correctVisit, openVisitServices, resolveAlert, sweepVisit } from "@/lib/db";
 import {
   canCorrect,
   checkReason,
   CORRECTION_ACTIONS,
   CORRECTION_MESSAGES,
+  describeBulk,
+  type BulkItem,
 } from "@/lib/rules";
 import { currentStaff } from "@/lib/staff-auth";
 
@@ -38,6 +40,44 @@ export async function sweepAction(visitId: string, gone: boolean, serviceId: num
   return {
     ok: false,
     message: result === "bad_state" ? "This car was already released or closed." : "We cannot find this car.",
+  };
+}
+
+export type BulkResult = { ok: boolean; message: string; done: string[]; failed: { visitId: string; message: string }[] };
+
+/**
+ * Marks several cars "Still here" in one go. Each car is its own audited decision (the same as marking it alone), the server looks up each
+ * car's service itself, and the answer says exactly how many worked and why any did not. "Gone" is never done in bulk, and nothing here
+ * releases a car.
+ */
+export async function sweepStillHereManyAction(visitIds: string[], sweepServiceId: number | null): Promise<BulkResult> {
+  const staff = await coordinator();
+  if (!staff) return { ok: false, message: "Please sign in again.", done: [], failed: [] };
+  const parsed = z.array(z.string().uuid()).max(500).safeParse(visitIds);
+  if (!parsed.success || (sweepServiceId !== null && !Number.isInteger(sweepServiceId))) return { ok: false, message: "Please try again.", done: [], failed: [] };
+
+  const ids = [...new Set(parsed.data)];
+  const services = await openVisitServices(ids);
+  const items: BulkItem[] = [];
+  for (const id of ids) {
+    const service = sweepServiceId ?? services.get(id);
+    if (service === undefined) {
+      items.push({ visitId: id, ok: false, message: "already released or closed" });
+      continue;
+    }
+    try {
+      const result = await sweepVisit(id, staff.id, false, service);
+      items.push(result === "ok" ? { visitId: id, ok: true } : { visitId: id, ok: false, message: result === "bad_state" ? "already released or closed" : "not found" });
+    } catch {
+      items.push({ visitId: id, ok: false, message: "a problem on our side" });
+    }
+  }
+  const summary = describeBulk(items);
+  return {
+    ok: summary.ok,
+    message: summary.message,
+    done: items.filter((i) => i.ok).map((i) => i.visitId),
+    failed: items.filter((i) => !i.ok).map((i) => ({ visitId: i.visitId, message: i.message ?? "" })),
   };
 }
 

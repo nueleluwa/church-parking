@@ -138,7 +138,7 @@ test("coordinator sweep, alerts and the pass keep plates on one line at every ph
     for (const width of WIDTHS) {
       await page.setViewportSize({ width, height: 800 });
       await page.goto("/staff/sweep");
-      await expect(page.getByRole("heading", { name: "Sweep" })).toBeVisible({ timeout: 60_000 });
+      await expect(page.getByRole("main").getByRole("heading", { name: "Sweep", exact: true })).toBeVisible({ timeout: 60_000 });
       await expect(page.locator("[data-plate]").first()).toBeVisible({ timeout: 60_000 });
       await expectPlatesWhole(page, `sweep at ${width}px`, 16);
       await expectNoOverflow(page, `sweep at ${width}px`);

@@ -58,3 +58,4 @@ export * from "./analytics-report";
 export * from "./report-catalogue";
 export * from "./visit-list";
 export * from "./settings";
+export * from "./sweep";

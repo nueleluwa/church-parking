@@ -119,7 +119,7 @@ test.describe("background updates never interrupt the user", () => {
       expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 
       await page.goto("/staff/sweep");
-      await expect(page.getByRole("heading", { name: "Sweep" })).toBeVisible({ timeout: 60_000 });
+      await expect(page.getByRole("main").getByRole("heading", { name: "Sweep", exact: true })).toBeVisible({ timeout: 60_000 });
       expectCalm(await observe(page, WATCH_SECONDS), "sweep");
     } finally {
       await coordinator.remove();
