@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { StaffChrome } from "@/components/StaffChrome";
+import { getSettings } from "@/lib/db";
 import { requireStaff } from "@/lib/staff-auth";
 
 export const dynamic = "force-dynamic";
@@ -18,5 +19,10 @@ export const metadata: Metadata = {
  */
 export default async function TeamLayout({ children }: { children: React.ReactNode }) {
   const staff = await requireStaff("attendant");
-  return <StaffChrome staff={staff}>{children}</StaffChrome>;
+  const { systemName } = await getSettings();
+  return (
+    <StaffChrome staff={staff} systemName={systemName}>
+      {children}
+    </StaffChrome>
+  );
 }

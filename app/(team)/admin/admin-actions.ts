@@ -13,6 +13,7 @@ import {
   getMemberPhone,
   getStaffRecord,
   listAreaSlugs,
+  saveSettings,
   logAudit,
   resetMemberPinRecord,
   setAreaActive,
@@ -20,7 +21,7 @@ import {
   updateStaffAccount,
 } from "@/lib/db";
 import { serverEnv } from "@/lib/env";
-import { checkAreaName, hasRole, makeAreaSlug, normalisePhone, PIN_PATTERN } from "@/lib/rules";
+import { checkAreaName, hasRole, makeAreaSlug, normalisePhone, PIN_PATTERN, validateChurch, validatePreferences } from "@/lib/rules";
 import { hashKey } from "@/lib/session";
 import { currentStaff } from "@/lib/staff-auth";
 
@@ -221,4 +222,38 @@ export async function setAreaActiveAction(fd: FormData): Promise<AdminState> {
   await logAudit(staff.id, null, on ? "area_activate" : "area_deactivate", { after: { area_id: p.data.areaId } });
   revalidatePath("/", "layout");
   return { ok: true, message: on ? "Car park switched on." : "Car park switched off. Drivers who scan its sign cannot check in until you switch it on." };
+}
+
+// ---------- Settings ----------
+
+/** Church name, campus and system name. Checked here, saved, and written to the audit log. */
+export async function saveChurchSettingsAction(fd: FormData): Promise<AdminState> {
+  const staff = await admin();
+  if (!staff) return NOT_ADMIN;
+  const checked = validateChurch(formObject(fd));
+  if (!checked.ok) return { error: checked.error };
+  try {
+    const { before } = await saveSettings(checked.values, staff.id);
+    await logAudit(staff.id, null, "settings_update", { after: { group: "church", before, ...checked.values } });
+  } catch {
+    return { error: "The settings could not be saved. Please try again." };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Church details saved." };
+}
+
+/** Default search method and staff session length. Checked here, saved, and written to the audit log. */
+export async function savePreferenceSettingsAction(fd: FormData): Promise<AdminState> {
+  const staff = await admin();
+  if (!staff) return NOT_ADMIN;
+  const checked = validatePreferences(formObject(fd));
+  if (!checked.ok) return { error: checked.error };
+  try {
+    const { before } = await saveSettings(checked.values, staff.id);
+    await logAudit(staff.id, null, "settings_update", { after: { group: "preferences", before, ...checked.values } });
+  } catch {
+    return { error: "The settings could not be saved. Please try again." };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Preferences saved." };
 }

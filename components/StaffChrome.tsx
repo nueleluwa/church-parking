@@ -19,13 +19,13 @@ export function initialsOf(name: string): string {
  * The staff screens and the admin screens share it, and because it lives in a layout it
  * stays in place while the screen inside changes.
  */
-export function StaffChrome({ staff, children }: { staff: StaffSession; children: ReactNode }) {
+export function StaffChrome({ staff, children, systemName = "Church Parking" }: { staff: StaffSession; children: ReactNode; systemName?: string }) {
   const coordinator = hasRole(staff.role, "coordinator");
   const admin = hasRole(staff.role, "admin");
   const roleName = admin ? "Parking Admin" : coordinator ? "Coordinator" : "Attendant";
   return (
     <>
-      {coordinator && <SideNav admin={admin} name={staff.name} role={roleName} initials={initialsOf(staff.name)} />}
+      {coordinator && <SideNav admin={admin} name={staff.name} role={roleName} initials={initialsOf(staff.name)} systemName={systemName} />}
       <div className={coordinator ? "lg:pl-64 print:pl-0" : ""}>
         <div className="print:hidden">
           <StaffHeader initials={initialsOf(staff.name)} wide={coordinator} />

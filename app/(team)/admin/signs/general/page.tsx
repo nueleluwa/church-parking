@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { serverEnv } from "@/lib/env";
 import { qrSvg } from "@/lib/qr";
+import { getSettings } from "@/lib/db";
 import { requireStaff } from "@/lib/staff-auth";
 import { PrintButton } from "../[slug]/PrintButton";
 
@@ -14,6 +15,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function GeneralSignPage() {
   await requireStaff("admin");
+  const settings = await getSettings();
   const url = `${serverEnv().APP_URL.replace(/\/$/, "")}/c`;
   const svg = await qrSvg(url);
 
@@ -31,8 +33,9 @@ export default async function GeneralSignPage() {
         className="mx-auto flex aspect-[210/297] w-full flex-col overflow-hidden rounded-card border-2 border-edge/20 bg-white text-center print:aspect-auto print:h-[297mm] print:w-[210mm] print:max-w-none print:rounded-none print:border-0"
       >
         <header className="flex flex-col items-center gap-2 bg-night px-6 py-5 text-white">
-          <Image src="/cci-logo.svg" alt="Christ Church International" width={210} height={60} unoptimized priority />
-          <p className="text-sm font-semibold tracking-wide print:text-lg">Christ Church International</p>
+          <Image src="/cci-logo.svg" alt={settings.churchName} width={210} height={60} unoptimized priority />
+          <p className="text-sm font-semibold tracking-wide print:text-lg">{settings.churchName}</p>
+          {settings.campus && <p className="-mt-1 text-sm print:text-base">{settings.campus}</p>}
         </header>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 py-4">
           <h1 className="text-3xl font-extrabold tracking-tight print:text-6xl">PARKING CHECK-IN</h1>

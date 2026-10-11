@@ -4,8 +4,10 @@ import { signValue, verifyValue } from "./session";
 export const STAFF_SESSION_SECONDS = 12 * 60 * 60;
 
 /** A signed, expiring staff session value. It holds only an id, never personal data. */
-export function makeStaffToken(staffId: string, secret: string, now = Date.now()): string {
-  const payload = JSON.stringify({ sid: staffId, exp: now + STAFF_SESSION_SECONDS * 1000 });
+export function makeStaffToken(staffId: string, secret: string, now = Date.now(), seconds = STAFF_SESSION_SECONDS): string {
+  // Never longer than the standard 12 hours, whatever is asked for
+  const lasts = Math.min(Math.max(1, Math.floor(seconds)), STAFF_SESSION_SECONDS);
+  const payload = JSON.stringify({ sid: staffId, exp: now + lasts * 1000 });
   return signValue(Buffer.from(payload).toString("base64url"), secret);
 }
 

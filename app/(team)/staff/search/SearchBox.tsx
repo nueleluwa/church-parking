@@ -23,12 +23,15 @@ export function SearchBox({
   corrections,
   areas,
   station,
+  defaultMode = "plate",
 }: {
   corrections: CorrectionContext | null;
   areas: CarParkOption[];
   station: string | null;
+  /** Which tab opens first (an admin's choice in Settings). */
+  defaultMode?: Mode;
 }) {
-  const [mode, setMode] = useState<Mode>("plate");
+  const [mode, setMode] = useState<Mode>(defaultMode);
   const [query, setQuery] = useState("");
   const [cards, setCards] = useState<ScanCard[] | null>(null);
   const [error, setError] = useState<string | null>(null);

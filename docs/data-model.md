@@ -140,3 +140,4 @@ create table audit_events (
 - Guest data older than 24 months is deleted daily by `delete_expired_guest_data`, run by pg_cron (D-20).
 - `release_visit(visit, staff, method, today)` is the single release function. It refuses a held visit, a visit from another day and a visit already released. `hold_visit`, `clear_hold` and `correct_visit` (change car park, undo a release and so on) keep the audit row in the same transaction.
 - Production data starts with only the car parks and the three Sunday services (`deploy/db/seed-production.sql` in the private repository). There is no sample data in production.
+- `app_settings` (key, value, updated_at, updated_by): the settings an admin can change (church name, campus, system name, default search tab, staff session length). Read with the server key only, with row-level security on and no public access (D-36).

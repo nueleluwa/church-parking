@@ -238,6 +238,7 @@ const MORE_WORDS: Record<string, string> = {
   staff_edit: "Staff name or phone changed",
   member_pin_reset: "Member PIN reset",
   export_report: "Report exported",
+  settings_update: "Settings changed",
 };
 
 /** The most recent staff and admin actions, newest first. Names of staff only: never a driver's details. */

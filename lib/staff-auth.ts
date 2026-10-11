@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getStaffById } from "@/lib/db";
+import { getSettings, getStaffById } from "@/lib/db";
 import { serverEnv } from "@/lib/env";
 import { hasRole, type StaffContext, type StaffRole } from "@/lib/rules/roles";
 import { makeStaffToken, readStaffToken, STAFF_SESSION_SECONDS } from "@/lib/staff-token";
@@ -8,12 +8,14 @@ import { makeStaffToken, readStaffToken, STAFF_SESSION_SECONDS } from "@/lib/sta
 const COOKIE = "cp_staff";
 
 export async function startStaffSession(staffId: string): Promise<void> {
-  (await cookies()).set(COOKIE, makeStaffToken(staffId, serverEnv().SESSION_SECRET), {
+  // The length an admin chose in Settings (12 hours at most), for people who sign in from now on
+  const seconds = Math.min((await getSettings()).staffSessionHours * 3600, STAFF_SESSION_SECONDS);
+  (await cookies()).set(COOKIE, makeStaffToken(staffId, serverEnv().SESSION_SECRET, Date.now(), seconds), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: STAFF_SESSION_SECONDS,
+    maxAge: seconds,
   });
 }
 

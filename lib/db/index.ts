@@ -7,3 +7,4 @@ export * from "./members";
 export * from "./operations";
 export * from "./admin";
 export * from "./insights";
+export * from "./settings";

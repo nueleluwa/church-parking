@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition, type ReactNode } from "react";
 import { Spinner } from "@/components/Spinner";
-import { errorBox, okBox, primaryButton, secondaryButton } from "@/components/ui";
+import { errorBox, okBox, primaryButton, redButton, secondaryButton } from "@/components/ui";
 import type { AdminState } from "./admin-actions";
 
 /**
@@ -23,7 +23,7 @@ export function AdminForm({
   busyLabel?: string;
   /** Empty the fields after a good save (for "add" forms). */
   clearOnSuccess?: boolean;
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "red";
 }) {
   const [state, setState] = useState<AdminState>({});
   const [pending, start] = useTransition();
@@ -52,7 +52,7 @@ export function AdminForm({
           {state.message ?? "Saved."}
         </p>
       )}
-      <button disabled={pending} className={variant === "primary" ? primaryButton : secondaryButton}>
+      <button disabled={pending} className={variant === "primary" ? primaryButton : variant === "red" ? redButton : secondaryButton}>
         {pending && <Spinner />}
         {pending ? busyLabel : submitLabel}
       </button>

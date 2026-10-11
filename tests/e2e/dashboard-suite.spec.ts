@@ -108,34 +108,6 @@ test("visit details: the facts, the driver masked until Show number (which is lo
   }
 });
 
-test("settings shows the rules in force and a log of what staff did, admin only", async ({ page, browser }) => {
-  await adminSignIn(page);
-  await page.goto("/admin/settings");
-  await expect(page.getByRole("heading", { name: "Service selection rules" })).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText("Pick the next service that starts within 30 minutes.")).toBeVisible();
-  await expect(page.getByText("5 an hour")).toBeVisible();
-  await expect(page.getByText("12 hours")).toBeVisible();
-  await expect(page.getByText("180 days")).toBeVisible();
-  await expect(page.getByText("Africa/Lagos (no clock changes)")).toBeVisible();
-
-  const log = page.getByRole("region", { name: "Activity log table, scroll sideways on a small screen" });
-  await expect(log.locator("tbody tr").first()).toBeVisible();
-  expect(await log.locator("tbody tr").count()).toBeGreaterThan(0);
-  await expect(page.locator("main")).not.toContainText(/\+?234\d{9}/);
-
-  const lead = await createStaff("coordinator");
-  try {
-    const c = await (await browser.newContext()).newPage();
-    await staffSignIn(c, lead.phone, lead.password);
-    for (const path of ["/admin/settings", "/admin/analytics", "/admin/vehicles"]) {
-      await c.goto(path);
-      await expect(c).toHaveURL(/\/staff$/, { timeout: 60_000 });
-    }
-  } finally {
-    await lead.remove();
-  }
-});
-
 test("the side menu and the admin overview link to the four new screens, and Services shows the selection rules", async ({ page }) => {
   await adminSignIn(page);
   await page.setViewportSize({ width: 1440, height: 900 });

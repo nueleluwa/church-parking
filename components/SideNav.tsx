@@ -47,14 +47,14 @@ const ITEMS: Item[] = [
  * The menu down the left side of wide screens, for coordinators and admins (the parking lead often
  * works at a desk). On a phone the tab bar is used instead and this is hidden.
  */
-export function SideNav({ admin, name, role, initials }: { admin: boolean; name: string; role: string; initials: string }) {
+export function SideNav({ admin, name, role, initials, systemName }: { admin: boolean; name: string; role: string; initials: string; systemName: string }) {
   const path = usePathname().replace(/(.)\/$/, "$1");
   return (
     <aside
       aria-label="Menu"
       className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-night text-white lg:flex print:hidden"
     >
-      <p className="px-6 pb-4 pt-6 text-lg font-extrabold">Church Parking</p>
+      <p className="px-6 pb-4 pt-6 text-lg font-extrabold">{systemName}</p>
       <nav aria-label="Parking team, desktop" className="flex-1 overflow-y-auto px-3">
         <ul className="space-y-1">
           {ITEMS.filter((i) => admin || !i.admin).map((i) => {

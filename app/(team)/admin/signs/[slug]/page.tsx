@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAreaBySlug } from "@/lib/db";
+import { getAreaBySlug, getSettings } from "@/lib/db";
 import { serverEnv } from "@/lib/env";
 import { qrSvg } from "@/lib/qr";
 import { requireStaff } from "@/lib/staff-auth";
@@ -15,6 +15,7 @@ export default async function SignPage({ params, searchParams }: { params: Promi
   await requireStaff("admin");
   const area = await getAreaBySlug((await params).slug);
   const a5 = (await searchParams).size === "a5";
+  const settings = await getSettings();
   if (!area) notFound();
   const url = `${serverEnv().APP_URL.replace(/\/$/, "")}/c/${area.slug}`;
   const svg = await qrSvg(url);
@@ -58,8 +59,9 @@ export default async function SignPage({ params, searchParams }: { params: Promi
         className={`mx-auto flex w-full flex-col overflow-hidden rounded-card border-2 border-edge/20 bg-white text-center print:aspect-auto print:max-w-none print:rounded-none print:border-0 ${a5 ? "aspect-[148/210] print:h-[210mm] print:w-[148mm]" : "aspect-[210/297] print:h-[297mm] print:w-[210mm]"}`}
       >
         <header className="flex flex-col items-center gap-2 bg-night px-6 py-5 text-white">
-          <Image src="/cci-logo.svg" alt="Christ Church International" width={210} height={60} unoptimized priority />
-          <p className="text-sm font-semibold tracking-wide print:text-lg">Christ Church International</p>
+          <Image src="/cci-logo.svg" alt={settings.churchName} width={210} height={60} unoptimized priority />
+          <p className="text-sm font-semibold tracking-wide print:text-lg">{settings.churchName}</p>
+          {settings.campus && <p className="-mt-1 text-sm print:text-base">{settings.campus}</p>}
         </header>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 py-4">
           <h1 className={`text-3xl font-extrabold tracking-tight ${a5 ? "print:text-4xl" : "print:text-6xl"}`}>PARKING CHECK-IN</h1>

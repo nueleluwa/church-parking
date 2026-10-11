@@ -4,7 +4,7 @@ import { IconCar, IconScan, IconUser } from "@/components/icons";
 import { MemberNav } from "@/components/MemberNav";
 import { PMark } from "@/components/PMark";
 import { card, outlineButton, pageMain, quietButton, redButton } from "@/components/ui";
-import { openPassTokenForMember } from "@/lib/db";
+import { getSettings, openPassTokenForMember } from "@/lib/db";
 import { currentMember } from "@/lib/member-auth";
 import { lagosDate } from "@/lib/rules";
 
@@ -17,6 +17,7 @@ const STEPS = [
 export default async function Home({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
   const { deleted } = await searchParams;
   const member = await currentMember();
+  const settings = await getSettings();
   const passToken = member ? await openPassTokenForMember(member.id, lagosDate(new Date())) : null;
 
   return (
@@ -32,7 +33,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
         <div className={`${card} text-center`}>
           <PMark className="mx-auto h-16 w-16 rounded-2xl text-4xl" />
           <h1 className="mt-4 text-2xl font-bold">
-            {member ? `Welcome back, ${member.full_name.split(" ")[0]}` : "Welcome to Church Parking"}
+            {member ? `Welcome back, ${member.full_name.split(" ")[0]}` : `Welcome to ${settings.systemName}`}
           </h1>
           <p className="mt-2 text-ink-soft">
             {member

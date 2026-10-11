@@ -75,7 +75,14 @@ The page shows four numbers, then Vehicle activity (check-ins and check-outs ove
 **What is not shown, and why.** There is no occupancy, capacity or "spaces left" figure, because capacities are not set. Cars on site at the same time is not reported as a peak, because a car that leaves without being scanned has no recorded departure time, so the count would overstate how many were there. Historical on-site counts are not reconstructed from today's live numbers.
 
 ## Settings
-The rules in force, and a log of what staff did (who, what, when).
+Eight sections run along the top. **Services**, **Parking areas**, **QR signs** and **Users & access** open the screens that already manage them (Services, Car Parks, QR Signs, Staff Accounts), so nothing is set up in two places. The other four are on this screen:
+
+- **General.** *Church details*: church name and campus (both printed on the QR signs) and the system name (shown in the side menu and the home page welcome). The time zone is shown but fixed at Africa/Lagos, because it decides when each service day starts and ends. *System preferences*: the tab attendants see first in Manual Lookup (vehicle number, phone number or pass reference), and how long a new staff sign-in lasts (2, 4, 8 or 12 hours; 12 is the longest, so it can only be shortened; it applies to people who sign in after you save). Each form has its own **Save changes**; a saved message appears only after the server confirms, and every change is written to the activity log with what it was before.
+- **Vehicle rules.** The rules built into the system, to read: how plates are stored and searched, one open visit for each car, first claim on a plate wins, member plates are locked, passes work only on the day issued, only staff release a car, the service selection rules and the security limits. They protect the exit check, so none can be switched off here.
+- **Notifications.** The system sends no emails, texts or push messages, so there is nothing to set. Alerts show on Live Parking and are kept in the reports.
+- **System.** Version, address, time zone, retention and midnight rules, a note that backups, restores and resets are done on the server by the developer (there are no buttons for them here), and the activity log, which is never cleared from the app.
+
+**Not offered, on purpose:** a logo upload, a change of time zone, date or time formats, a QR-required switch, member-plate checking on or off, two-factor sign-in and password expiry, backup and reset buttons, and clearing logs. Each either has nothing in the app behind it or would weaken the exit check.
 
 ## Good habits
 - Give each person their own account; never share one.
