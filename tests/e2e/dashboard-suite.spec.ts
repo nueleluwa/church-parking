@@ -12,35 +12,6 @@ async function visitIdOf(plate: string) {
   return data!.id as string;
 }
 
-test("vehicles: search by plate, member or guest, visit count, and no names or phone numbers", async ({ page, browser }) => {
-  const plate = randomPlate("VH");
-  await guestCheckIn(browser, plate);
-  await adminSignIn(page);
-  await page.goto("/admin/vehicles");
-  await expect(page.getByRole("heading", { name: "Vehicles", exact: true })).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText(/The cars seen most recently/)).toBeVisible();
-
-  await page.goto(`/admin/vehicles?q=${plate}`);
-  const row = page.locator("li").filter({ hasText: spaced(plate) });
-  await expect(row).toHaveCount(1, { timeout: 60_000 });
-  await expect(row).toContainText("Guest");
-  await expect(row).toContainText("1 visit");
-  await expect(row).toContainText("Parked");
-  await expect(page.locator("main")).not.toContainText("Stability Guest");
-  await expect(page.locator("main")).not.toContainText(/\+?234\d{9}|080\d{8}/);
-
-  // Look-alike letters still find it, and an unknown plate says so
-  await page.goto(`/admin/vehicles?q=${plate.replace(/[0-9]/, (d) => (d === "0" ? "O" : d))}`);
-  await expect(page.locator("li").filter({ hasText: spaced(plate) })).toHaveCount(1);
-  await page.goto("/admin/vehicles?q=ZZZ999ZZ");
-  await expect(page.getByText("No car found with that plate.")).toBeVisible({ timeout: 60_000 });
-
-  // Opening the car goes to its latest visit
-  await page.goto(`/admin/vehicles?q=${plate}`);
-  await page.getByRole("link", { name: `Latest visit of ${spaced(plate)}` }).click();
-  await expect(page).toHaveURL(/\/admin\/visits\/[0-9a-f-]{36}$/, { timeout: 60_000 });
-});
-
 test("visit details: the facts, the driver masked until Show number (which is logged), and a timeline that follows a hold and a release", async ({ page, browser }) => {
   const db = adminClient();
   const plate = randomPlate("VD");

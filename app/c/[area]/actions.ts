@@ -41,6 +41,7 @@ const schema = z.object({
 const MESSAGES = {
   plate_conflict: "This car is already checked in. Please see an attendant.",
   member_plate: "We can't check in this car here. Please see an attendant.",
+  vehicle_inactive: "This vehicle is not active. Please see an attendant.",
   rate_limited: "Too many tries. Please wait a few minutes, or see an attendant.",
   finished: "The services have finished for today. Please see an attendant.",
   bad_service: "Please choose a service that has not finished.",
@@ -168,7 +169,9 @@ export async function checkInMember(_prev: CheckInState, formData: FormData): Pr
       error:
         result.reason === "plate_conflict"
           ? MESSAGES.plate_conflict
-          : "We cannot check in this car. Please see an attendant.",
+          : result.reason === "vehicle_inactive"
+            ? MESSAGES.vehicle_inactive
+            : "We cannot check in this car. Please see an attendant.",
       blocked: true,
     };
   }

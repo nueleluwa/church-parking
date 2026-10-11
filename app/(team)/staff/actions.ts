@@ -175,7 +175,11 @@ export async function registerCar(_prev: RegisterState, formData: FormData): Pro
     });
     if (result.status === "not_member") return fail("This car is not saved to a member account.");
     if (result.status === "blocked") {
-      return fail("This car is already checked in for someone else. Tell the coordinator.");
+      return fail(
+        result.reason === "vehicle_inactive"
+          ? "This vehicle is deactivated, so it cannot be checked in. Tell an administrator."
+          : "This car is already checked in for someone else. Tell the coordinator.",
+      );
     }
     await logAudit(staff.id, null, "register_for_member", { after: { reference: result.reference } });
     return { reference: result.reference, plate };
@@ -199,6 +203,7 @@ export async function registerCar(_prev: RegisterState, formData: FormData): Pro
   });
 
   if (result.status === "blocked") {
+    if (result.reason === "vehicle_inactive") return fail("This vehicle is deactivated, so it cannot be checked in. Tell an administrator.");
     return result.reason === "member_plate"
       ? fail("This car belongs to a member. If the member is here, tap Register for the member.", { memberPlate: true })
       : fail("This car is already checked in. Tell the coordinator.");

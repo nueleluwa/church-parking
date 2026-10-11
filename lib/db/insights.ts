@@ -239,6 +239,11 @@ const MORE_WORDS: Record<string, string> = {
   member_pin_reset: "Member PIN reset",
   export_report: "Report exported",
   settings_update: "Settings changed",
+  vehicle_added: "Vehicle added",
+  vehicle_updated: "Vehicle details changed",
+  vehicle_owner_changed: "Vehicle owner changed",
+  vehicle_deactivated: "Vehicle deactivated",
+  vehicle_reactivated: "Vehicle reactivated",
 };
 
 /** The most recent staff and admin actions, newest first. Names of staff only: never a driver's details. */

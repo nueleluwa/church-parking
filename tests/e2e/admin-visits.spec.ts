@@ -194,35 +194,3 @@ test("staff accounts: summary, search and role filter, editing a name and phone,
     await second.remove();
   }
 });
-
-test("vehicles: summary, type and car park filters, sorting, and paging keep the choice in the address", async ({ page, browser }) => {
-  const plate = randomPlate("VF");
-  await guestCheckIn(browser, plate); // a guest car, in the first car park
-  const { data: areas } = await adminClient().from("areas").select("name, slug").eq("active", true).order("sort");
-  await adminSignIn(page);
-
-  await page.goto(`/admin/vehicles?q=${plate}`);
-  const summary = page.getByRole("region", { name: "Summary" });
-  await expect(summary).toContainText("Cars shown", { timeout: 60_000 });
-  await expect(summary).toContainText("Guest cars");
-  const row = page.locator("li").filter({ hasText: `${plate.slice(0, 3)} ${plate.slice(3, 6)}` });
-  await expect(row).toHaveCount(1);
-
-  // Guests only: still there. Members only: gone. The right car park keeps it; another does not
-  await page.goto(`/admin/vehicles?q=${plate}&type=guest`);
-  await expect(row).toHaveCount(1, { timeout: 60_000 });
-  await page.goto(`/admin/vehicles?q=${plate}&type=member`);
-  await expect(page.getByText("No car found with that plate.")).toBeVisible({ timeout: 60_000 });
-  await page.goto(`/admin/vehicles?q=${plate}&area=${areas![0].slug}`);
-  await expect(row).toHaveCount(1, { timeout: 60_000 });
-  await page.goto(`/admin/vehicles?q=${plate}&area=${areas![1].slug}`);
-  await expect(page.getByText("No car found with that plate.")).toBeVisible({ timeout: 60_000 });
-
-  // Sorting is a link; a filter keeps the others
-  await page.goto("/admin/vehicles?type=guest");
-  await page.getByRole("navigation", { name: "Sort" }).getByRole("link", { name: "Most visits" }).click();
-  await expect(page).toHaveURL(/type=guest.*sort=visits|sort=visits.*type=guest/, { timeout: 60_000 });
-  await page.getByRole("navigation", { name: "Type" }).getByRole("link", { name: "Members" }).click();
-  await expect(page).toHaveURL(/type=member/);
-  await expect(page).toHaveURL(/sort=visits/);
-});

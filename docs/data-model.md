@@ -47,7 +47,10 @@ create table vehicles (
   id      uuid primary key default gen_random_uuid(),
   plate   text not null unique,            -- normalised: 'PHC234AB'
   colour  text,
-  make    text
+  make    text,                            -- make and model together
+  active       boolean not null default true,   -- false: cannot start a new check-in
+  vehicle_type text,                            -- car, suv, van, bus, motorcycle, other; null = not recorded
+  created_at   timestamptz                      -- null for records from before dates were kept
 );
 
 -- A plate saved here is locked to members (rule R-5)

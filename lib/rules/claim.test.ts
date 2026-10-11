@@ -182,6 +182,13 @@ describe("claimVisitForMemberByStaff", () => {
     store.vehicles["ABC123DE"] = "v1";
     store.memberOfVehicle["v1"] = "m1";
     store.memberAnswer = { status: "blocked", reason: "plate_conflict" };
-    expect(await claimVisitForMemberByStaff(store, input)).toEqual({ status: "blocked" });
+    expect(await claimVisitForMemberByStaff(store, input)).toEqual({ status: "blocked", reason: "plate_conflict" });
+  });
+
+  test("a deactivated vehicle is refused, with that reason", async () => {
+    store.vehicles["ABC123DE"] = "v1";
+    store.memberOfVehicle["v1"] = "m1";
+    store.memberAnswer = { status: "blocked", reason: "vehicle_inactive" };
+    expect(await claimVisitForMemberByStaff(store, input)).toEqual({ status: "blocked", reason: "vehicle_inactive" });
   });
 });

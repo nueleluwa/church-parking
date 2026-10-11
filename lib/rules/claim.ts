@@ -16,13 +16,13 @@ export type Candidate = { reference: string; token: string };
 /** What the database answers when a guest claims a plate. It never carries anyone else's pass or details. */
 export type GuestClaimAnswer =
   | { status: "ok"; token: string; reference: string; existing?: boolean }
-  | { status: "blocked"; reason: "plate_conflict" | "member_plate" }
+  | { status: "blocked"; reason: "plate_conflict" | "member_plate" | "vehicle_inactive" }
   | { status: "rate_limited" }
   | { status: "error" };
 
 export type MemberClaimAnswer =
   | { status: "ok"; token: string; reference: string; existing: boolean }
-  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" }
+  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" | "vehicle_inactive" }
   | { status: "error" };
 
 export type GuestClaimArgs = {
@@ -91,7 +91,7 @@ export type GuestClaimInput = {
 
 export type ClaimResult =
   | { status: "ok"; token: string; reference: string; existing?: boolean }
-  | { status: "blocked"; reason: "plate_conflict" | "member_plate" }
+  | { status: "blocked"; reason: "plate_conflict" | "member_plate" | "vehicle_inactive" }
   | { status: "rate_limited" };
 
 const MAX_REFERENCE_TRIES = 5;
@@ -144,7 +144,7 @@ export type MemberClaimInput = {
 
 export type MemberClaimResult =
   | { status: "ok"; token: string; reference: string; existing: boolean }
-  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" };
+  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" | "vehicle_inactive" };
 
 /**
  * A member's car checks in (CI-4), in one database call. If the member is already checked in
@@ -179,7 +179,7 @@ export type StaffMemberClaimInput = {
 export type StaffMemberClaimResult =
   | { status: "ok"; token: string; reference: string; existing: boolean }
   | { status: "not_member" }
-  | { status: "blocked" };
+  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" | "vehicle_inactive" };
 
 /**
  * An attendant registers a car that belongs to a member, for example when the
@@ -195,5 +195,5 @@ export async function claimVisitForMemberByStaff(
   if (!vehicleId || !memberId) return { status: "not_member" };
 
   const result = await claimMemberVisit(store, { ...input, memberId, vehicleId });
-  return result.status === "ok" ? result : { status: "blocked" };
+  return result.status === "ok" ? result : { status: "blocked", reason: result.reason };
 }

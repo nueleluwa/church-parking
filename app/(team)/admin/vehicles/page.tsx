@@ -1,234 +1,322 @@
 import Link from "next/link";
-import { AdminTable, cell } from "@/components/AdminTable";
-import { IconChevronRight } from "@/components/icons";
-import { Pager } from "@/components/Pager";
-import { StatusBadge } from "@/components/StatusBadge";
+import { IconCar, IconChevronRight, IconLock, IconPlus, IconSearch, IconUser, IconUsers } from "@/components/icons";
+import { PageNumbers } from "@/components/Pager";
 import { VehicleImage } from "@/components/VehicleImage";
-import { field, primaryButton } from "@/components/ui";
-import { listActiveAreas, listVehicles } from "@/lib/db";
-import { formatVisitTime } from "@/lib/format";
-import { formatPlate, normalisePlate } from "@/lib/rules";
-import { describeVehicle } from "@/lib/rules/vehicle";
+import { field } from "@/components/ui";
+import { getVehicleDetail, registerCounts, searchRegister, type RegisterRow } from "@/lib/db";
+import {
+  REGISTER_PAGE_SIZES,
+  VEHICLE_TYPES,
+  describeVehicle,
+  formatPlate,
+  lagosParts,
+  normalisePlate,
+  pageNumbers,
+  parseOwnership,
+  parsePageSize,
+  parseVehicleStatus,
+  parseVehicleType,
+  registerRange,
+  searchPlate,
+  typeLabel,
+} from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
+import { StatusChip } from "./StatusChip";
+import { VehicleForm } from "./VehicleForm";
+import { BulkRegister } from "./BulkRegister";
 
 export const metadata = { title: "Vehicles" };
 export const dynamic = "force-dynamic";
 
-const STATUS = {
-  parked: { label: "Parked", tone: "success" },
-  released: { label: "Released", tone: "neutral" },
-  missed: { label: "Missed", tone: "danger" },
-} as const;
+type Search = { q?: string; type?: string; owner?: string; status?: string; size?: string; page?: string; add?: string; edit?: string; notice?: string; plate?: string };
 
-const FILTERS = [
-  { value: "", label: "All cars" },
-  { value: "parked", label: "Parked" },
-  { value: "released", label: "Released" },
-  { value: "missed", label: "Missed" },
-] as const;
+const inputClass = `${field} !mt-1 !py-2.5 !text-base`;
 
-const TYPES = [
-  { value: "", label: "All types" },
-  { value: "member", label: "Members" },
-  { value: "guest", label: "Guests" },
-] as const;
+function Summary({ label, value, note, href, id, icon }: { label: string; value: number; note: string; href: string; id: string; icon: React.ReactNode }) {
+  return (
+    <Link href={href} className="flex items-center gap-3 rounded-2xl border border-edge/15 bg-card p-4 hover:bg-page">
+      <span aria-hidden="true" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-page text-ink sm:flex">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium text-ink-soft">{label}</span>
+        <span data-testid={id} className="block text-3xl font-extrabold leading-tight">
+          {value}
+        </span>
+        <span className="block text-xs text-ink-soft">{note}</span>
+      </span>
+      <IconChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-ink-soft" />
+    </Link>
+  );
+}
 
-const SORTS = [
-  { value: "recent", label: "Last seen" },
-  { value: "visits", label: "Most visits" },
-  { value: "plate", label: "Plate" },
-] as const;
+const registered = (v: RegisterRow) => (v.createdAt ? lagosParts(v.createdAt).date : "Not recorded");
 
-const PAGE_SIZE = 30;
-
-/** Every car the church has seen. Search by plate; filter by type, car park or last visit; sort; page. Owners' names and numbers are never listed. */
-type Search = { q?: string; status?: string; type?: string; area?: string; sort?: string; page?: string };
-
+/**
+ * The register of every vehicle the church knows: member vehicles (saved by a member), guest vehicles (everything else),
+ * active and inactive. A row is a vehicle record, not a visit. Administrators only: it shows the name of the linked member
+ * (never a phone number). Adding and editing happen in a panel opened from the address, so a link or a refresh keeps it.
+ */
 export default async function VehiclesPage({ searchParams }: { searchParams: Promise<Search> }) {
   await requireStaff("admin");
   const sp = await searchParams;
-  const q = normalisePlate((sp.q ?? "").slice(0, 20));
-  const status = FILTERS.some((f) => f.value && f.value === sp.status) ? (sp.status as keyof typeof STATUS) : "";
-  const type = TYPES.some((t) => t.value && t.value === sp.type) ? (sp.type as "member" | "guest") : "";
-  const sort = SORTS.some((s) => s.value === sp.sort) ? (sp.sort as (typeof SORTS)[number]["value"]) : "recent";
-  const areas = await listActiveAreas();
-  const area = areas.find((a) => a.slug === sp.area);
+  const plate = searchPlate(sp.q);
+  const type = parseVehicleType(sp.type);
+  const owner = parseOwnership(sp.owner);
+  const status = parseVehicleStatus(sp.status);
+  const size = parsePageSize(sp.size);
+  const filter = { plate, type, owner, status };
 
-  // The latest cars (or the plate matches), then narrowed down and sorted here
-  const all = await listVehicles(q, 300);
-  const narrowed = all.filter(
-    (v) =>
-      (!status || v.lastStatus === status) &&
-      (!type || (type === "member" ? v.isMember : !v.isMember)) &&
-      (!area || v.lastAreaName === area.name),
-  );
-  const vehicles = [...narrowed].sort((a, b) =>
-    sort === "visits" ? b.visits - a.visits || (b.lastSeen ?? "").localeCompare(a.lastSeen ?? "") : sort === "plate" ? a.plate.localeCompare(b.plate) : (b.lastSeen ?? "").localeCompare(a.lastSeen ?? ""),
-  );
-  const pages = Math.max(1, Math.ceil(vehicles.length / PAGE_SIZE));
+  const counts = await registerCounts();
+  const matchingFirst = await searchRegister(filter, 1, size);
+  const pages = Math.max(1, Math.ceil(matchingFirst.total / size));
   const page = Math.min(pages, Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1));
-  const pageRows = vehicles.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const href = (next: Partial<Search>) => {
-    const merged = { q, status, type, area: area?.slug ?? "", sort: sort === "recent" ? "" : sort, page: "", ...next };
-    const qs = new URLSearchParams(Object.entries(merged).filter(([, v]) => v) as [string, string][]).toString();
+  const { rows, total } = page === 1 ? matchingFirst : await searchRegister(filter, page, size);
+  const { first, last } = registerRange(page, size, rows.length, total);
+
+  const scope = (over: Partial<Search> = {}) => {
+    const merged: Record<string, string> = {
+      ...(plate ? { q: plate } : {}),
+      ...(type ? { type } : {}),
+      ...(owner ? { owner } : {}),
+      ...(status ? { status } : {}),
+      ...(size !== 20 ? { size: String(size) } : {}),
+      ...over,
+    } as Record<string, string>;
+    const qs = new URLSearchParams(Object.entries(merged).filter(([, v]) => v)).toString();
     return `/admin/vehicles${qs ? `?${qs}` : ""}`;
   };
-  const pill = (on: boolean) =>
-    `rounded-full border-2 px-4 py-2 font-semibold ${on ? "border-night bg-night text-white" : "border-edge/30 bg-white hover:bg-page"}`;
+  const filtersOn = Boolean(plate || type || owner || status);
 
-  const members = vehicles.filter((v) => v.isMember).length;
-  const repeat = vehicles.filter((v) => v.visits > 1).length;
+  // The panel: adding, or editing one vehicle
+  const editing = sp.edit ? await getVehicleDetail(sp.edit) : null;
+  const panel = sp.add ? "add" : editing ? "edit" : null;
+
+  const noticePlate = sp.plate ? formatPlate(normalisePlate(sp.plate).slice(0, 14)) : "";
+  const notice = sp.notice === "added" ? `${noticePlate || "The vehicle"} was added.` : sp.notice === "saved" ? `${noticePlate || "The vehicle"} was saved.` : null;
 
   return (
     <>
-      <p className="text-ink-soft">
-        {q ? "Cars matching your search." : "The cars seen most recently."} Open a car to see its latest visit. Names and phone
-        numbers are not shown here.
-      </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-extrabold">Vehicles</h1>
+          <p className="text-ink-soft">Manage all vehicles registered in the church parking system.</p>
+        </div>
+        <Link href={scope({ page: "", add: "1" })} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-accent px-6 font-semibold text-white hover:bg-accent-dark">
+          <IconPlus aria-hidden="true" className="h-5 w-5" />
+          Add vehicle
+        </Link>
+      </header>
 
-      <section aria-label="Summary" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {[
-          { label: "Cars shown", value: vehicles.length },
-          { label: "Members' cars", value: members },
-          { label: "Guest cars", value: vehicles.length - members },
-          { label: "Seen more than once", value: repeat },
-        ].map((c) => (
-          <div key={c.label} className="rounded-2xl bg-card p-4 shadow-sm">
-            <p className="text-sm font-medium text-ink-soft">{c.label}</p>
-            <p className="text-3xl font-extrabold">{c.value}</p>
-          </div>
-        ))}
+      {notice && (
+        <p role="status" className="rounded-xl border-2 border-success bg-success-soft p-3 font-medium">
+          {notice}
+        </p>
+      )}
+
+      <section aria-label="Summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <Summary id="vh-total" label="Total vehicles" value={counts.total} note="Every vehicle in the register" href="/admin/vehicles" icon={<IconCar className="h-5 w-5" />} />
+        <Summary id="vh-member" label="Member vehicles" value={counts.activeMember} note="Active, saved by a member" href="/admin/vehicles?owner=member&status=active" icon={<IconUsers className="h-5 w-5" />} />
+        <Summary id="vh-guest" label="Guest vehicles" value={counts.activeGuest} note="Active, not linked to a member" href="/admin/vehicles?owner=guest&status=active" icon={<IconUser className="h-5 w-5" />} />
+        <Summary id="vh-inactive" label="Inactive vehicles" value={counts.inactive} note="Cannot be checked in" href="/admin/vehicles?status=inactive" icon={<IconLock className="h-5 w-5" />} />
       </section>
 
-      <form className="flex flex-col gap-3 rounded-card bg-card p-4 shadow-sm lg:max-w-xl lg:flex-row lg:items-end">
-        {status && <input type="hidden" name="status" value={status} />}
-        {type && <input type="hidden" name="type" value={type} />}
-        {area && <input type="hidden" name="area" value={area.slug} />}
-        {sort !== "recent" && <input type="hidden" name="sort" value={sort} />}
-        <label className="block flex-1 font-medium">
-          Plate number
-          <input name="q" defaultValue={q} autoComplete="off" autoCapitalize="characters" className={`${field} uppercase`} />
-        </label>
-        <button className={`${primaryButton} lg:w-32`}>Search</button>
+      <form aria-label="Filters" className="space-y-3 rounded-2xl border border-edge/15 bg-card p-4">
+        {size !== 20 && <input type="hidden" name="size" value={size} />}
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-[1fr_1fr_1fr_minmax(0,1.6fr)]">
+          <label className="block text-sm font-medium">
+            Vehicle type
+            <select name="type" defaultValue={type ?? ""} className={inputClass}>
+              <option value="">All types</option>
+              {VEHICLE_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm font-medium">
+            Ownership
+            <select name="owner" defaultValue={owner ?? ""} className={inputClass}>
+              <option value="">All</option>
+              <option value="member">Member</option>
+              <option value="guest">Guest</option>
+            </select>
+          </label>
+          <label className="block text-sm font-medium">
+            Status
+            <select name="status" defaultValue={status ?? ""} className={inputClass}>
+              <option value="">All statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </label>
+          <label className="col-span-2 block text-sm font-medium xl:col-span-1">
+            Search by plate number
+            <span className="relative mt-1 block">
+              <IconSearch aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-soft" />
+              <input name="q" defaultValue={plate} autoComplete="off" autoCapitalize="characters" placeholder="Search by plate number…" className={`${field} !mt-0 !py-2.5 !pl-11 !text-base uppercase`} />
+            </span>
+          </label>
+        </div>
+        <div className="flex gap-2 sm:justify-end">
+          <Link href="/admin/vehicles" className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full border-2 border-edge/70 bg-white px-6 font-semibold hover:bg-page sm:flex-none">
+            Reset
+          </Link>
+          <button className="min-h-12 flex-1 rounded-full bg-accent px-6 font-semibold text-white hover:bg-accent-dark sm:flex-none">Apply filters</button>
+        </div>
       </form>
 
-      <div className="space-y-2">
-        <nav aria-label="Show cars by their last visit" className="flex flex-wrap gap-2">
-          {FILTERS.map((f) => (
-            <Link key={f.value} href={href({ status: f.value })} aria-current={f.value === status ? "true" : undefined} className={pill(f.value === status)}>
-              {f.label}
-            </Link>
-          ))}
-        </nav>
-        <nav aria-label="Type" className="flex flex-wrap gap-2">
-          {TYPES.map((t) => (
-            <Link key={t.value} href={href({ type: t.value })} aria-current={t.value === type ? "true" : undefined} className={pill(t.value === type)}>
-              {t.label}
-            </Link>
-          ))}
-        </nav>
-        <nav aria-label="Last car park" className="flex flex-wrap gap-2">
-          <Link href={href({ area: "" })} aria-current={!area ? "true" : undefined} className={pill(!area)}>
-            All car parks
-          </Link>
-          {areas.map((a) => (
-            <Link key={a.slug} href={href({ area: a.slug })} aria-current={a.slug === area?.slug ? "true" : undefined} className={pill(a.slug === area?.slug)}>
-              {a.name}
-            </Link>
-          ))}
-        </nav>
-        <nav aria-label="Sort" className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="font-semibold text-ink-soft">Sort:</span>
-          {SORTS.map((o) => (
-            <Link
-              key={o.value}
-              href={href({ sort: o.value === "recent" ? "" : o.value })}
-              aria-current={o.value === sort ? "true" : undefined}
-              className={`rounded-full px-3 py-1 font-semibold ${o.value === sort ? "bg-panel text-ink" : "text-accent underline"}`}
-            >
-              {o.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
+      <section aria-label="Vehicles" className="rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
+        <h2 className="mb-3 text-xl font-extrabold">
+          Vehicles (<span data-testid="vh-count">{total}</span>)
+        </h2>
 
-      {vehicles.length === 0 ? (
-        <p className="rounded-card bg-card p-5 font-medium shadow-sm">
-          {q ? "No car found with that plate." : status ? `No ${STATUS[status].label.toLowerCase()} cars in the latest records.` : "No cars yet."}
-        </p>
-      ) : (
-        <>
-          <ul className="grid items-start gap-3 lg:hidden">
-            {pageRows.map((v) => {
-              const details = describeVehicle({ make: v.make, colour: v.colour });
-              const body = (
-                <>
-                  <VehicleImage size="sm" />
-                  <span className="min-w-0 flex-1">
-                    <span data-plate className="block whitespace-nowrap text-lg font-extrabold">
-                      {formatPlate(v.plate)}
+        {rows.length === 0 ? (
+          <p className="rounded-xl bg-page p-4 font-medium">
+            {filtersOn ? "No vehicles match these filters. " : "No vehicles are registered yet. "}
+            {filtersOn && (
+              <Link href="/admin/vehicles" className="font-semibold text-accent underline">
+                Reset filters
+              </Link>
+            )}
+          </p>
+        ) : (
+          <BulkRegister>
+            <ul className="grid gap-3 xl:hidden">
+              {rows.map((v) => (
+                <li key={v.id} className="flex min-w-0 items-start gap-3 rounded-xl border border-edge/10 p-3">
+                  <input type="checkbox" name="ids" value={v.id} aria-label={`Select ${formatPlate(v.plate)}`} className="mt-2 h-5 w-5 shrink-0 accent-[#141414]" />
+                  <Link href={`/admin/vehicles/${v.id}`} aria-label={`Vehicle ${formatPlate(v.plate)}`} className="flex min-w-0 flex-1 items-center gap-3 hover:opacity-80">
+                    <VehicleImage size="sm" />
+                    <span className="min-w-0 flex-1">
+                      <span data-plate className="block whitespace-nowrap text-lg font-extrabold">
+                        {formatPlate(v.plate)}
+                      </span>
+                      <span className="block truncate text-sm text-ink-soft">{[v.type ? typeLabel(v.type) : null, describeVehicle({ make: v.make, colour: v.colour })].filter(Boolean).join(" · ") || "No details"}</span>
+                      <span className="block text-sm text-ink-soft">{v.ownerId ? `Member · ${v.ownerName ?? ""}` : "Guest vehicle"}</span>
+                      <span className="mt-1 block">
+                        <StatusChip active={v.active} />
+                      </span>
                     </span>
-                    <span className="block truncate text-sm text-ink-soft">{details ?? "No details"}</span>
-                    <span className="block text-sm text-ink-soft">
-                      {v.isMember ? "Member" : "Guest"} · {v.visits} {v.visits === 1 ? "visit" : "visits"}
-                      {v.lastSeen && ` · last ${formatVisitTime(v.lastSeen)}`}
-                    </span>
-                  </span>
-                  {v.lastStatus && (
-                    <StatusBadge tone={STATUS[v.lastStatus].tone} className="shrink-0">
-                      {STATUS[v.lastStatus].label}
-                    </StatusBadge>
-                  )}
-                  {v.lastVisitId && <IconChevronRight className="h-5 w-5 shrink-0 text-ink-soft" />}
-                </>
-              );
-              const row = "flex items-center gap-3 rounded-card bg-card p-3 shadow-sm";
-              return (
-                <li key={v.id}>
-                  {v.lastVisitId ? (
-                    <Link href={`/admin/visits/${v.lastVisitId}`} aria-label={`Latest visit of ${formatPlate(v.plate)}`} className={`${row} hover:bg-page`}>
-                      {body}
-                    </Link>
-                  ) : (
-                    <div className={row}>{body}</div>
-                  )}
+                  </Link>
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
 
-          <AdminTable label="Cars" columns={["Plate", "Car", "Type", "Visits", "Last seen", "Car park", "Last visit"]}>
-            {pageRows.map((v) => (
-              <tr key={v.id} className="hover:bg-page">
-                <td className={cell}>
-                  {v.lastVisitId ? (
-                    <Link
-                      href={`/admin/visits/${v.lastVisitId}`}
-                      aria-label={`Latest visit of ${formatPlate(v.plate)}`}
-                      data-plate
-                      className="whitespace-nowrap text-lg font-extrabold underline-offset-2 hover:underline"
-                    >
-                      {formatPlate(v.plate)}
-                    </Link>
-                  ) : (
-                    <span data-plate className="whitespace-nowrap text-lg font-extrabold">
-                      {formatPlate(v.plate)}
-                    </span>
-                  )}
-                </td>
-                <td className={`${cell} text-ink-soft`}>{describeVehicle({ make: v.make, colour: v.colour }) ?? "No details"}</td>
-                <td className={cell}>{v.isMember ? "Member" : "Guest"}</td>
-                <td className={cell}>{v.visits}</td>
-                <td className={`${cell} whitespace-nowrap`}>{v.lastSeen ? formatVisitTime(v.lastSeen) : "-"}</td>
-                <td data-area className={`${cell} whitespace-nowrap`}>{v.lastAreaName ?? "-"}</td>
-                <td className={cell}>
-                  {v.lastStatus ? <StatusBadge tone={STATUS[v.lastStatus].tone}>{STATUS[v.lastStatus].label}</StatusBadge> : "-"}
-                </td>
-              </tr>
-            ))}
-          </AdminTable>
-          <Pager page={page} pages={pages} href={(p) => href({ page: String(p) })} />
-        </>
+            <div className="hidden overflow-x-auto xl:block">
+              <table className="w-full min-w-[56rem] text-left">
+                <caption className="sr-only">Vehicles</caption>
+                <thead className="border-b border-edge/20 text-sm text-ink-soft">
+                  <tr>
+                    <th scope="col" className="w-10 px-2.5 py-3">
+                      <input type="checkbox" data-select-all aria-label="Select all vehicles on this page" className="h-5 w-5 accent-[#141414]" />
+                    </th>
+                    {["Vehicle", "Ownership", "Linked member / owner", "Status", "Date registered", "Actions"].map((c) => (
+                      <th key={c} scope="col" className="whitespace-nowrap px-2.5 py-3 font-semibold">
+                        {c}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-edge/15">
+                  {rows.map((v) => {
+                    const details = [v.type ? typeLabel(v.type) : null, describeVehicle({ make: v.make, colour: v.colour })].filter(Boolean).join(" · ");
+                    return (
+                      <tr key={v.id} className="hover:bg-page">
+                        <td className="px-2.5 py-3">
+                          <input type="checkbox" name="ids" value={v.id} aria-label={`Select ${formatPlate(v.plate)}`} className="h-5 w-5 accent-[#141414]" />
+                        </td>
+                        <td className="px-2.5 py-3">
+                          <span className="flex items-center gap-3">
+                            <VehicleImage size="sm" />
+                            <span className="min-w-0">
+                              <Link href={`/admin/vehicles/${v.id}`} aria-label={`Vehicle ${formatPlate(v.plate)}`} data-plate className="block whitespace-nowrap text-lg font-extrabold underline-offset-2 hover:underline">
+                                {formatPlate(v.plate)}
+                              </Link>
+                              <span className="block truncate text-sm text-ink-soft">{details || "No details"}</span>
+                            </span>
+                          </span>
+                        </td>
+                        <td className="whitespace-nowrap px-2.5 py-3">{v.ownerId ? "Member" : "Guest"}</td>
+                        <td className="px-2.5 py-3">
+                          {v.ownerId ? (
+                            <Link href={`/admin/members/${v.ownerId}`} className="font-semibold underline-offset-2 hover:underline">
+                              {v.ownerName ?? "Member"}
+                            </Link>
+                          ) : (
+                            <span className="text-ink-soft">Guest vehicle</span>
+                          )}
+                        </td>
+                        <td className="px-2.5 py-3">
+                          <StatusChip active={v.active} />
+                        </td>
+                        <td className="whitespace-nowrap px-2.5 py-3">{registered(v)}</td>
+                        <td className="px-2.5 py-3">
+                          <span className="flex gap-2">
+                            <Link href={`/admin/vehicles/${v.id}`} aria-label={`View vehicle ${formatPlate(v.plate)}`} className="inline-flex min-h-10 items-center rounded-lg border border-edge/30 bg-white px-4 font-semibold hover:bg-page">
+                              View
+                            </Link>
+                            <Link href={scope({ edit: v.id, page: page > 1 ? String(page) : "" })} aria-label={`Edit vehicle ${formatPlate(v.plate)}`} className="inline-flex min-h-10 items-center rounded-lg border border-edge/30 bg-white px-4 font-semibold hover:bg-page">
+                              Edit
+                            </Link>
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </BulkRegister>
+        )}
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-ink-soft" data-testid="vh-showing">
+            Showing {first}–{last} of {total} {total === 1 ? "vehicle" : "vehicles"}
+          </p>
+          <PageNumbers page={page} pages={pages} numbers={pageNumbers(page, pages)} href={(p) => scope({ page: String(p) })} />
+          <nav aria-label="Rows per page" className="flex items-center gap-1.5 text-sm">
+            <span className="text-ink-soft">Rows per page</span>
+            {REGISTER_PAGE_SIZES.map((n) =>
+              n === size ? (
+                <span key={n} aria-current="true" className="flex h-9 min-w-9 items-center justify-center rounded-lg border border-accent bg-accent px-2 font-semibold text-white">
+                  {n}
+                </span>
+              ) : (
+                <Link key={n} href={scope({ size: n === 20 ? "" : String(n), page: "" })} className="flex h-9 min-w-9 items-center justify-center rounded-lg border border-edge/20 bg-white px-2 font-semibold hover:bg-page">
+                  {n}
+                </Link>
+              ),
+            )}
+          </nav>
+        </div>
+      </section>
+
+      {panel && (
+        <div className="fixed inset-0 z-[60] flex justify-end">
+          <Link href={scope({ page: page > 1 ? String(page) : "" })} aria-label="Close panel" className="absolute inset-0 bg-night/40" />
+          <section role="dialog" aria-modal="true" aria-labelledby="panel-title" className="relative flex h-full w-full min-w-0 flex-col bg-white shadow-xl sm:max-w-md">
+            <header className="flex items-center gap-3 border-b border-edge/15 px-5 py-4">
+              <VehicleImage size="sm" />
+              <h2 id="panel-title" className="flex-1 text-xl font-extrabold">
+                {panel === "add" ? "Add vehicle" : `Edit ${formatPlate(editing!.plate)}`}
+              </h2>
+              <Link href={scope({ page: page > 1 ? String(page) : "" })} aria-label="Close" className="flex h-10 w-10 items-center justify-center rounded-full text-2xl leading-none hover:bg-page">
+                ×
+              </Link>
+            </header>
+            <VehicleForm
+              key={editing?.id ?? "new"}
+              doneHref={scope({ page: page > 1 ? String(page) : "" })}
+              vehicle={
+                editing
+                  ? { id: editing.id, plate: editing.plate, type: editing.type ?? "", make: editing.make ?? "", colour: editing.colour ?? "", active: editing.active, ownerId: editing.ownerId, ownerName: editing.ownerName }
+                  : undefined
+              }
+            />
+          </section>
+        </div>
       )}
     </>
   );

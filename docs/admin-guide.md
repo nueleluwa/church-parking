@@ -36,7 +36,16 @@ A visit has three tabs: **Details**, **Timeline** (everything that happened, in 
 **Export** (admins only) downloads every visit matching the filters, not just the page on screen: the same status, entry, exit and duration as the table, no names or phone numbers, and the download is logged. Coordinators can see Visits but not export.
 
 ## Vehicles
-Every car the church has seen. Search by plate, filter by member or guest, last car park and last visit, sort by last seen, most visits or plate. Open a car to see its latest visit.
+Administrators only. The register of every vehicle the church knows. A row is a vehicle record, not a visit.
+
+- **Four numbers**, which do not overlap: *Total vehicles*, *Member vehicles* (active, saved by a member), *Guest vehicles* (active, not linked to a member; this includes cars first seen at a guest check-in) and *Inactive vehicles*.
+- **Filters.** Vehicle type, ownership, status and plate search (look-alike letters 0/O and 1/I match). **Reset** clears them. The choice stays in the address.
+- **The table.** Picture, plate, type, make and colour, ownership, the linked member's name (never a phone number), status, date registered ("Not recorded" for vehicles from before dates were kept) and View / Edit. The range, total, page numbers and rows per page (10, 20, 50) are shown below.
+- **Add vehicle** opens a panel on the right (full screen on a phone). The plate is required and is stored in capitals without spaces or dashes; a plate already registered is refused. Ownership is *Member* (choose the member by searching their name or phone number) or *Guest*.
+- **Edit.** Type, make and model, colour, ownership and status. **The plate is never changed**, because every visit is filed under it. Changing the owner never rewrites history (old visits keep the member or guest they were made for) and is refused while the car is checked in.
+- **Inactive.** A deactivated vehicle cannot start a new check-in (guest, member or attendant). Its history stays, and a visit that is open at the time is **not** closed or released: the car is released at the exit as usual.
+- **Select several.** Tick vehicles (this page only) and choose *Deactivate selected* or *Activate selected*. You are asked first; each vehicle is its own recorded change; if some cannot be changed the message says how many. There is no bulk delete, and vehicles are never deleted.
+- **A vehicle's page** shows its details, the visit open now, its latest visits and the changes made to it, with who made each.
 
 ## Members
 The members seen most recently, or search by name, phone or the plate of a saved car. Each card shows saved cars and visits. **View cars and visits** opens the member's page. **Set a new PIN** also unlocks a locked account; tell the member the new PIN in person, after checking who they are.
