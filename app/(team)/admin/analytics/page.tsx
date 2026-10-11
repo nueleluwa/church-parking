@@ -51,7 +51,7 @@ function Kpi({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-edge/15 bg-card p-4">
+    <div className="flex h-full items-start gap-3 rounded-2xl border border-edge/15 bg-card p-4">
       <span aria-hidden="true" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-page text-ink sm:flex">
         {icon}
       </span>
@@ -258,7 +258,7 @@ export default async function AnalyticsPage({
         <Kpi id="a-unique" label="Unique vehicles" value={String(k.uniqueVehicles)} note="Different number plates" trend={vs(k.uniqueVehicles, p.uniqueVehicles)} versus={versus} icon={<IconUsers className="h-5 w-5" />} />
       </section>
 
-      <div className="grid items-start gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-3">
         <section aria-label="Vehicle activity" className={`${card} lg:col-span-2`}>
           <h2 className="text-lg font-bold">Vehicle activity</h2>
           <p className="mb-3 text-sm text-ink-soft">
@@ -301,7 +301,7 @@ export default async function AnalyticsPage({
         </section>
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <section aria-label="Top parking areas by check-ins" className={card}>
           <h2 className="text-lg font-bold">Top parking areas by check-ins</h2>
           <p className="mb-3 text-sm text-ink-soft">Cars checked in during this period</p>
@@ -314,7 +314,7 @@ export default async function AnalyticsPage({
         </section>
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <section aria-label="Average parking duration" className={card}>
           <h2 className="text-lg font-bold">Average parking duration</h2>
           <p className="mb-3 text-sm text-ink-soft">Time between check-in and check-out</p>
