@@ -51,8 +51,17 @@ test("the page has its title, description and Add vehicle button, and four summa
   await expect(main(page).getByRole("link", { name: "Add vehicle" })).toBeVisible();
 
   const db = adminClient();
-  const vehicles = (await db.from("vehicles").select("id, active").limit(5000)).data!;
-  const linked = new Set((await db.from("member_vehicles").select("vehicle_id").limit(5000)).data!.map((l) => l.vehicle_id as string));
+  // The database answers at most 1000 rows at a time, so read every page
+  const all = async (table: string, columns: string) => {
+    const rows: Record<string, unknown>[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data } = await db.from(table).select(columns).order(columns.split(",")[0].trim()).range(from, from + 999);
+      rows.push(...((data ?? []) as unknown as Record<string, unknown>[]));
+      if (!data || data.length < 1000) return rows;
+    }
+  };
+  const vehicles = (await all("vehicles", "id, active")) as { id: string; active: boolean }[];
+  const linked = new Set((await all("member_vehicles", "vehicle_id, member_id")).map((l) => l.vehicle_id as string));
   const expected = {
     total: vehicles.length,
     member: vehicles.filter((v) => v.active && linked.has(v.id)).length,

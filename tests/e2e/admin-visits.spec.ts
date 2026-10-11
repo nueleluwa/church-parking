@@ -50,7 +50,8 @@ test("members can also be found by the plate of a saved car", async ({ page, bro
 
 test("the dashboard lets you pick which service's numbers to see", async ({ page }) => {
   const db = adminClient();
-  const weekday = new Date().getUTCDay() === 0 ? 0 : new Date().getUTCDay();
+  // The weekday in Lagos, which is what the app uses (it can differ from UTC around midnight)
+  const weekday = new Date(`${new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" })}T12:00:00Z`).getUTCDay();
   const name = `Picker test ${Math.floor(Math.random() * 100000)}`;
   const { data: extra } = await db.from("services").insert({ name, weekday, starts_at: "00:00", ends_at: "23:59", active: true }).select("id").single();
   try {
