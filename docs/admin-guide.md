@@ -35,7 +35,20 @@ The services drivers are put into, with a status: Active now, Upcoming, Complete
 Add, rename or switch off a car park. A car park cannot be switched off while a car is parked in it. Renaming never changes its QR address, so printed signs keep working. **QR Signs** has one sign for each car park and a general sign that opens the list. Open a sign to print it on A4 or A5 (choose "Save as PDF" as the printer for a PDF) or download the QR code on its own. Check printed signs scan from about 1.5 m in daylight.
 
 ## Reports
-One summary (checked in, released, still parked, missed, exceptions) above four views: **Service report** (by day, service and car park), **Car park report**, **Exceptions** (released without a pass, missed check-outs) and **Visitor list** (every visit, with paging). Choose dates and a car park, then **Export CSV** (each export is logged) or **Print**.
+Choose a date range and a service (or all services), pick one of six categories, then **Download** the report you want. Each report is a CSV file, worked out from the visit and alert records when you press the button, for the dates and service you chose. The file name says which report, which dates and which service. A message beside the button says it is preparing, then how many rows it holds (or that there were no records), or why it failed. Reports contain plates but never drivers' names or phone numbers. Only admins can open or download them, and every download is logged.
+
+| Category | Reports |
+|---|---|
+| Parking activity | Parking summary; Vehicle activity by day; Hourly activity; Parking area activity; Service activity |
+| Vehicle details | Vehicle visit history; Check-in and check-out records; Vehicle activity |
+| Members | Member vehicle activity; Member vehicle visits; Member car claims by guests |
+| Services | Service activity by day; Service comparison; Service activity by hour |
+| Parking areas | Parking area activity by day; Parking area comparison; Cars parked now, by area |
+| Alerts and exceptions | Missed check-outs; Vehicle and member conflicts; Releases without a scanned pass; Cars held: does not match |
+
+**How the records are treated.** A visit belongs to the service date it was checked in on, and to the service it was checked in for. *Cars checked in* counts visits (a car that came twice counts twice). *Cars left* counts visits released at the exit. *Not checked out* counts visits with no recorded check-out (closed as missed, or still parked). Average stay uses only completed visits. *Right now* and *live* figures, including **Cars parked now, by area**, are taken when the file is made and are never limited to the dates, so they are not the number parked across a past week. Every alert raised in the period is listed, resolved or not, and repeats are never merged. Times are Lagos time. A range can be up to 366 days; a reversed or longer range switches the buttons off and explains why.
+
+**Not offered.** No PDF (none is generated), no scheduled or emailed reports, and nothing about capacity or free spaces, because capacities are not set. A report of staff corrections from the audit log is not built yet.
 
 ## Analytics
 Choose a date range (From and To, or Today, Yesterday, Last 7 days, Last 28 days, This month), a service and a parking area, then **Show analytics**. **Reset filters** clears them. **Export CSV** downloads the visits behind the page, with the same dates, service and area. Everything is in Lagos time, and a range is capped at 366 days.

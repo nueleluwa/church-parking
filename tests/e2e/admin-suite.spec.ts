@@ -225,51 +225,6 @@ test("QR signs: one for each car park, a printable A4 sign with the church name 
   }
 });
 
-test("reports count real visits, export a CSV with no names or phone numbers, and log the export", async ({ page, browser }) => {
-  const db = adminClient();
-  const plate = randomPlate("RP");
-  await guestCheckIn(browser, plate);
-  await adminSignIn(page);
-  await page.goto("/admin/reports?view=visitors");
-  await expect(page.getByRole("heading", { name: "Transactions" })).toBeVisible({ timeout: 60_000 });
-
-  const today = new Date().toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" });
-  const { count } = await db.from("visits").select("id", { count: "exact", head: true }).gte("service_date", new Date(Date.now() - 27 * 86_400_000).toLocaleDateString("en-CA", { timeZone: "Africa/Lagos" })).lte("service_date", today);
-  await expect(page.getByTestId("r-checked-in")).toHaveText(String(count));
-  await expect(page.getByRole("link", { name: new RegExp(`Visit details for ${plate.slice(0, 3)}`) }).first()).toBeVisible();
-  for (const id of ["r-released", "r-parked", "r-missed", "r-no-pass", "r-conflicts", "r-member-claims", "r-no-match"]) {
-    await expect(page.getByTestId(id)).toBeVisible();
-  }
-
-  // The export
-  const href = await page.getByRole("link", { name: "Export CSV" }).getAttribute("href");
-  const res = await page.request.get(href!);
-  expect(res.status()).toBe(200);
-  expect(res.headers()["content-type"]).toContain("text/csv");
-  expect(res.headers()["content-disposition"]).toContain("attachment");
-  const csv = await res.text();
-  expect(csv).toContain(plate);
-  expect(csv.split("\r\n")[0]).toContain("Plate");
-  expect(csv).not.toMatch(/Stability Guest/);
-  expect(csv).not.toMatch(/\+?234\d{9}|\b080\d{8}\b/);
-  const { data: audit } = await db.from("audit_events").select("action, after").eq("action", "export_report").order("id", { ascending: false }).limit(1).single();
-  expect((audit!.after as { rows: number }).rows).toBe(count);
-
-  // A bad range is refused, and only an admin can export
-  expect((await page.request.get("/admin/reports/export?from=2026-12-01&to=2026-01-01")).status()).toBe(400);
-  const coordinator = await createStaff("coordinator");
-  try {
-    const p = await (await browser.newContext()).newPage();
-    await staffSignIn(p, coordinator.phone, coordinator.password);
-    expect((await p.request.get(href!)).status()).toBe(401);
-    await p.goto("/admin/reports");
-    await expect(p).toHaveURL(/\/staff$/, { timeout: 60_000 });
-  } finally {
-    await coordinator.remove();
-  }
-  expect((await (await browser.newContext()).request.get(href!)).status()).toBe(401);
-});
-
 test("the retention job deletes guest visits older than 24 months and keeps recent ones, open ones and members' visits", async () => {
   const db = adminClient();
   const [{ data: service }, { data: area }] = await Promise.all([

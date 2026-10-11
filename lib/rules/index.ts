@@ -55,3 +55,4 @@ export * from "./pass-tokens";
 export * from "./sign-scan";
 export * from "./camera-problem";
 export * from "./analytics-report";
+export * from "./report-catalogue";

@@ -72,30 +72,6 @@ test("staff accounts show when each person last did something", async ({ page })
   await expect(page.locator("li").getByText(/Last activity|No recorded activity yet/).first()).toBeVisible({ timeout: 60_000 });
 });
 
-test("reports can be limited to one car park, and the CSV follows the choice", async ({ page, browser }) => {
-  const plate = randomPlate("RA");
-  await guestCheckIn(browser, plate); // the first car park
-  await adminSignIn(page);
-
-  const { data: areas } = await adminClient().from("areas").select("name, slug").eq("active", true).order("sort");
-  const [first, other] = [areas![0], areas![1]];
-
-  await page.goto(`/admin/reports?area=${first.slug}&view=visitors`);
-  await expect(page.getByRole("heading", { name: "Transactions" })).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByRole("link", { name: new RegExp(`Visit details for ${plate.slice(0, 3)}`) }).first()).toBeVisible();
-  await expect(page.getByRole("button", { name: "Print" })).toBeVisible();
-
-  // The CSV for that car park has the car, and for another car park it does not
-  const href = await page.getByRole("link", { name: "Export CSV" }).getAttribute("href");
-  expect(href).toContain(`area=${first.slug}`);
-  expect(await (await page.request.get(href!)).text()).toContain(plate);
-  const otherHref = href!.replace(`area=${first.slug}`, `area=${other.slug}`);
-  const res = await page.request.get(otherHref);
-  expect(res.headers()["content-disposition"]).toContain(other.slug);
-  expect(await res.text()).not.toContain(plate);
-
-});
-
 test("members can also be found by the plate of a saved car", async ({ page, browser }) => {
   const db = adminClient();
   const plate = randomPlate("MP");
@@ -129,27 +105,6 @@ test("the dashboard lets you pick which service's numbers to see", async ({ page
   } finally {
     await db.from("services").delete().eq("id", extra!.id);
   }
-});
-
-test("reports have four views: service, car park, exceptions and the visitor list, and the summary stays above them", async ({ page }) => {
-  const { data: areas } = await adminClient().from("areas").select("name").eq("active", true);
-  await adminSignIn(page);
-  await page.goto("/admin/reports");
-  const tabs = page.getByRole("navigation", { name: "Report" });
-  await expect(tabs.getByRole("link", { name: "Service report" })).toHaveAttribute("aria-current", "page", { timeout: 60_000 });
-  await expect(page.getByTestId("r-checked-in")).toBeVisible();
-
-  await tabs.getByRole("link", { name: "Car park report" }).click();
-  await expect(page).toHaveURL(/view=area/, { timeout: 60_000 });
-  for (const a of areas!) await expect(page.locator("li").filter({ hasText: a.name }).first()).toBeVisible();
-  await expect(page.getByTestId("r-checked-in")).toBeVisible();
-
-  await tabs.getByRole("link", { name: "Exceptions" }).click();
-  await expect(page.getByRole("heading", { name: "Released without a pass" })).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByRole("heading", { name: "Missed check-outs" })).toBeVisible();
-
-  await tabs.getByRole("link", { name: "Visitor list" }).click();
-  await expect(page.getByRole("heading", { name: "Transactions" })).toBeVisible({ timeout: 60_000 });
 });
 
 async function visitIdOf(plate: string) {

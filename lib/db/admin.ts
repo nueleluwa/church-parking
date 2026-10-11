@@ -1,3 +1,4 @@
+import type { ReportAlert } from "@/lib/rules/report-catalogue";
 import type { ReportVisit } from "@/lib/rules/reports";
 import { db } from "./client";
 import type { Service, StaffRole } from "./types";
@@ -285,6 +286,51 @@ export async function listAlertKinds(from: string, to: string): Promise<string[]
     if (rows.length < PAGE) break;
   }
   return out;
+}
+
+/** Every alert raised between two Lagos dates, resolved or not, oldest first. Nothing is merged or dropped. */
+export async function listReportAlerts(from: string, to: string): Promise<ReportAlert[]> {
+  type Row = {
+    id: number;
+    kind: string;
+    plate: string | null;
+    detail: { area_id?: number; service_id?: number } | null;
+    created_at: string;
+    resolved_at: string | null;
+    visits: { areas: { name: string } | null; services: { id: number; name: string } | null } | null;
+  };
+  const rows: Row[] = [];
+  for (let start = 0; start < MAX_ROWS; start += PAGE) {
+    const { data, error } = await db()
+      .from("alerts")
+      .select("id, kind, plate, detail, created_at, resolved_at, visits(areas(name), services(id, name))")
+      .gte("created_at", `${from}T00:00:00+01:00`)
+      .lt("created_at", `${addDay(to)}T00:00:00+01:00`)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(start, start + PAGE - 1);
+    if (error) fail(error.message);
+    const page = (data ?? []) as unknown as Row[];
+    rows.push(...page);
+    if (page.length < PAGE) break;
+  }
+  // A conflict alert has no visit of its own, only the car park and service ids in its detail
+  const [areas, services] = await Promise.all([db().from("areas").select("id, name"), db().from("services").select("id, name")]);
+  const areaName = new Map((areas.data ?? []).map((a) => [a.id as number, a.name as string]));
+  const serviceName = new Map((services.data ?? []).map((s) => [s.id as number, s.name as string]));
+  return rows.map((r) => {
+    const serviceId = r.visits?.services?.id ?? r.detail?.service_id ?? null;
+    return {
+      id: r.id,
+      kind: r.kind,
+      plate: r.plate,
+      createdAt: r.created_at,
+      resolvedAt: r.resolved_at,
+      areaName: r.visits?.areas?.name ?? (r.detail?.area_id ? (areaName.get(r.detail.area_id) ?? null) : null),
+      serviceId,
+      serviceName: r.visits?.services?.name ?? (serviceId !== null ? (serviceName.get(serviceId) ?? null) : null),
+    };
+  });
 }
 
 function addDay(date: string): string {

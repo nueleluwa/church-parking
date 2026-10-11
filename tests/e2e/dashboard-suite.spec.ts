@@ -108,16 +108,6 @@ test("visit details: the facts, the driver masked until Show number (which is lo
   }
 });
 
-test("a report transaction opens its visit details", async ({ page, browser }) => {
-  const plate = randomPlate("RV");
-  await guestCheckIn(browser, plate);
-  await adminSignIn(page);
-  await page.goto("/admin/reports?view=visitors");
-  await page.getByRole("link", { name: `Visit details for ${spaced(plate)}` }).click();
-  await expect(page).toHaveURL(/\/admin\/visits\//, { timeout: 60_000 });
-  await expect(page.locator("[data-plate]").first()).toHaveText(spaced(plate));
-});
-
 test("settings shows the rules in force and a log of what staff did, admin only", async ({ page, browser }) => {
   await adminSignIn(page);
   await page.goto("/admin/settings");
