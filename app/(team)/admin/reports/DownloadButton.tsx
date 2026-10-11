@@ -9,7 +9,20 @@ type State = { kind: "idle" } | { kind: "loading" } | { kind: "done"; rows: numb
  * Makes one report and saves it. The file is asked for here (not by a plain link) so a problem, such as a bad date
  * range or a lost connection, is shown next to the button instead of leaving the screen. It never reloads the page.
  */
-export function DownloadButton({ href, report, disabled }: { href: string; report: string; disabled?: boolean }) {
+export function DownloadButton({
+  href,
+  report,
+  disabled,
+  label = "Download",
+  outline = false,
+}: {
+  href: string;
+  report: string;
+  disabled?: boolean;
+  label?: string;
+  /** A white button with an outline, for a screen where Download is not the main action. */
+  outline?: boolean;
+}) {
   const [state, setState] = useState<State>({ kind: "idle" });
 
   async function download() {
@@ -47,10 +60,12 @@ export function DownloadButton({ href, report, disabled }: { href: string; repor
         onClick={() => void download()}
         disabled={disabled || state.kind === "loading"}
         aria-label={`Download ${report} as CSV`}
-        className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 font-semibold text-white hover:bg-accent-dark disabled:cursor-not-allowed disabled:opacity-60"
+        className={`inline-flex min-h-11 items-center gap-2 rounded-full px-5 font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${
+          outline ? "border-2 border-edge/70 bg-white text-ink hover:bg-page" : "bg-accent text-white hover:bg-accent-dark"
+        }`}
       >
         <IconDownload className="h-5 w-5" />
-        {state.kind === "loading" ? "Preparing…" : "Download"}
+        {state.kind === "loading" ? "Preparing…" : label}
       </button>
       <span role="status" aria-live="polite" className={`text-xs ${state.kind === "error" ? "font-semibold text-accent" : "text-ink-soft"}`}>
         {state.kind === "done" && (state.rows === 0 ? "Downloaded. No records for these dates." : `Downloaded · ${state.rows} ${state.rows === 1 ? "row" : "rows"}`)}

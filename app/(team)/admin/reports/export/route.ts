@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listActiveAreas, listReportVisits, logAudit } from "@/lib/db";
+import { listActiveAreas, listMatchingVisits, listReportVisits, logAudit } from "@/lib/db";
 import { loadReportInput } from "@/lib/report-data";
 import {
   MAX_REPORT_DAYS,
@@ -7,9 +7,12 @@ import {
   findReport,
   hasRole,
   parseRange,
+  parseVisitStatus,
+  searchPlate,
   rangeDays,
   reportFilename,
   tableToCsv,
+  visitListToCsv,
   visitsToCsv,
 } from "@/lib/rules";
 import { currentStaff } from "@/lib/staff-auth";
@@ -36,6 +39,28 @@ export async function GET(request: Request) {
   const serviceId = serviceParam ? Number(serviceParam) : null;
 
   const reportId = url.searchParams.get("report");
+
+  // The Visits screen's list: the visits matching its filters (not just the page on screen)
+  if (reportId === "visit-list") {
+    const areaSlug = url.searchParams.get("area");
+    const area = areaSlug ? (await listActiveAreas()).find((a) => a.slug === areaSlug) : undefined;
+    if (areaSlug && !area) return fail("That parking area is not recognised.");
+    const status = parseVisitStatus(url.searchParams.get("status"));
+    const plate = searchPlate(url.searchParams.get("q"));
+    const rows = await listMatchingVisits({ from: range.from, to: range.to, serviceId, areaId: area?.id ?? null, status, plate });
+    await logAudit(staff.id, null, "export_report", {
+      after: { report: "visit-list", from: range.from, to: range.to, rows: rows.length, ...(serviceId !== null ? { service: serviceId } : {}), ...(area ? { area: area.slug } : {}), ...(status ? { status } : {}), ...(plate ? { search: true } : {}) },
+    });
+    return new NextResponse(visitListToCsv(rows), {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="visits_${range.from === range.to ? range.from : `${range.from}_to_${range.to}`}${area ? `_${area.slug}` : ""}${status ? `_${status}` : ""}.csv"`,
+        "X-Report-Rows": String(rows.length),
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
   if (reportId) {
     const report = findReport(reportId);
     if (!report) return fail("That report is not recognised.");

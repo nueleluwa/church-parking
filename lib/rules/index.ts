@@ -56,3 +56,4 @@ export * from "./sign-scan";
 export * from "./camera-problem";
 export * from "./analytics-report";
 export * from "./report-catalogue";
+export * from "./visit-list";

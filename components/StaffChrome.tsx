@@ -32,7 +32,7 @@ export function StaffChrome({ staff, children }: { staff: StaffSession; children
         </div>
         <main
           className={`mx-auto space-y-4 px-4 pb-28 pt-5 print:max-w-none print:p-0 ${
-            coordinator ? "max-w-md lg:max-w-5xl lg:pb-10" : "max-w-md"
+            coordinator ? "max-w-md lg:max-w-5xl lg:pb-10 xl:max-w-7xl" : "max-w-md"
           }`}
         >
           {children}

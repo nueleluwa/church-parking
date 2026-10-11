@@ -15,9 +15,13 @@ The live board updates every few seconds without reloading, and shows when it la
 Attendants cannot open the live board. The sweep, after each service, lists the cars still here so the team can mark each as still here or gone.
 
 ## Visits
-Every visit on one day, newest first. Search by plate, choose a car park, service or status, and move between days. Each row shows the car's stay (so far, if it is still parked) and flags a held car. Open a visit for its details. Admins can **Export CSV** for the day.
+Every visit, by dates, service, parking area, status and number plate, twenty to a page. A row is one visit (a car's stay), not an entry or an exit. The four numbers: **Total visits**, **Checked in** (open visits) and **Released** count visits in the dates you chose; **Currently parked** is live (every car on site now, whatever the date) and is limited only by the service and parking area. Tap a number to see those visits.
 
-A visit has three tabs: **Details**, **Timeline** (everything that happened, in order) and **Member / guest** (first name, last four digits; **Show number** reveals the full number and is logged). For a parked car, **Release car** and **Mark as mismatch** are on the Details tab; each asks once and is recorded with who did it.
+Choose **From** and **To** (or Today, Yesterday, Last 7 days), a service, a parking area and a status (Checked in, Released or Missed), type part of a plate (case and spaces do not matter, and 0 and O, 1 and I match), then **Apply filters**. **Reset** clears them. The table shows the vehicle with its picture, type (guest or member), service, parking area, entry time, exit time, duration and status. An open visit has no exit time or duration yet. **View** (or the plate) opens the visit.
+
+A visit has three tabs: **Details**, **Timeline** (everything that happened, in order) and **Member / guest** (first name, last four digits; **Show number** reveals the full number and is logged). For a parked car, **Release car** and **Mark as mismatch** are on the Details tab; each asks once and is recorded with who did it. There is no Add visit button on purpose: a visit is only made by the normal check-in, so the one-open-visit and plate rules cannot be bypassed.
+
+**Export** (admins only) downloads every visit matching the filters, not just the page on screen: the same status, entry, exit and duration as the table, no names or phone numbers, and the download is logged. Coordinators can see Visits but not export.
 
 ## Vehicles
 Every car the church has seen. Search by plate, filter by member or guest, last car park and last visit, sort by last seen, most visits or plate. Open a car to see its latest visit.

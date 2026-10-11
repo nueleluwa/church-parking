@@ -1,3 +1,4 @@
+import { plateLikePattern, type VisitListRow, type VisitStatus } from "@/lib/rules/visit-list";
 import { db } from "./client";
 
 function fail(message: string): never {
@@ -342,4 +343,117 @@ export async function listParkedNow(): Promise<{ areaId: number; areaName: strin
     areaName: r.areas?.name ?? "",
     serviceId: r.service_id,
   }));
+}
+
+// ---------- The Visits screen: a filtered, paged list of visits ----------
+
+export type VisitFilter = {
+  from: string;
+  to: string;
+  serviceId: number | null;
+  areaId: number | null;
+  status: VisitStatus | null;
+  /** A normalised plate, or "" for no plate search. */
+  plate: string;
+};
+
+const VISIT_LIST_SELECT =
+  "id, status, checked_in_at, released_at, release_method, reference, member_id, held_at, service_id, area_id, " +
+  "vehicles!inner(plate, make, colour), areas(name, slug), services(name), staff:released_by(full_name)";
+
+type VisitListJoin = {
+  id: string;
+  status: VisitStatus;
+  checked_in_at: string;
+  released_at: string | null;
+  release_method: VisitListRow["releaseMethod"];
+  reference: string;
+  member_id: string | null;
+  held_at: string | null;
+  service_id: number;
+  area_id: number;
+  vehicles: { plate: string; make: string | null; colour: string | null };
+  areas: { name: string; slug: string } | null;
+  services: { name: string } | null;
+  staff: { full_name: string } | null;
+};
+
+/** Applies the filters to a visits query. The plate filter needs the vehicles join (vehicles!inner). */
+// The query builder's chained types are very large, so it is handled loosely here and returned as it came in.
+function filtered<Q>(query: Q, f: VisitFilter, withStatus = true): Q {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let q = (query as any).gte("service_date", f.from).lte("service_date", f.to);
+  if (f.serviceId !== null) q = q.eq("service_id", f.serviceId);
+  if (f.areaId !== null) q = q.eq("area_id", f.areaId);
+  if (withStatus && f.status) q = q.eq("status", f.status);
+  if (f.plate) q = q.like("vehicles.plate", plateLikePattern(f.plate));
+  return q as Q;
+}
+
+const toListRow = (r: VisitListJoin): VisitListRow => ({
+  id: r.id,
+  plate: r.vehicles.plate,
+  make: r.vehicles.make,
+  colour: r.vehicles.colour,
+  member: r.member_id !== null,
+  serviceId: r.service_id,
+  serviceName: r.services?.name ?? "",
+  areaId: r.area_id,
+  areaName: r.areas?.name ?? "",
+  areaSlug: r.areas?.slug ?? "",
+  status: r.status,
+  checkedInAt: r.checked_in_at,
+  releasedAt: r.released_at,
+  releaseMethod: r.release_method,
+  releasedBy: r.staff?.full_name ?? null,
+  reference: r.reference,
+  held: r.held_at !== null,
+});
+
+/** One page of visits matching the filters, newest first, and how many match in all. */
+export async function searchVisits(f: VisitFilter, page: number, size: number): Promise<{ rows: VisitListRow[]; total: number }> {
+  const start = (page - 1) * size;
+  const { data, error, count } = await filtered(db().from("visits").select(VISIT_LIST_SELECT, { count: "exact" }), f)
+    .order("checked_in_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(start, start + size - 1);
+  if (error) fail(error.message);
+  return { rows: ((data ?? []) as unknown as VisitListJoin[]).map(toListRow), total: count ?? 0 };
+}
+
+/** Every visit matching the filters (for the export), oldest first. */
+export async function listMatchingVisits(f: VisitFilter, max = 50_000): Promise<VisitListRow[]> {
+  const out: VisitListRow[] = [];
+  for (let start = 0; start < max; start += 1000) {
+    const { data, error } = await filtered(db().from("visits").select(VISIT_LIST_SELECT), f)
+      .order("checked_in_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(start, start + 999);
+    if (error) fail(error.message);
+    const rows = (data ?? []) as unknown as VisitListJoin[];
+    out.push(...rows.map(toListRow));
+    if (rows.length < 1000) break;
+  }
+  return out;
+}
+
+/** How many visits in the period (and service, car park and plate) have each status. The status filter is not applied. */
+export async function countVisitsByStatus(f: VisitFilter): Promise<Record<VisitStatus, number>> {
+  const one = async (status: VisitStatus) => {
+    const { count, error } = await filtered(db().from("visits").select("id, vehicles!inner(plate)", { count: "exact", head: true }), { ...f, status }, true);
+    if (error) fail(error.message);
+    return count ?? 0;
+  };
+  const [parked, released, missed] = await Promise.all([one("parked"), one("released"), one("missed")]);
+  return { parked, released, missed };
+}
+
+/** Cars checked in and not released right now, whatever the dates. Limited only by service and car park. */
+export async function countParkedNowIn(serviceId: number | null, areaId: number | null): Promise<number> {
+  let q = db().from("visits").select("id", { count: "exact", head: true }).eq("status", "parked");
+  if (serviceId !== null) q = q.eq("service_id", serviceId);
+  if (areaId !== null) q = q.eq("area_id", areaId);
+  const { count, error } = await q;
+  if (error) fail(error.message);
+  return count ?? 0;
 }
