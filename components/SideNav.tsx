@@ -31,8 +31,7 @@ const ITEMS: Item[] = [
   { href: "/admin/vehicles", label: "Vehicles", icon: <IconCar />, admin: true, match: (p) => p.startsWith("/admin/vehicles") },
   { href: "/admin/services", label: "Services", icon: <IconCalendar />, admin: true, match: (p) => p.startsWith("/admin/services") },
   { href: "/admin/signs", label: "QR Signs", icon: <IconQr />, admin: true, match: (p) => p.startsWith("/admin/signs") },
-  { href: "/admin/staff", label: "Staff Accounts", icon: <IconUsers />, admin: true, match: (p) => p.startsWith("/admin/staff") },
-  { href: "/admin/members", label: "Members", icon: <IconUsers />, admin: true, match: (p) => p.startsWith("/admin/members") },
+  { href: "/admin/users", label: "Users", icon: <IconUsers />, admin: true, match: (p) => ["/admin/users", "/admin/members", "/admin/staff"].some((r) => p.startsWith(r)) },
   { href: "/admin/areas", label: "Car Parks", icon: <IconPin />, admin: true, match: (p) => p.startsWith("/admin/areas") },
   { href: "/admin/settings", label: "Settings", icon: <IconSettings />, admin: true, match: (p) => p.startsWith("/admin/settings") },
   {

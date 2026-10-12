@@ -1,12 +1,20 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AdminTable, cell } from "@/components/AdminTable";
+import { PasswordField } from "@/components/PasswordField";
 import { StatusBadge } from "@/components/StatusBadge";
+import { VehicleImage } from "@/components/VehicleImage";
+import { field } from "@/components/ui";
 import { getMemberById, listMemberVehicles, memberHistory } from "@/lib/db";
 import { formatLagosDate, formatVisitTime } from "@/lib/format";
-import { formatPlate } from "@/lib/rules";
+import { formatPlate, memberState } from "@/lib/rules";
 import { describeVehicle } from "@/lib/rules/vehicle";
 import { requireStaff } from "@/lib/staff-auth";
+import { AdminForm } from "../../AdminForm";
+import { resetMemberPinAction } from "../../admin-actions";
+import { addMemberCarAction, updateMemberAction } from "../../member-actions";
+import { MemberChip } from "../../users/MemberChip";
+import { MemberStatusToggle } from "../../users/MemberStatusToggle";
 
 export const metadata = { title: "Member" };
 export const dynamic = "force-dynamic";
@@ -17,7 +25,7 @@ const STATUS = {
   missed: { label: "Missed", tone: "danger" },
 } as const;
 
-/** One member: who they are, their saved cars and their latest visits. The PIN is reset from the member list. */
+/** One member: who they are, their saved cars and their latest visits. An administrator can correct the name or phone, set a new PIN, save a car, and switch the account off or on. */
 export default async function MemberPage({ params }: { params: Promise<{ id: string }> }) {
   await requireStaff("admin");
   const { id } = await params;
@@ -25,12 +33,12 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
   const member = await getMemberById(id);
   if (!member) notFound();
   const [cars, history] = await Promise.all([listMemberVehicles(id), memberHistory(id, 40)]);
-  const locked = member.locked_until !== null && new Date(member.locked_until) > new Date();
+  const state = memberState(member, new Date());
 
   return (
     <>
-      <Link href="/admin/members" className="text-sm font-semibold text-accent underline">
-        All members
+      <Link href="/admin/users" className="text-sm font-semibold text-accent underline">
+        All users
       </Link>
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -40,27 +48,75 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
             {member.last_seen_at && ` · last seen ${formatVisitTime(member.last_seen_at)}`}
           </p>
         </div>
-        <StatusBadge tone={locked ? "danger" : "success"}>{locked ? "Locked" : "Active"}</StatusBadge>
+        <MemberChip state={state} />
       </div>
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
-        <section aria-label="Saved cars" className="rounded-card bg-card p-4 shadow-sm">
-          <h2 className="text-lg font-bold">Saved cars</h2>
-          {cars.length === 0 ? (
-            <p className="mt-2 text-ink-soft">No saved cars.</p>
-          ) : (
-            <ul className="mt-2 divide-y divide-edge/15">
-              {cars.map((c) => (
-                <li key={c.id} className="py-2">
-                  <span data-plate className="block whitespace-nowrap font-extrabold">
-                    {formatPlate(c.plate)}
-                  </span>
-                  <span className="text-sm text-ink-soft">{describeVehicle({ make: c.make, colour: c.colour }) ?? "No details"}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <div className="space-y-4">
+          <section aria-label="Saved cars" className="rounded-card bg-card p-4 shadow-sm">
+            <h2 className="text-lg font-bold">Saved cars</h2>
+            {cars.length === 0 ? (
+              <p className="mt-2 text-ink-soft">No saved cars.</p>
+            ) : (
+              <ul className="mt-2 divide-y divide-edge/15">
+                {cars.map((c) => (
+                  <li key={c.id} className="flex items-center gap-3 py-2">
+                    <VehicleImage size="sm" />
+                    <span className="min-w-0">
+                      <Link href={`/admin/vehicles/${c.id}`} data-plate className="block whitespace-nowrap font-extrabold underline-offset-2 hover:underline">
+                        {formatPlate(c.plate)}
+                      </Link>
+                      <span className="text-sm text-ink-soft">{describeVehicle({ make: c.make, colour: c.colour }) ?? "No details"}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <details className="mt-3">
+              <summary className="cursor-pointer font-semibold">Save another car</summary>
+              <div className="mt-3">
+                <AdminForm action={addMemberCarAction} submitLabel="Save car" variant="secondary" clearOnSuccess>
+                  <input type="hidden" name="memberId" value={member.id} />
+                  <label className="block font-medium">
+                    Plate number
+                    <input name="plate" required autoComplete="off" autoCapitalize="characters" maxLength={14} className={`${field} uppercase`} />
+                  </label>
+                  <label className="block font-medium">
+                    Make and model (optional)
+                    <input name="make" autoComplete="off" className={field} />
+                  </label>
+                  <label className="block font-medium">
+                    Colour (optional)
+                    <input name="colour" autoComplete="off" className={field} />
+                  </label>
+                </AdminForm>
+              </div>
+            </details>
+          </section>
+
+          <section aria-label="Manage this member" className="space-y-5 rounded-card bg-card p-4 shadow-sm">
+            <h2 className="text-lg font-bold">Manage</h2>
+            <AdminForm action={updateMemberAction} submitLabel="Save name and phone" variant="secondary">
+              <input type="hidden" name="memberId" value={member.id} />
+              <label className="block font-medium">
+                Full name
+                <input name="name" required maxLength={80} defaultValue={member.full_name} autoComplete="off" className={field} />
+              </label>
+              <label className="block font-medium">
+                Phone number
+                <input name="phone" type="tel" inputMode="tel" required defaultValue={member.phone} autoComplete="off" className={field} />
+              </label>
+            </AdminForm>
+            <div id="pin" className="scroll-mt-24">
+              <AdminForm action={resetMemberPinAction} submitLabel="Set PIN and unlock" variant="secondary" clearOnSuccess>
+                <input type="hidden" name="memberId" value={member.id} />
+                <PasswordField label="New PIN (4 numbers)" name="pin" inputMode="numeric" pattern="\d{4}" maxLength={4} required autoComplete="new-password" />
+              </AdminForm>
+              <p className="mt-1 text-xs text-ink-soft">Also unlocks the account. Check who they are first, and tell them the PIN in person.</p>
+            </div>
+            <MemberStatusToggle id={member.id} name={member.full_name} active={member.active} />
+          </section>
+        </div>
 
         <section aria-label="Visits" className="space-y-3 lg:col-span-2">
           <h2 className="px-1 text-lg font-bold">Latest visits</h2>

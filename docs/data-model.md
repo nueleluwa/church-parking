@@ -32,7 +32,8 @@ create table members (
   failed_pins   smallint not null default 0,
   locked_until  timestamptz,
   created_at    timestamptz not null default now(),
-  last_seen_at  timestamptz
+  last_seen_at  timestamptz,
+  active        boolean not null default true  -- false: switched off by an admin (cannot sign in or check in; history stays)
 );
 
 create table guests (

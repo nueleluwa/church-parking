@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { adminSignIn, live, memberSignUp } from "./helpers";
+import { adminClient, adminSignIn, live, memberSignUp } from "./helpers";
 
 /** The box starts hidden; the button shows what was typed, and hides it again. */
 async function expectToggle(scope: Page | Locator, label: string | RegExp, value: string) {
@@ -63,11 +63,10 @@ test.describe("signed-in forms", () => {
 
     const admin = await (await browser.newContext()).newPage();
     await adminSignIn(admin);
-    await admin.goto("/admin/staff");
+    await admin.goto("/admin/users?tab=staff&add=1");
     await expectToggle(admin, /^Password \(at least 10 characters\)/, "a-long-enough-password");
-    await admin.goto("/admin/members?q=a");
-    const first = admin.locator("li").filter({ hasText: "Set a new PIN" }).first();
-    await first.getByText("Set a new PIN").click();
-    await expectToggle(first, "New PIN (4 numbers)", "1357");
+    const { data: someone } = await adminClient().from("members").select("id").limit(1).single();
+    await admin.goto(`/admin/members/${someone!.id}`);
+    await expectToggle(admin, "New PIN (4 numbers)", "1357");
   });
 });

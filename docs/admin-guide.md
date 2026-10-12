@@ -47,11 +47,21 @@ Administrators only. The register of every vehicle the church knows. A row is a 
 - **Select several.** Tick vehicles (this page only) and choose *Deactivate selected* or *Activate selected*. You are asked first; each vehicle is its own recorded change; if some cannot be changed the message says how many. There is no bulk delete, and vehicles are never deleted.
 - **A vehicle's page** shows its details, the visit open now, its latest visits and the changes made to it, with who made each.
 
-## Members
-The members seen most recently, or search by name, phone or the plate of a saved car. Each card shows saved cars and visits. **View cars and visits** opens the member's page. **Set a new PIN** also unlocks a locked account; tell the member the new PIN in person, after checking who they are.
+## Users
+Administrators only. **Users** replaces the separate Members and Staff Accounts screens, with two tabs. They are different records and stay different: a member signs in with a PIN and saves cars; a staff account signs in with a password and has a role. Each tab has its own filters, so a member filter is never carried into the staff list. The old addresses (`/admin/members`, `/admin/staff`) still work and open the right tab.
 
-## Staff Accounts
-Everyone on the team has their own account. Search by name or phone, filter by role, and open **Manage** to change a name or phone number, change a role, set a new password or switch the account off (they are signed out at once). Each person's recent activity is shown. You cannot switch off your own account, remove your own admin access, or leave the church with no active admin.
+**Members tab**
+- **Four numbers:** *Total members*, *Registered vehicles* (cars saved by members; a car saved by one member counts once), *New this month* (joined since the first of the month, Lagos time) and *Inactive members*.
+- **Search** by name, phone number or car plate (look-alike letters match). Filter by status and by whether the member has saved cars. **Reset** clears them. The range, total, page numbers and rows per page are shown below.
+- **The table:** name, phone number, number of vehicles, status (Active, Inactive or Locked), date joined, **View** and a "..." menu (View details, Set a new PIN, Switch account off/on).
+- **Add member** opens a panel on the right (full screen on a phone): full name, phone number, a 4-number PIN (you tell it to the member in person), optional cars (up to four; a car that already belongs to another member, is parked right now or is deactivated is refused and nothing is saved), and status. There is no department or email, because the system does not keep them.
+- **A member's page** (View): correct the name or phone number, set a new PIN (also unlocks the account), save another car, switch the account off or on, and see their cars and latest visits.
+- **Inactive** means switched off by an admin: the member cannot sign in and cannot be checked in (not by themselves, and not when an attendant registers their car). Their cars, visits and history are kept. **Locked** is different: too many wrong PINs, cleared by setting a new PIN.
+
+**Staff accounts tab**
+- **Four numbers:** active Admins, Coordinators and Attendants, and Switched off accounts.
+- **Search** by name or phone number; filter by role and status. Staff sign in with their phone number, so there is no separate username or email.
+- **Add staff account** and **Manage** open a panel: change name and phone, change role, set a new password, switch the account off or on, and see recent activity. The protections are unchanged: you cannot switch off or demote yourself, there must always be one active admin, and only an admin can do any of it. Switching an account off signs that person out at once and keeps their records.
 
 ## Services
 The services drivers are put into, with a status: Active now, Upcoming, Completed today, or Not today. Switch a service off instead of deleting it, so old records keep it. The selection rules (next service starting within 30 minutes, else the one in progress, else the next that day) are shown.

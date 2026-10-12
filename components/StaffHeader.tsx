@@ -22,8 +22,7 @@ const SCREENS: Record<string, { title: string; back: string }> = {
   "/admin": { title: "Admin", back: "/staff" },
   "/admin/areas": { title: "Car Parks", back: "/admin" },
   "/admin/services": { title: "Services", back: "/admin" },
-  "/admin/staff": { title: "Staff Accounts", back: "/admin" },
-  "/admin/members": { title: "Members", back: "/admin" },
+  "/admin/users": { title: "Users", back: "/admin" },
   "/admin/reports": { title: "Reports", back: "/admin" },
   "/admin/signs": { title: "QR Signs", back: "/admin" },
   "/admin/analytics": { title: "Analytics", back: "/admin" },
@@ -36,7 +35,11 @@ export function StaffHeader({ initials, wide = false }: { initials: string; wide
   const clean = path.replace(/\/$/, "");
   const screen = SCREENS[clean] ?? (clean.startsWith("/admin/signs/")
       ? { title: clean === "/admin/signs/general" ? "General Sign" : "Print Sign", back: "/admin/signs" }
-      : clean.startsWith("/admin/visits/")
+      : clean.startsWith("/admin/members/")
+        ? { title: "Member", back: "/admin/users" }
+        : clean.startsWith("/admin/vehicles/")
+          ? { title: "Vehicle", back: "/admin/vehicles" }
+          : clean.startsWith("/admin/visits/")
         ? { title: "Visit Details", back: "/admin/vehicles" }
         : undefined);
 

@@ -87,6 +87,7 @@ export async function currentMember(): Promise<Member | null> {
   const member = await getMemberById(id);
   if (!member) return null;
   if (member.locked_until && new Date(member.locked_until) > new Date()) return null;
+  if (!member.active) return null;
   return member;
 }
 

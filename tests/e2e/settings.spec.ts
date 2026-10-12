@@ -27,7 +27,7 @@ test("the page has its title, description and eight sections; four open the scre
     ["Parking areas", "/admin/areas"],
     ["Vehicle rules", "/admin/settings?tab=rules"],
     ["QR signs", "/admin/signs"],
-    ["Users & access", "/admin/staff"],
+    ["Users & access", "/admin/users?tab=staff"],
     ["Notifications", "/admin/settings?tab=notifications"],
     ["System", "/admin/settings?tab=system"],
   ];

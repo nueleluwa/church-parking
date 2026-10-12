@@ -14,7 +14,7 @@ export const LOCKED_FOREVER = "9999-12-31T00:00:00.000Z";
 export const PIN_PATTERN = /^\d{4}$/;
 
 export interface MemberAuthStore {
-  getMemberByPhone(phone: string): Promise<{ id: string; pin_hash: string; locked_until: string | null } | null>;
+  getMemberByPhone(phone: string): Promise<{ id: string; pin_hash: string; locked_until: string | null; active?: boolean } | null>;
   countFailures(key: string, windowMinutes: number): Promise<number>;
   recordFailure(key: string): Promise<void>;
   clearFailures(key: string): Promise<void>;
@@ -43,6 +43,8 @@ export async function attemptMemberSignIn(
   if (member?.locked_until && new Date(member.locked_until) > input.now) {
     return { status: "locked" };
   }
+  // A switched-off account is treated like a locked one: it needs an attendant, whatever the PIN
+  if (member && member.active === false) return { status: "locked" };
 
   const [recent, today, fromIp] = await Promise.all([
     store.countFailures(input.phoneKey, PIN_LIMITS.pause.windowMinutes),

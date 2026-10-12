@@ -25,7 +25,7 @@ const longPlate = () => `${letters(3)}${1000 + Math.floor(Math.random() * 9000)}
 /** Everything marked as a plate must be whole, on one line, inside the screen. */
 async function expectPlatesWhole(page: Page, label: string, minFontPx = 18) {
   const report = await page.evaluate(() =>
-    [...document.querySelectorAll<HTMLElement>("[data-plate]")].map((el) => {
+    [...document.querySelectorAll<HTMLElement>("[data-plate]")].filter((el) => el.getClientRects().length > 0).map((el) => {
       const range = document.createRange();
       range.selectNodeContents(el);
       const rect = el.getBoundingClientRect();

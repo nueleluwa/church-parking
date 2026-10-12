@@ -178,6 +178,8 @@ export async function registerCar(_prev: RegisterState, formData: FormData): Pro
       return fail(
         result.reason === "vehicle_inactive"
           ? "This vehicle is deactivated, so it cannot be checked in. Tell an administrator."
+          : result.reason === "member_inactive"
+            ? "This member account is switched off, so the car cannot be checked in. Tell an administrator."
           : "This car is already checked in for someone else. Tell the coordinator.",
       );
     }

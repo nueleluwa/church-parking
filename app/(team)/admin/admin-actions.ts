@@ -101,6 +101,7 @@ export async function createStaffAction(fd: FormData): Promise<AdminState> {
   if (id === "phone_taken") return { error: "Someone already has an account with that phone number." };
   await logAudit(staff.id, null, "staff_create", { after: { staff_id: id, role: p.data.role } });
   revalidatePath("/admin/staff");
+  revalidatePath("/admin/users");
   return { ok: true, message: "Account created. Give them the password in person." };
 }
 
@@ -164,6 +165,7 @@ export async function manageStaffAction(fd: FormData): Promise<AdminState> {
     }
   }
   revalidatePath("/admin/staff");
+  revalidatePath("/admin/users");
   return { ok: true, message: "Saved." };
 }
 
@@ -184,6 +186,7 @@ export async function resetMemberPinAction(fd: FormData): Promise<AdminState> {
   await clearAttempts(hashKey("pin-phone", phone, secret));
   await logAudit(staff.id, null, "member_pin_reset", { after: { member_id: p.data.memberId } });
   revalidatePath("/admin/members");
+  revalidatePath("/admin/users");
   return { ok: true, message: "PIN changed and the account is unlocked. Tell the member their new PIN in person." };
 }
 

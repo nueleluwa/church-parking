@@ -22,7 +22,7 @@ const SECTIONS = [
   { id: "areas", label: "Parking areas", href: "/admin/areas" },
   { id: "rules", label: "Vehicle rules" },
   { id: "signs", label: "QR signs", href: "/admin/signs" },
-  { id: "users", label: "Users & access", href: "/admin/staff" },
+  { id: "users", label: "Users & access", href: "/admin/users?tab=staff" },
   { id: "notifications", label: "Notifications" },
   { id: "system", label: "System" },
 ] as const;

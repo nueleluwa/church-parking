@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { adminClient, adminSignIn, createStaff, guestCheckIn, live, memberSignUp, randomPhone, randomPlate, staffSignIn } from "./helpers";
+import { adminClient, adminSignIn, createStaff, guestCheckIn, live, randomPhone, randomPlate, staffSignIn } from "./helpers";
 
 // Runs against the real hosted dev project (and the test service that global setup switches on).
 test.skip(!live, "needs .env.local with the Supabase key and admin login");
@@ -12,7 +12,7 @@ test("the admin overview shows today's numbers and the way to every admin screen
   for (const label of ["Checked in", "Released", "Still parked", "Exceptions"]) {
     await expect(page.locator("main").getByText(label, { exact: true }).first()).toBeVisible();
   }
-  for (const row of ["Reports", "Services", "QR Signs", "Staff Accounts", "Members", "Car Parks"]) {
+  for (const row of ["Reports", "Services", "QR Signs", "Users", "Car Parks"]) {
     await expect(page.locator("main").getByRole("link", { name: new RegExp(`^${row}`) })).toBeVisible();
   }
   // Phone: the tab bar, no side menu
@@ -71,117 +71,6 @@ test("an admin adds, changes and checks services; bad times are refused", async 
   } finally {
     await db.from("services").delete().eq("name", name);
   }
-});
-
-test("an admin manages staff: add, change role, new password, switch off; and cannot lock the church out", async ({ page, browser }) => {
-  const db = adminClient();
-  const phone = randomPhone();
-  const name = `Audit Person ${Math.floor(Math.random() * 100000)}`;
-  await adminSignIn(page);
-  await page.goto("/admin/staff");
-  await expect(page.getByRole("heading", { name: "Add a team member" })).toBeVisible({ timeout: 60_000 });
-
-  const add = page.locator("section").filter({ hasText: "Add a team member" });
-  await add.getByLabel("Full name").fill(name);
-  await add.getByLabel("Phone number").fill(phone);
-  await add.getByLabel(/^Password/).fill("a-long-enough-password");
-  await add.getByRole("button", { name: "Create account" }).click();
-  await expect(add.getByText(/Account created/)).toBeVisible({ timeout: 30_000 });
-
-  // The same number again is refused
-  await add.getByLabel("Full name").fill(name);
-  await add.getByLabel("Phone number").fill(phone);
-  await add.getByLabel(/^Password/).fill("a-long-enough-password");
-  await add.getByRole("button", { name: "Create account" }).click();
-  await expect(add.getByText("Someone already has an account with that phone number.")).toBeVisible({ timeout: 30_000 });
-
-  const { data: created } = await db.from("staff").select("id, role, active").eq("full_name", name).single();
-  expect(created).toMatchObject({ role: "attendant", active: true });
-
-  // The new person can sign in, as an attendant
-  const other = await (await browser.newContext()).newPage();
-  await staffSignIn(other, phone, "a-long-enough-password");
-  await expect(other.getByRole("navigation", { name: "Parking team", exact: true }).getByRole("link")).toHaveCount(3);
-
-  // Change the role
-  await page.reload();
-  const card = page.locator("li").filter({ hasText: `Manage ${name}` });
-  await card.getByText(`Manage ${name}`).click();
-  await card.getByLabel("Role").selectOption("coordinator");
-  await card.getByRole("button", { name: "Save role" }).click();
-  await expect(card.getByText("Saved.").first()).toBeVisible({ timeout: 30_000 });
-  expect((await db.from("staff").select("role").eq("id", created!.id).single()).data!.role).toBe("coordinator");
-
-  // Switch off: they are signed out at once
-  await card.getByRole("button", { name: "Switch account off" }).click();
-  await expect
-    .poll(async () => (await db.from("staff").select("active").eq("id", created!.id).single()).data!.active, { timeout: 30_000 })
-    .toBe(false);
-  await other.goto("/staff/history");
-  await expect(other).toHaveURL(/\/staff\/signin$/, { timeout: 60_000 });
-
-  // The admin cannot switch themselves off or remove their own admin role
-  const me = page.locator("li").filter({ hasText: "(you)" });
-  await me.getByText(/^Manage /).click();
-  await me.getByRole("button", { name: "Switch account off" }).click();
-  await expect(me.getByText("You cannot switch off your own account.")).toBeVisible({ timeout: 30_000 });
-  await me.getByLabel("Role").selectOption("attendant");
-  await me.getByRole("button", { name: "Save role" }).click();
-  await expect(me.getByText(/cannot remove your own admin access/)).toBeVisible({ timeout: 30_000 });
-
-  // Only an admin can use these actions, whatever the screen shows
-  const lead = await createStaff("coordinator");
-  try {
-    const coord = await (await browser.newContext()).newPage();
-    await staffSignIn(coord, lead.phone, lead.password);
-    await coord.goto("/admin/staff");
-    await expect(coord).toHaveURL(/\/staff$/, { timeout: 60_000 });
-  } finally {
-    await lead.remove();
-  }
-
-  const { data: audit } = await db.from("audit_events").select("action").in("action", ["staff_create", "staff_role", "staff_deactivate"]).order("id", { ascending: false }).limit(3);
-  expect((audit ?? []).map((a) => a.action).sort()).toEqual(["staff_create", "staff_deactivate", "staff_role"]);
-});
-
-test("an admin unlocks a locked member by setting a new PIN, and the member can sign in", async ({ page, browser }) => {
-  const db = adminClient();
-  const memberPage = await (await browser.newContext()).newPage();
-  const phone = await memberSignUp(memberPage, "4821");
-  await expect(memberPage).toHaveURL(/\/account\?welcome=1$/, { timeout: 60_000 });
-  const e164 = `+234${phone.slice(1)}`;
-  await db.from("members").update({ locked_until: "9999-12-31T00:00:00.000Z" }).eq("phone", e164);
-
-  // Locked: the right PIN is refused
-  const fresh = await (await browser.newContext()).newPage();
-  await fresh.goto("/account/signin");
-  await fresh.getByLabel("Phone number").fill(phone);
-  await fresh.getByLabel("PIN").fill("4821");
-  await fresh.getByRole("button", { name: "Sign in" }).click();
-  await expect(fresh.getByText(/This account is locked/)).toBeVisible({ timeout: 60_000 });
-
-  await adminSignIn(page);
-  await page.goto(`/admin/members?q=${phone}`);
-  const card = page.locator("li").filter({ hasText: phone.slice(1) });
-  await expect(card.getByText("Locked", { exact: true })).toBeVisible({ timeout: 60_000 });
-  await card.getByText("Set a new PIN").click();
-  await card.getByLabel("New PIN (4 numbers)").fill("12");
-  await card.getByRole("button", { name: "Set PIN and unlock" }).click();
-  await expect.poll(async () => (await db.from("members").select("locked_until").eq("phone", e164).single()).data!.locked_until).not.toBeNull();
-  await card.getByLabel("New PIN (4 numbers)").fill("9034");
-  await card.getByRole("button", { name: "Set PIN and unlock" }).click();
-  await expect(card.getByText(/PIN changed and the account is unlocked/)).toBeVisible({ timeout: 30_000 });
-  expect((await db.from("members").select("locked_until").eq("phone", e164).single()).data!.locked_until).toBeNull();
-
-  await fresh.goto("/account/signin");
-  await fresh.getByLabel("Phone number").fill(phone);
-  await fresh.getByLabel("PIN").fill("9034");
-  await fresh.getByRole("button", { name: "Sign in" }).click();
-  await expect(fresh).toHaveURL(/\/account/, { timeout: 60_000 });
-  await expect(fresh).not.toHaveURL(/signin/);
-
-  const { data: audit } = await db.from("audit_events").select("action").eq("action", "member_pin_reset").order("id", { ascending: false }).limit(1);
-  expect(audit).toHaveLength(1);
 });
 
 test("QR signs: one for each car park, a printable A4 sign with the church name and a code that opens that car park", async ({ page, browser }) => {

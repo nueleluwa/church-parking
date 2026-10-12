@@ -211,8 +211,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
           <li><MenuRow href="/admin/reports" icon={<IconReport className="h-5 w-5" />} title="Reports" subtitle="Counts, missed check-outs and CSV export" /></li>
           <li><MenuRow href="/admin/services" icon={<IconCalendar className="h-5 w-5" />} title="Services" subtitle="Names and times" /></li>
           <li><MenuRow href="/admin/signs" icon={<IconQr className="h-5 w-5" />} title="QR Signs" subtitle="Print a sign for each car park" /></li>
-          <li><MenuRow href="/admin/staff" icon={<IconUsers className="h-5 w-5" />} title="Staff Accounts" subtitle="Add people, change roles, switch accounts off" /></li>
-          <li><MenuRow href="/admin/members" icon={<IconUser className="h-5 w-5" />} title="Members" subtitle="Find a member and reset their PIN" /></li>
+          <li><MenuRow href="/admin/users" icon={<IconUsers className="h-5 w-5" />} title="Users" subtitle="Members and staff accounts: add, find, reset PINs, change roles" /></li>
           <li><MenuRow href="/admin/visits" icon={<IconClock className="h-5 w-5" />} title="Visits" subtitle="Every visit by day, car park and status" /></li>
           <li><MenuRow href="/admin/vehicles" icon={<IconCar className="h-5 w-5" />} title="Vehicles" subtitle="Every car seen, and its latest visit" /></li>
           <li><MenuRow href="/admin/areas" icon={<IconPin className="h-5 w-5" />} title="Car Parks" subtitle="Add, rename or switch off a car park" /></li>

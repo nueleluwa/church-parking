@@ -35,6 +35,8 @@ export type Member = {
   locked_until: string | null;
   created_at: string;
   last_seen_at: string | null;
+  /** False: switched off by an admin. Cannot sign in or start a check-in; history stays. */
+  active: boolean;
 };
 
 export type Guest = {
