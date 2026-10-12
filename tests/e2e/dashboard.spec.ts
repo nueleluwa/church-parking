@@ -71,7 +71,7 @@ test("each parking area shows its own numbers, as text only, with no capacity or
   const { data: areas } = await adminClient().from("areas").select("id, name, slug").eq("active", true).order("sort");
   const today = lagosToday();
   const list = page.getByRole("region", { name: "Parking areas" });
-  await expect(list.getByRole("link", { name: "View all areas" })).toHaveAttribute("href", "/admin/areas", { timeout: 60_000 });
+  await expect(list.getByRole("link", { name: "View all areas" })).toHaveAttribute("href", "/admin/settings/parking-areas", { timeout: 60_000 });
   for (const a of areas!) {
     const want = await expected(today, today, null, a.id as number);
     await expect(list.getByRole("link", { name: `${a.name}: see its visits` })).toBeVisible();
@@ -267,7 +267,7 @@ test("every card and link opens a real screen showing the same numbers", async (
 
   await page.goto("/admin");
   await page.getByRole("link", { name: "View all areas" }).click();
-  await expect(page).toHaveURL(/\/admin\/areas$/, { timeout: 60_000 });
+  await expect(page).toHaveURL(/\/admin\/settings\/parking-areas$/, { timeout: 60_000 });
 });
 
 test("active alerts count only open alerts, show red with a way in, and drop when resolved", async ({ page }) => {

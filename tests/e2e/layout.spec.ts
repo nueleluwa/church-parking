@@ -197,7 +197,7 @@ test("admin header and all six tabs fit at every phone width", async ({ page }) 
   await adminSignIn(page);
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 800 });
-    for (const path of ["/staff", "/staff/scan", "/admin", "/admin/areas"]) {
+    for (const path of ["/staff", "/staff/scan", "/admin", "/admin/settings/parking-areas"]) {
       await page.goto(path);
       await expect(page.getByRole("navigation", { name: "Parking team", exact: true }).locator("a")).toHaveCount(6, { timeout: 60_000 });
       await expectHeaderAndTabsFit(page, `admin ${path} at ${width}px`);

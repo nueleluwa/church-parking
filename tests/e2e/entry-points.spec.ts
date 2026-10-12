@@ -118,10 +118,10 @@ test.describe("the general sign", () => {
 
   test("an admin can print one QR code that opens the car park list", async ({ page }) => {
     await adminSignIn(page);
-    await page.goto("/admin/signs");
+    await page.goto("/admin/settings/qr-signs");
     await expect(page.getByRole("heading", { name: "General sign" })).toBeVisible({ timeout: 60_000 });
     await page.getByRole("link", { name: "Open the general sign to print" }).click();
-    await expect(page).toHaveURL(/\/admin\/signs\/general$/, { timeout: 60_000 });
+    await expect(page).toHaveURL(/\/admin\/settings\/qr-signs\/general$/, { timeout: 60_000 });
 
     const sign = page.getByRole("article", { name: "The general sign" });
     await expect(sign.getByText("PARKING CHECK-IN")).toBeVisible();

@@ -17,33 +17,153 @@ async function openSettings(page: Page, query = "") {
   await expect(page.getByRole("main").getByRole("heading", { name: "Settings", exact: true })).toBeVisible({ timeout: 60_000 });
 }
 
-test("the page has its title, description and eight sections; four open the screens that already manage them", async ({ page }) => {
+const SECTIONS: { label: string; path: string; region: string }[] = [
+  { label: "General", path: "/admin/settings", region: "Church details" },
+  { label: "Services", path: "/admin/settings/services", region: "Services" },
+  { label: "Parking areas", path: "/admin/settings/parking-areas", region: "Parking areas" },
+  { label: "QR signs", path: "/admin/settings/qr-signs", region: "QR signs" },
+  { label: "Vehicle rules", path: "/admin/settings/vehicle-rules", region: "Vehicle identification" },
+  { label: "Users & access", path: "/admin/settings/users", region: "Users and access" },
+  { label: "Notifications", path: "/admin/settings/notifications", region: "Notifications" },
+  { label: "System", path: "/admin/settings/system", region: "Activity log" },
+];
+
+test("Settings is the one place for configuration: every tab switches the content in place, at its own address, inside the Settings page", async ({ page }) => {
   await openSettings(page);
   await expect(page.getByText("Manage your church parking system and preferences.")).toBeVisible();
   const nav = page.getByRole("navigation", { name: "Settings sections" });
-  const expected: [string, string][] = [
-    ["General", "/admin/settings"],
-    ["Services", "/admin/services"],
-    ["Parking areas", "/admin/areas"],
-    ["Vehicle rules", "/admin/settings?tab=rules"],
-    ["QR signs", "/admin/signs"],
-    ["Users & access", "/admin/users?tab=staff"],
-    ["Notifications", "/admin/settings?tab=notifications"],
-    ["System", "/admin/settings?tab=system"],
-  ];
-  for (const [label, href] of expected) await expect(nav.getByRole("link", { name: label, exact: true })).toHaveAttribute("href", href);
+  for (const s of SECTIONS) await expect(nav.getByRole("link", { name: s.label, exact: true })).toHaveAttribute("href", s.path);
   await expect(nav.getByRole("link", { name: "General" })).toHaveAttribute("aria-current", "page");
 
-  // No dead links: every section opens a real screen
-  for (const [label, href] of expected) {
-    await page.goto(href);
-    await expect(page.getByRole("main").getByRole("heading").first(), label).toBeVisible({ timeout: 60_000 });
+  // Click through every tab. The page is never reloaded, the heading and tabs stay, and the address stays under Settings
+  await page.evaluate(() => ((window as unknown as { __shell: number }).__shell = 1));
+  for (const s of SECTIONS) {
+    await nav.getByRole("link", { name: s.label, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${s.path.replace(/\//g, "\\/")}$`), { timeout: 60_000 });
+    await expect(page.getByRole("region", { name: s.region }).first(), s.label).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole("main").getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: s.label, exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page, "never a standalone module").not.toHaveURL(/\/admin\/(services|areas|signs)(\/|$)/);
+    expect(await page.evaluate(() => (window as unknown as { __shell?: number }).__shell), `${s.label} reloaded the page`).toBe(1);
+  }
+
+  // Refresh keeps the section, and back and forward move between sections
+  await page.reload();
+  await expect(nav.getByRole("link", { name: "System", exact: true })).toHaveAttribute("aria-current", "page", { timeout: 60_000 });
+  await page.goBack();
+  await expect(nav.getByRole("link", { name: "Notifications", exact: true })).toHaveAttribute("aria-current", "page", { timeout: 60_000 });
+  await expect(page.getByRole("region", { name: "Notifications" })).toBeVisible();
+  await page.goForward();
+  await expect(nav.getByRole("link", { name: "System", exact: true })).toHaveAttribute("aria-current", "page", { timeout: 60_000 });
+
+  // Direct addresses work, and an unknown tab address is not a section
+  for (const s of SECTIONS) {
+    await page.goto(s.path);
+    await expect(page.getByRole("region", { name: s.region }).first(), s.label).toBeVisible({ timeout: 60_000 });
     await expect(page.getByRole("heading", { name: "We cannot find that page" })).toHaveCount(0);
   }
-  await page.goto("/admin/settings?tab=notifications");
-  await expect(nav.getByRole("link", { name: "Notifications" })).toHaveAttribute("aria-current", "page");
-  await page.goto("/admin/settings?tab=nonsense"); // an unknown section shows General
-  await expect(page.getByRole("region", { name: "Church details" })).toBeVisible();
+  await page.goto("/admin/settings/nonsense");
+  await expect(page.getByRole("heading", { name: "We cannot find that page" })).toBeVisible({ timeout: 60_000 });
+  await page.goto("/admin/settings?tab=nonsense"); // an unknown old tab shows General
+  await expect(page.getByRole("region", { name: "Church details" })).toBeVisible({ timeout: 60_000 });
+});
+
+test("the old addresses open the matching Settings section and never render a second screen; the menu no longer lists them", async ({ page }) => {
+  await openSettings(page);
+  const cases: [string, RegExp][] = [
+    ["/admin/services", /\/admin\/settings\/services$/],
+    ["/admin/areas", /\/admin\/settings\/parking-areas$/],
+    ["/admin/signs", /\/admin\/settings\/qr-signs$/],
+    ["/admin/signs/cp1", /\/admin\/settings\/qr-signs\/cp1$/],
+    ["/admin/signs/cp1?size=a5", /\/admin\/settings\/qr-signs\/cp1\?size=a5$/],
+    ["/admin/signs/general", /\/admin\/settings\/qr-signs\/general$/],
+    ["/admin/settings?tab=rules", /\/admin\/settings\/vehicle-rules$/],
+    ["/admin/settings?tab=notifications", /\/admin\/settings\/notifications$/],
+    ["/admin/settings?tab=system", /\/admin\/settings\/system$/],
+  ];
+  for (const [from, to] of cases) {
+    await page.goto(from);
+    await expect(page, from).toHaveURL(to, { timeout: 60_000 });
+    await expect(page.getByRole("heading", { name: "We cannot find that page" })).toHaveCount(0);
+  }
+
+  // The side menu has Settings, and none of the three standalone entries; the phone list the same
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/admin/settings/services");
+  const side = page.getByRole("navigation", { name: "Parking team, desktop" });
+  await expect(side.getByRole("link", { name: "Settings", exact: true })).toHaveAttribute("aria-current", "page", { timeout: 60_000 });
+  for (const gone of ["Services", "Car Parks", "QR Signs"]) await expect(side.getByRole("link", { name: gone, exact: true })).toHaveCount(0);
+  for (const kept of ["Dashboard", "Live Parking", "Sweep", "Analytics", "Reports", "Visits", "Vehicles", "Users", "Attendant tools"]) {
+    await expect(side.getByRole("link", { name: kept, exact: true })).toBeVisible();
+  }
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.goto("/admin");
+  for (const gone of ["Services", "Car Parks", "QR Signs"]) await expect(page.getByRole("main").getByRole("link", { name: new RegExp(`^${gone}`) })).toHaveCount(0);
+  await expect(page.getByRole("main").getByRole("link", { name: /^Settings/ })).toBeVisible();
+});
+
+test("Services in Settings: the schedule is listed from the real records, can be filtered, and the selection rules are shown", async ({ page }) => {
+  const db = adminClient();
+  const { data: services } = await db.from("services").select("id, name, weekday, starts_at, ends_at, active").order("weekday").order("starts_at");
+  await openSettings(page, "/services");
+  await expect(page.getByTestId("svc-count")).toHaveText(String(services!.length), { timeout: 60_000 });
+  const first = services![0];
+  const list = page.getByRole("region", { name: "Services", exact: true });
+  await expect(list).toContainText(first.name);
+  await expect(list).toContainText(`${String(first.starts_at).slice(0, 5)} to ${String(first.ends_at).slice(0, 5)}`);
+  await expect(page.getByRole("region", { name: "Service selection rules" })).toContainText("Pick the next service that starts within 30 minutes.");
+
+  // Filters narrow the list from the same records
+  await page.goto(`/admin/settings/services?day=${first.weekday}`);
+  await expect(page.getByTestId("svc-count")).toHaveText(String(services!.filter((s) => s.weekday === first.weekday).length), { timeout: 60_000 });
+  await page.goto("/admin/settings/services?q=zzzz-nobody");
+  await expect(page.getByText("No services match these filters.")).toBeVisible({ timeout: 60_000 });
+  await page.goto("/admin/settings/services?status=off");
+  await expect(page.getByTestId("svc-count")).toHaveText(String(services!.filter((s) => !s.active).length), { timeout: 60_000 });
+
+  // Editing a service never moves an existing visit
+  const { data: sample } = await db.from("visits").select("id, service_id").limit(1).single();
+  const before = (await db.from("visits").select("service_id").eq("id", sample!.id).single()).data!.service_id;
+  expect(before).toBe(sample!.service_id);
+});
+
+test("Parking areas and QR signs in Settings list the real car parks and their signs, with working links", async ({ page }) => {
+  const db = adminClient();
+  const { data: areas } = await db.from("areas").select("id, name, slug, active").order("sort").order("id");
+  await openSettings(page, "/parking-areas");
+  await expect(page.getByTestId("area-count")).toHaveText(String(areas!.length), { timeout: 60_000 });
+  for (const a of areas!) {
+    const row = page.getByRole("region", { name: "Parking areas" }).locator("li").filter({ hasText: `/c/${a.slug}` });
+    await expect(row).toContainText(a.active ? "Active" : "Off");
+    await expect(row.getByRole("button", { name: `Rename ${a.name}` })).toBeVisible();
+    if (a.active) await expect(row.getByRole("link", { name: `QR sign for ${a.name}` })).toHaveAttribute("href", `/admin/settings/qr-signs/${a.slug}`);
+  }
+  // No capacity, occupancy or price is invented
+  await expect(page.getByRole("main")).not.toContainText(/capacity|occupancy|%|price|spaces left/i);
+
+  await page.goto("/admin/settings/qr-signs");
+  const active = areas!.filter((a) => a.active);
+  await expect(page.getByTestId("sign-count")).toHaveText(String(active.length), { timeout: 60_000 });
+  for (const a of active) {
+    await expect(page.getByRole("img", { name: `QR code for ${a.name}` })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open the sign to print" }).first()).toBeVisible();
+  }
+  // A sign opens inside Settings: the tabs stay, and the address is under Settings
+  await page.getByRole("link", { name: "Open the sign to print" }).first().click();
+  await expect(page).toHaveURL(/\/admin\/settings\/qr-signs\/[a-z0-9-]+$/, { timeout: 60_000 });
+  await expect(page.getByRole("navigation", { name: "Settings sections" }).getByRole("link", { name: "QR signs", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("article")).toContainText("PARKING CHECK-IN");
+});
+
+test("Users & access explains the roles from the real accounts and links to the accounts themselves", async ({ page }) => {
+  await openSettings(page, "/users");
+  const staff = (await adminClient().from("staff").select("role, active").limit(2000)).data!;
+  const section = page.getByRole("region", { name: "Users and access" });
+  for (const [role, label] of [["admin", "Admin"], ["coordinator", "Coordinator"], ["attendant", "Attendant"]]) {
+    const row = section.locator("div").filter({ hasText: new RegExp(`^${label}`) }).first();
+    await expect(row).toContainText(`${staff.filter((s) => s.active && s.role === role).length} active`);
+  }
+  await expect(section.getByRole("link", { name: "Manage staff accounts" })).toHaveAttribute("href", "/admin/users?tab=staff");
 });
 
 test("the form loads the saved values, the time zone is fixed, and no unsupported control is shown", async ({ page }) => {
@@ -62,7 +182,7 @@ test("the form loads the saved values, the time zone is fixed, and no unsupporte
   await expect(prefs.locator('[name="staffSessionHours"] option')).toHaveText(["2 hours", "4 hours", "8 hours", "12 hours (standard)"]);
 
   // Nothing here that the system cannot do, and nothing destructive
-  for (const tab of ["", "?tab=rules", "?tab=notifications", "?tab=system"]) {
+  for (const tab of ["", "/vehicle-rules", "/notifications", "/system", "/services", "/parking-areas", "/qr-signs", "/users"]) {
     await page.goto(`/admin/settings${tab}`);
     await expect(page.locator("main")).not.toContainText(/two-factor|2FA|password expiry|Reset system data|Clear logs|Download latest backup|Automatic backups|Change logo|Require QR/i);
   }
@@ -218,7 +338,7 @@ test("the settings page fits every width from 320 to 1440 and keeps its buttons 
   await adminSignIn(page);
   for (const width of [320, 375, 390, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const tab of ["", "?tab=rules", "?tab=system"]) {
+    for (const tab of ["", "/services", "/parking-areas", "/qr-signs", "/vehicle-rules", "/system"]) {
       await page.goto(`/admin/settings${tab}`);
       await expect(page.getByRole("main").getByRole("heading", { name: "Settings", exact: true })).toBeVisible({ timeout: 60_000 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `settings${tab} at ${width}px`).toBeLessThanOrEqual(0);

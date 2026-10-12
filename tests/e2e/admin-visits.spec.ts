@@ -55,13 +55,13 @@ test("signs: the QR code can be downloaded, and a sign can be set for A4 or A5 p
   const { data: areas } = await adminClient().from("areas").select("name, slug").eq("active", true).order("sort");
   const first = areas![0];
   await adminSignIn(page);
-  await page.goto("/admin/signs");
+  await page.goto("/admin/settings/qr-signs");
   const card = page.locator("li").filter({ hasText: first.name }).first();
   const download = card.getByRole("link", { name: "Download the QR code" });
   await expect(download).toHaveAttribute("download", `qr-${first.slug}.svg`, { timeout: 60_000 });
   expect(decodeURIComponent((await download.getAttribute("href"))!)).toContain("<svg");
 
-  await page.goto(`/admin/signs/${first.slug}`);
+  await page.goto(`/admin/settings/qr-signs/${first.slug}`);
   const size = page.getByRole("navigation", { name: "Paper size" });
   await expect(size.getByRole("link", { name: "A4 (portrait)" })).toHaveAttribute("aria-current", "true", { timeout: 60_000 });
   expect(await page.locator("style").evaluateAll((els) => els.map((e) => e.textContent).join(" "))).toContain("size: A4 portrait");

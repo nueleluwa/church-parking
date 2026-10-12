@@ -1,14 +1,12 @@
 import Link from "next/link";
 import {
   IconAlert,
-  IconCalendar,
   IconCar,
   IconCheck,
   IconChevronRight,
   IconClock,
   IconLogout,
   IconPin,
-  IconQr,
   IconReport,
   IconSettings,
   IconTrend,
@@ -161,7 +159,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
       <section aria-label="Parking areas" className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xl font-extrabold">Parking areas</h2>
-          <Link href="/admin/areas" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-edge/20 bg-card px-4 text-sm font-semibold hover:bg-page">
+          <Link href="/admin/settings/parking-areas" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-edge/20 bg-card px-4 text-sm font-semibold hover:bg-page">
             <IconPin aria-hidden="true" className="h-4 w-4" />
             View all areas
           </Link>
@@ -236,8 +234,10 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
                         {e.kind === "entry" ? "↑ Entry" : "↓ Exit"} · <span data-area>{e.areaName}</span>
                       </span>
                       <span className="block text-sm text-ink-soft">{formatLagosTime(e.at)}</span>
+                      <span className="mt-1 block">
+                        <EventChip kind={e.kind} />
+                      </span>
                     </span>
-                    <EventChip kind={e.kind} />
                   </Link>
                 </li>
               ))}
@@ -292,13 +292,10 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
         <ul className="divide-y divide-edge/15 overflow-hidden rounded-card bg-card shadow-sm">
           <li><MenuRow href="/admin/analytics" icon={<IconTrend className="h-5 w-5" />} title="Analytics" subtitle="Peak times, car park usage and how visits ended" /></li>
           <li><MenuRow href="/admin/reports" icon={<IconReport className="h-5 w-5" />} title="Reports" subtitle="Counts, missed check-outs and CSV export" /></li>
-          <li><MenuRow href="/admin/services" icon={<IconCalendar className="h-5 w-5" />} title="Services" subtitle="Names and times" /></li>
-          <li><MenuRow href="/admin/signs" icon={<IconQr className="h-5 w-5" />} title="QR Signs" subtitle="Print a sign for each car park" /></li>
           <li><MenuRow href="/admin/users" icon={<IconUsers className="h-5 w-5" />} title="Users" subtitle="Members and staff accounts: add, find, reset PINs, change roles" /></li>
           <li><MenuRow href="/admin/visits" icon={<IconClock className="h-5 w-5" />} title="Visits" subtitle="Every visit by day, car park and status" /></li>
           <li><MenuRow href="/admin/vehicles" icon={<IconCar className="h-5 w-5" />} title="Vehicles" subtitle="Every car seen, and its latest visit" /></li>
-          <li><MenuRow href="/admin/areas" icon={<IconPin className="h-5 w-5" />} title="Car Parks" subtitle="Add, rename or switch off a car park" /></li>
-          <li><MenuRow href="/admin/settings" icon={<IconSettings className="h-5 w-5" />} title="Settings" subtitle="The rules in force, and the activity log" /></li>
+          <li><MenuRow href="/admin/settings" icon={<IconSettings className="h-5 w-5" />} title="Settings" subtitle="Services, car parks, QR signs, rules and the activity log" /></li>
         </ul>
       </section>
     </>

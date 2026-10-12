@@ -18,7 +18,7 @@ import {
 } from "@/lib/rules";
 import { MemberChip } from "./MemberChip";
 import { MemberForm } from "./MemberForm";
-import { Panel } from "./Panel";
+import { Panel } from "../Panel";
 import { RowMenu } from "./RowMenu";
 import { Summary } from "./Summary";
 

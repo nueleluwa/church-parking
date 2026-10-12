@@ -5,13 +5,10 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import {
   IconAlert,
-  IconCalendar,
   IconCar,
   IconCheck,
   IconClock,
   IconGrid,
-  IconPin,
-  IconQr,
   IconReport,
   IconScan,
   IconSettings,
@@ -29,10 +26,7 @@ const ITEMS: Item[] = [
   { href: "/admin/reports", label: "Reports", icon: <IconReport />, admin: true, match: (p) => p.startsWith("/admin/reports") },
   { href: "/admin/visits", label: "Visits", icon: <IconClock />, match: (p) => p.startsWith("/admin/visits") },
   { href: "/admin/vehicles", label: "Vehicles", icon: <IconCar />, admin: true, match: (p) => p.startsWith("/admin/vehicles") },
-  { href: "/admin/services", label: "Services", icon: <IconCalendar />, admin: true, match: (p) => p.startsWith("/admin/services") },
-  { href: "/admin/signs", label: "QR Signs", icon: <IconQr />, admin: true, match: (p) => p.startsWith("/admin/signs") },
   { href: "/admin/users", label: "Users", icon: <IconUsers />, admin: true, match: (p) => ["/admin/users", "/admin/members", "/admin/staff"].some((r) => p.startsWith(r)) },
-  { href: "/admin/areas", label: "Car Parks", icon: <IconPin />, admin: true, match: (p) => p.startsWith("/admin/areas") },
   { href: "/admin/settings", label: "Settings", icon: <IconSettings />, admin: true, match: (p) => p.startsWith("/admin/settings") },
   {
     href: "/staff",

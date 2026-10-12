@@ -27,8 +27,8 @@ test("an admin renames a car park: it shows everywhere, persists, and no record 
 
   try {
     await adminSignIn(page);
-    await page.goto("/admin/areas");
-    await expect(page.getByRole("heading", { name: "Car parks" })).toBeVisible({ timeout: 60_000 });
+    await page.goto("/admin/settings/parking-areas");
+    await expect(page.getByRole("main").getByRole("heading", { name: "Parking areas" })).toBeVisible({ timeout: 60_000 });
 
     // Rename it
     await page.getByRole("button", { name: `Rename ${original}` }).click();
@@ -111,8 +111,8 @@ test("a car park name is checked before saving: empty, too short and duplicate n
   const cp2 = areas!.find((a) => a.slug === "cp2")!;
 
   await adminSignIn(page);
-  await page.goto("/admin/areas");
-  await expect(page.getByRole("heading", { name: "Car parks" })).toBeVisible({ timeout: 60_000 });
+  await page.goto("/admin/settings/parking-areas");
+  await expect(page.getByRole("main").getByRole("heading", { name: "Parking areas" })).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: `Rename ${cp2.name}` }).click();
   const input = page.getByLabel("New name");
 

@@ -40,7 +40,7 @@ test("attendant screens have no automatically detectable accessibility problems"
 
 test("coordinator and admin screens have no automatically detectable accessibility problems", async ({ page }) => {
   await adminSignIn(page);
-  for (const path of ["/staff/dashboard", "/staff/sweep", "/admin", "/admin/reports", "/admin/services", "/admin/users?tab=staff", "/admin/users?q=a", "/admin/users?add=1", "/admin/users?tab=staff&add=1", "/admin/signs", "/admin/signs/cp1", "/admin/areas"]) {
+  for (const path of ["/staff/dashboard", "/staff/sweep", "/admin", "/admin/reports", "/admin/settings/services", "/admin/users?tab=staff", "/admin/users?q=a", "/admin/users?add=1", "/admin/users?tab=staff&add=1", "/admin/settings/qr-signs", "/admin/settings/qr-signs/cp1", "/admin/settings/parking-areas", "/admin/settings/parking-areas?add=1", "/admin/settings/services?add=1", "/admin/settings/vehicle-rules", "/admin/settings/users", "/admin/settings/notifications", "/admin/settings/system"]) {
     await scan(page, path);
   }
   // The analytics, vehicles, visit details and settings screens, on a phone and on a wide screen

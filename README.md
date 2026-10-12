@@ -25,7 +25,7 @@ Built and in use. Everything in [docs/roadmap.md](docs/roadmap.md) is done excep
 | `/account/*` | Member sign-up, sign-in, cars and history | Members |
 | `/staff` | Team home, scanner, search, register, history, service info | Attendants and up |
 | `/staff/dashboard`, `/staff/sweep` | Live board and end-of-service sweep | Coordinators and up |
-| `/admin/*` | Dashboard, Visits, Vehicles, Users (members and staff accounts), Services, Car parks, QR signs, Reports, Analytics, Settings | Admins (Visits also for coordinators) |
+| `/admin/*` | Dashboard, Visits, Vehicles, Users (members and staff accounts), Reports, Analytics, Settings (General, Services, Parking areas, QR signs, Vehicle rules, Users & access, Notifications, System) | Admins (Visits also for coordinators) |
 
 ## Tech
 

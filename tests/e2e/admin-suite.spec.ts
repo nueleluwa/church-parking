@@ -12,7 +12,7 @@ test("the admin overview shows today's numbers and the way to every admin screen
   for (const label of ["Cars checked in", "Cars left", "Currently parked", "Active alerts"]) {
     await expect(page.locator("main").getByText(label, { exact: true }).first()).toBeVisible();
   }
-  for (const row of ["Reports", "Services", "QR Signs", "Users", "Car Parks"]) {
+  for (const row of ["Reports", "Users", "Settings"]) {
     await expect(page.locator("main").getByRole("link", { name: new RegExp(`^${row}`) })).toBeVisible();
   }
   // Phone: the tab bar, no side menu
@@ -31,16 +31,18 @@ test("the admin overview shows today's numbers and the way to every admin screen
   await expect(page).toHaveURL(/\/admin\/reports$/, { timeout: 60_000 });
 });
 
-test("an admin adds, changes and checks services; bad times are refused", async ({ page }) => {
+test("an admin adds, changes and checks services in Settings; bad times are refused", async ({ page }) => {
   const db = adminClient();
   const name = `Test Service ${Math.floor(Math.random() * 100000)}`;
   const day = (new Date().getUTCDay() + 3) % 7; // a day with no real service today
+  const dayName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][day];
   try {
     await adminSignIn(page);
-    await page.goto("/admin/services");
-    await expect(page.getByRole("heading", { name: "Add a service" })).toBeVisible({ timeout: 60_000 });
+    await page.goto("/admin/settings/services");
+    await expect(page.getByRole("main").getByRole("link", { name: "Add service" })).toBeVisible({ timeout: 60_000 });
+    await page.getByRole("main").getByRole("link", { name: "Add service" }).click();
 
-    const add = page.locator("section").filter({ hasText: "Add a service" });
+    const add = page.getByRole("dialog", { name: "Add service" });
     await add.getByLabel("Name").fill(name);
     await add.getByLabel("Day").selectOption(String(day));
     await add.getByLabel("Starts").fill("14:00");
@@ -51,18 +53,20 @@ test("an admin adds, changes and checks services; bad times are refused", async 
     await add.getByLabel("Ends").fill("15:30");
     await add.getByRole("button", { name: "Add service" }).click();
     await expect(add.getByText("Service saved.")).toBeVisible({ timeout: 30_000 });
-    await expect(page.getByText(name).first()).toBeVisible({ timeout: 30_000 });
 
     const { data: row } = await db.from("services").select("id, starts_at, ends_at").eq("name", name).single();
     expect(row!.starts_at).toMatch(/^14:00/);
     expect(row!.ends_at).toMatch(/^15:30/);
+    await page.goto(`/admin/settings/services?q=${encodeURIComponent(name)}`);
+    await expect(page.getByTestId("svc-count")).toHaveText("1", { timeout: 60_000 });
+    await expect(page.getByRole("main").getByText(name).first()).toBeVisible();
 
-    // Change it
-    await page.getByText(`Change ${name}`).click();
-    const card = page.locator("li").filter({ hasText: `Change ${name}` });
-    await card.getByLabel("Ends").fill("16:00");
-    await card.getByRole("button", { name: "Save service" }).click();
-    await expect(card.getByText("Service saved.")).toBeVisible({ timeout: 30_000 });
+    // Change it, in the panel
+    await page.getByRole("main").getByRole("link", { name: `Edit ${name} (${dayName})` }).click();
+    const edit = page.getByRole("dialog", { name: `Edit ${name}` });
+    await edit.getByLabel("Ends").fill("16:00");
+    await edit.getByRole("button", { name: "Save service" }).click();
+    await expect(edit.getByText("Service saved.")).toBeVisible({ timeout: 30_000 });
     const { data: changed } = await db.from("services").select("ends_at").eq("id", row!.id).single();
     expect(changed!.ends_at).toMatch(/^16:00/);
 
@@ -77,14 +81,14 @@ test("QR signs: one for each car park, a printable A4 sign with the church name 
   const db = adminClient();
   const { data: areas } = await db.from("areas").select("name, slug").eq("active", true);
   await adminSignIn(page);
-  await page.goto("/admin/signs");
+  await page.goto("/admin/settings/qr-signs");
   await expect(page.getByRole("heading", { name: areas![0].name })).toBeVisible({ timeout: 60_000 });
   for (const a of areas!) {
     await expect(page.getByRole("img", { name: `QR code for ${a.name}` })).toBeVisible();
     await expect(page.getByText(`/c/${a.slug}`)).toBeVisible();
   }
 
-  await page.goto("/admin/signs/cp1");
+  await page.goto("/admin/settings/qr-signs/cp1");
   const sign = page.getByRole("article");
   await expect(sign.getByText("PARKING CHECK-IN")).toBeVisible({ timeout: 60_000 });
   await expect(sign.getByText("Christ Church International").first()).toBeVisible();
@@ -101,13 +105,13 @@ test("QR signs: one for each car park, a printable A4 sign with the church name 
 
   // An unknown car park is not found, and an attendant cannot open signs
   await page.emulateMedia({ media: "screen" });
-  await page.goto("/admin/signs/nowhere");
+  await page.goto("/admin/settings/qr-signs/nowhere");
   await expect(page.getByRole("heading", { name: "We cannot find that page" })).toBeVisible({ timeout: 60_000 });
   const attendant = await createStaff("attendant");
   try {
     const p = await (await browser.newContext()).newPage();
     await staffSignIn(p, attendant.phone, attendant.password);
-    await p.goto("/admin/signs");
+    await p.goto("/admin/settings/qr-signs");
     await expect(p).toHaveURL(/\/staff$/, { timeout: 60_000 });
   } finally {
     await attendant.remove();
@@ -176,8 +180,8 @@ test("an admin adds a car park: it gets its own QR address and sign, drivers can
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   try {
     await adminSignIn(page);
-    await page.goto("/admin/areas");
-    const add = page.locator("section").filter({ hasText: "Add a car park" });
+    await page.goto("/admin/settings/parking-areas?add=1");
+    const add = page.getByRole("dialog", { name: "Add car park" });
     await add.getByLabel("Name of the car park").fill("Car Park 1");
     await add.getByRole("button", { name: "Add car park" }).click();
     await expect(add.getByText("Another car park already has that name.")).toBeVisible({ timeout: 60_000 });
@@ -191,13 +195,13 @@ test("an admin adds a car park: it gets its own QR address and sign, drivers can
     // It is listed, has a sign, and drivers can check in there
     await page.reload();
     await expect(page.getByText(name, { exact: true })).toBeVisible({ timeout: 60_000 });
-    await page.goto(`/admin/signs/${slug}`);
+    await page.goto(`/admin/settings/qr-signs/${slug}`);
     await expect(page.getByRole("article").getByText(name)).toBeVisible({ timeout: 60_000 });
     const plate = randomPlate("LT");
     await guestCheckIn(browser, plate, slug);
 
     // It cannot be switched off while a car is parked in it
-    await page.goto("/admin/areas");
+    await page.goto("/admin/settings/parking-areas");
     const card = page.locator("li").filter({ hasText: name });
     await card.getByText("Switch off", { exact: true }).click();
     await card.getByRole("button", { name: "Switch off this car park" }).click();

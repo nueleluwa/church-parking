@@ -20,11 +20,8 @@ const SCREENS: Record<string, { title: string; back: string }> = {
   "/staff/dashboard": { title: "Live Board", back: "/staff" },
   "/staff/sweep": { title: "Sweep", back: "/staff" },
   "/admin": { title: "Dashboard", back: "/staff" },
-  "/admin/areas": { title: "Car Parks", back: "/admin" },
-  "/admin/services": { title: "Services", back: "/admin" },
   "/admin/users": { title: "Users", back: "/admin" },
   "/admin/reports": { title: "Reports", back: "/admin" },
-  "/admin/signs": { title: "QR Signs", back: "/admin" },
   "/admin/analytics": { title: "Analytics", back: "/admin" },
   "/admin/vehicles": { title: "Vehicles", back: "/admin" },
   "/admin/settings": { title: "Settings", back: "/admin" },
@@ -33,8 +30,10 @@ const SCREENS: Record<string, { title: string; back: string }> = {
 export function StaffHeader({ initials, wide = false }: { initials: string; wide?: boolean }) {
   const path = usePathname();
   const clean = path.replace(/\/$/, "");
-  const screen = SCREENS[clean] ?? (clean.startsWith("/admin/signs/")
-      ? { title: clean === "/admin/signs/general" ? "General Sign" : "Print Sign", back: "/admin/signs" }
+  const screen = SCREENS[clean] ?? (clean.startsWith("/admin/settings/qr-signs/")
+      ? { title: clean === "/admin/settings/qr-signs/general" ? "General Sign" : "Print Sign", back: "/admin/settings/qr-signs" }
+      : clean.startsWith("/admin/settings/")
+        ? { title: "Settings", back: "/admin" }
       : clean.startsWith("/admin/members/")
         ? { title: "Member", back: "/admin/users" }
         : clean.startsWith("/admin/vehicles/")

@@ -90,7 +90,7 @@ test("the side menu and the admin overview link to the four new screens, and Ser
   await side.getByRole("link", { name: "Analytics" }).click();
   await expect(page).toHaveURL(/\/admin\/analytics/, { timeout: 60_000 });
   await expect(side.getByRole("link", { name: "Analytics" })).toHaveAttribute("aria-current", "page");
-  await page.goto("/admin/services");
+  await page.goto("/admin/settings/services");
   await expect(page.getByRole("heading", { name: "Service selection rules" })).toBeVisible({ timeout: 60_000 });
   await page.setViewportSize({ width: 390, height: 800 });
   await page.goto("/admin");

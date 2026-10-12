@@ -8,7 +8,7 @@ import { formatVisitTime } from "@/lib/format";
 import { MEMBER_PAGE_SIZES, initials, lagosParts, pageNumbers, parseMemberPageSize, parseMemberStatus, registerRange } from "@/lib/rules";
 import { AdminForm } from "../AdminForm";
 import { createStaffAction, manageStaffAction } from "../admin-actions";
-import { Panel } from "./Panel";
+import { Panel } from "../Panel";
 import { Summary } from "./Summary";
 
 export type StaffSearch = { q?: string; role?: string; status?: string; size?: string; page?: string; add?: string; manage?: string };
