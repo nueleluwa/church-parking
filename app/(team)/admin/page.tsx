@@ -4,204 +4,287 @@ import {
   IconCalendar,
   IconCar,
   IconCheck,
+  IconChevronRight,
   IconClock,
+  IconLogout,
   IconPin,
   IconQr,
   IconReport,
   IconSettings,
   IconTrend,
-  IconUser,
   IconUsers,
 } from "@/components/icons";
-import { AdminTable, cell } from "@/components/AdminTable";
 import { MenuRow } from "@/components/MenuRow";
-import { StatusBadge } from "@/components/StatusBadge";
 import { VehicleImage } from "@/components/VehicleImage";
-import { loadDashboard } from "@/lib/dashboard-data";
-import { listActiveAreas, listRecentActivity, previousServiceCounts } from "@/lib/db";
+import { listActiveAreas, listAllServices, listOpenAlerts, listPeriodActivity, loadDashboardFigures } from "@/lib/db";
 import { formatLagosTime } from "@/lib/format";
-import { formatPlate, lagosDate, percentChange } from "@/lib/rules";
+import { DASHBOARD_RANGES, formatPlate, lagosDate, parseDashboardPeriod } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
+import { DashboardFilters } from "./DashboardFilters";
 
-export const metadata = { title: "Admin" };
+export const metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
-const KIND = {
-  entry: { word: "Entry", badge: "Checked in", tone: "success" },
-  exit: { word: "Exit", badge: "Released", tone: "neutral" },
-  closed: { word: "Closed", badge: "Missed", tone: "danger" },
-} as const;
+const ACTIVITY_ROWS = 8;
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-function Stat({ label, value, note, icon, href, tone, trend }: {
-  trend?: number | null;
+/** One summary card. It is a link to the screen that lists what the number counts. */
+function Card({
+  label,
+  value,
+  note,
+  icon,
+  href,
+  id,
+  alert,
+  tint,
+}: {
   label: string;
   value: number;
   note: string;
   icon: React.ReactNode;
-  href?: string;
-  tone?: "danger";
+  href: string;
+  id: string;
+  /** Red number and note: only for alerts that need attention. */
+  alert?: boolean;
+  /** A pale red circle behind the icon. */
+  tint?: boolean;
 }) {
-  const body = (
-    <>
-      <span
-        aria-hidden="true"
-        className={`flex h-10 w-10 items-center justify-center rounded-full ${tone === "danger" ? "bg-blush text-danger" : "bg-page text-ink"}`}
-      >
+  return (
+    <Link href={href} className="flex items-center gap-3 rounded-2xl border border-edge/15 bg-card p-4 hover:bg-page">
+      <span aria-hidden="true" className={`hidden h-12 w-12 shrink-0 sm:flex items-center justify-center rounded-full ${tint || alert ? "bg-blush text-accent" : "bg-page text-ink"}`}>
         {icon}
       </span>
-      <p className="mt-2 text-sm font-medium text-ink-soft">{label}</p>
-      <p className="flex items-baseline gap-2">
-        <span className={`text-3xl font-extrabold ${tone === "danger" ? "text-danger" : ""}`}>{value}</span>
-        {trend ? (
-          <span className={`text-sm font-bold ${trend > 0 ? "text-success" : "text-danger"}`} title="Compared with this service last time">
-            {trend > 0 ? "↑" : "↓"} {Math.abs(trend)}%
-          </span>
-        ) : null}
-      </p>
-      <p className="text-xs text-ink-soft">{note}</p>
-    </>
-  );
-  const box = "rounded-2xl bg-card p-4 shadow-sm";
-  return href ? (
-    <Link href={href} className={`${box} block hover:bg-page`}>
-      {body}
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-medium text-ink-soft">{label}</span>
+        <span data-testid={id} className={`block text-3xl font-extrabold leading-tight ${alert ? "text-accent" : ""}`}>
+          {value}
+        </span>
+        <span className={`block text-xs ${alert ? "font-semibold text-accent" : "text-ink-soft"}`}>{note}</span>
+      </span>
+      <IconChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-ink-soft" />
     </Link>
-  ) : (
-    <div className={box}>{body}</div>
   );
 }
 
-/** The admin overview: today's numbers at a glance, the car parks, recent activity, and the way to every admin screen. */
-export default async function AdminHome({ searchParams }: { searchParams: Promise<{ service?: string }> }) {
+/** An entry or an exit, in words and a small mark, in the church's black and grey only. */
+function EventChip({ kind }: { kind: "entry" | "exit" }) {
+  return kind === "entry" ? (
+    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-edge/70 bg-white px-2.5 py-0.5 text-sm font-semibold text-ink">
+      <IconCheck aria-hidden="true" className="h-3.5 w-3.5" />
+      Checked in
+    </span>
+  ) : (
+    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-edge/15 bg-panel px-2.5 py-0.5 text-sm font-semibold text-ink-soft">
+      <IconLogout aria-hidden="true" className="h-3.5 w-3.5" />
+      Released
+    </span>
+  );
+}
+
+type Search = { range?: string; date?: string; service?: string };
+
+/**
+ * The admin dashboard: what happened in the chosen period, what is on site right now, each car park, and the latest entries and exits.
+ * Check-ins, releases and the car park counts cover the visits whose service date is in the period (the same definition as Visits).
+ * "Currently parked" and "Active alerts" are live and say so when another date is chosen. Counts only: no names or phone numbers.
+ */
+export default async function AdminHome({ searchParams }: { searchParams: Promise<Search> }) {
   await requireStaff("admin");
-  const requested = Number.parseInt((await searchParams).service ?? "", 10);
+  const sp = await searchParams;
   const today = lagosDate(new Date());
-  const [data, activity, areas] = await Promise.all([
-    loadDashboard(Number.isFinite(requested) ? requested : undefined),
-    listRecentActivity(today, 6),
-    listActiveAreas(),
+  const period = parseDashboardPeriod({ range: sp.range, date: sp.date }, today);
+
+  const [areas, allServices] = await Promise.all([listActiveAreas(), listAllServices()]);
+  const requested = Number.parseInt(sp.service ?? "", 10);
+  const service = allServices.find((s) => s.id === requested) ?? null;
+  const services = allServices.filter((s) => s.active || s.id === service?.id);
+  const scope = { from: period.from, to: period.to, serviceId: service?.id ?? null };
+
+  const [figures, events, openAlerts] = await Promise.all([
+    loadDashboardFigures(scope, areas.map((a) => a.id)),
+    listPeriodActivity(scope, ACTIVITY_ROWS),
+    listOpenAlerts(200),
   ]);
-  const last = data.serviceId ? await previousServiceCounts(data.serviceId, today) : null;
-  const t = data.summary?.totals;
-  const service = data.services.find((s) => s.id === data.serviceId);
+  const alerts = service ? openAlerts.filter((a) => a.serviceName === service.name) : openAlerts;
+  const byArea = new Map(figures.areas.map((a) => [a.areaId, a]));
+
+  // Every card opens the list it counts, for the same dates and service
+  const visitsHref = (extra: Record<string, string> = {}) =>
+    `/admin/visits?${new URLSearchParams({ from: period.from, to: period.to, ...(service ? { service: String(service.id) } : {}), ...extra })}`;
+  const serviceNote = service ? `${service.name}` : "all services";
+  const live = period.includesToday && period.from === period.to;
 
   return (
     <>
-      <div>
-        <h1 className="text-2xl font-extrabold">Parking operations</h1>
-        <p className="text-ink-soft">
-          {service ? `${service.name} · ${service.time}` : "No service is running today."}
-        </p>
-      </div>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold">Dashboard</h1>
+          <p className="text-ink-soft">
+            {period.range === "today" ? "Overview of today's parking activity" : `Overview of parking activity ${period.words}`} across {service ? "the chosen service" : "all services"} and areas.
+          </p>
+        </div>
+        <DashboardFilters
+          range={period.range}
+          date={period.date}
+          today={today}
+          serviceId={service ? String(service.id) : ""}
+          ranges={DASHBOARD_RANGES.map((r) => ({ value: r.value, label: r.label }))}
+          services={services.map((s) => ({ value: String(s.id), label: `${s.name} · ${DAYS[s.weekday]} ${s.starts_at.slice(0, 5)}` }))}
+          dates={period.dates}
+        />
+      </header>
 
-      {data.services.length > 1 && (
-        <nav aria-label="Choose a service" className="flex flex-wrap gap-2">
-          {data.services.map((s) => (
-            <Link
-              key={s.id}
-              href={`/admin?service=${s.id}`}
-              aria-current={s.id === data.serviceId ? "true" : undefined}
-              className={`rounded-full border-2 px-4 py-2 font-semibold ${
-                s.id === data.serviceId ? "border-night bg-night text-white" : "border-edge/30 bg-white hover:bg-page"
-              }`}
-            >
-              {s.name} <span className="font-normal opacity-80">· {s.time}</span>
-            </Link>
-          ))}
-        </nav>
-      )}
-
-      <section aria-label="Today" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label="Checked in" value={t?.checkedIn ?? 0} trend={last ? percentChange(t?.checkedIn ?? 0, last.checkedIn) : null} note="This service" icon={<IconCar className="h-5 w-5" />} href="/admin/visits" />
-        <Stat label="Released" value={t?.released ?? 0} trend={last ? percentChange(t?.released ?? 0, last.released) : null} note="This service" icon={<IconCheck className="h-5 w-5" />} href="/admin/visits?status=released" />
-        <Stat label="Still parked" value={t?.parked ?? 0} note="From this service" icon={<IconUser className="h-5 w-5" />} href="/admin/visits?status=parked" />
-        <Stat
-          label="Exceptions"
-          value={data.alerts.length}
-          note={data.alerts.length ? "Need attention · view" : "None open"}
-          icon={<IconAlert className="h-5 w-5" />}
+      <section aria-label="Summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <Card id="d-checked-in" label="Cars checked in" value={figures.checkedIn} note={`Checked in ${period.words}`} icon={<IconCar className="h-6 w-6" />} href={visitsHref()} tint />
+        <Card id="d-left" label="Cars left" value={figures.released} note={`Released ${period.words}`} icon={<IconLogout className="h-6 w-6" />} href={visitsHref({ status: "released" })} />
+        <Card
+          id="d-parked"
+          label="Currently parked"
+          value={figures.parkedNow}
+          note={live ? (service ? `From ${service.name}` : "Across all areas") : `Live now, not for ${period.label.toLowerCase()}`}
+          icon={<IconClock className="h-6 w-6" />}
           href="/staff/dashboard"
-          tone={data.alerts.length ? "danger" : undefined}
+          tint
+        />
+        <Card
+          id="d-alerts"
+          label="Active alerts"
+          value={alerts.length}
+          note={alerts.length ? "Need attention · view" : live ? "None open" : "None open now"}
+          icon={<IconAlert className="h-6 w-6" />}
+          href="/staff/dashboard"
+          alert={alerts.length > 0}
         />
       </section>
 
-      <div className="space-y-4">
-      {data.summary && (
-        <section aria-label="Parking areas" className="space-y-2">
-          <h2 className="px-1 text-lg font-bold">Parking areas</h2>
-          <ul className="grid gap-3 sm:grid-cols-3">
-            {data.summary.areas.map((a) => (
-              <li key={a.areaId} className="rounded-2xl bg-card shadow-sm hover:bg-page">
-                <Link href={`/admin/visits?area=${areas.find((x) => x.name === a.areaName)?.slug ?? ""}`} className="block p-4" aria-label={`${a.areaName}: see its visits`}>
-                <p data-area className="font-bold">{a.areaName}</p>
-                <p className="text-3xl font-extrabold">{a.parked}</p>
-                <p className="text-sm text-ink-soft">Currently parked</p>
-                <p className="mt-2 text-sm text-ink-soft">
-                  {a.checkedIn} checked in · {a.released} released
-                </p>
-                </Link>
-              </li>
-            ))}
+      <section aria-label="Parking areas" className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xl font-extrabold">Parking areas</h2>
+          <Link href="/admin/areas" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-edge/20 bg-card px-4 text-sm font-semibold hover:bg-page">
+            <IconPin aria-hidden="true" className="h-4 w-4" />
+            View all areas
+          </Link>
+        </div>
+        {areas.length === 0 ? (
+          <p className="rounded-2xl border border-edge/15 bg-card p-4 font-medium">No car parks are switched on.</p>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {areas.map((a) => {
+              const f = byArea.get(a.id) ?? { checkedIn: 0, released: 0, parkedNow: 0 };
+              return (
+                <li key={a.id}>
+                  <Link href={visitsHref({ area: a.slug })} aria-label={`${a.name}: see its visits`} className="block rounded-2xl border border-edge/15 bg-card p-4 hover:bg-page">
+                    <span className="flex items-center justify-between gap-2 border-b border-edge/10 pb-3">
+                      <span data-area className="text-lg font-extrabold">
+                        {a.name}
+                      </span>
+                      <IconChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-ink-soft" />
+                    </span>
+                    <span className="mt-3 grid grid-cols-3 divide-x divide-edge/10 text-center">
+                      {[
+                        { v: f.parkedNow, l: "Currently parked", t: "parked" },
+                        { v: f.checkedIn, l: "Checked in", t: "in" },
+                        { v: f.released, l: "Released", t: "out" },
+                      ].map((x) => (
+                        <span key={x.t} className="px-1">
+                          <span data-testid={`area-${a.slug}-${x.t}`} className="block text-2xl font-extrabold">
+                            {x.v}
+                          </span>
+                          <span className="block text-xs text-ink-soft">{x.l}</span>
+                        </span>
+                      ))}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
-        </section>
-      )}
+        )}
+        {!live && <p className="px-1 text-xs text-ink-soft">Checked in and Released are for {period.label.toLowerCase()}. Currently parked is live and does not change with the date.</p>}
+      </section>
 
-      <section aria-label="Recent activity" className="rounded-card bg-card p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Recent activity</h2>
-          <Link href="/staff/history" className="text-sm font-semibold text-accent underline">
+      <section aria-label="Recent activity" className="rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-xl font-extrabold">Recent activity</h2>
+            {events.length > 0 && (
+              <p data-testid="d-activity-count" className="text-sm text-ink-soft">
+                The latest {events.length} of {figures.checkedIn + figures.released} {figures.checkedIn + figures.released === 1 ? "event" : "events"} · {period.label.toLowerCase()}, {serviceNote}
+              </p>
+            )}
+          </div>
+          <Link href={visitsHref()} className="text-sm font-semibold text-accent underline">
             View all
           </Link>
         </div>
-        {activity.length === 0 ? (
-          <p className="mt-2 text-ink-soft">Nothing has happened today yet.</p>
+
+        {events.length === 0 ? (
+          <p className="mt-3 rounded-xl bg-page p-4 font-medium">No cars have checked in or left {period.words}{service ? ` for ${service.name}` : ""}.</p>
         ) : (
           <>
-          <ul className="mt-2 divide-y divide-edge/15 lg:hidden">
-            {activity.map((e) => (
-              <li key={e.key} className="flex items-center gap-3 py-2">
-                <span className="min-w-0 flex-1">
-                  <span className="block whitespace-nowrap font-bold">{formatPlate(e.plate)}</span>
-                  <span className="block text-sm text-ink-soft">
-                    {KIND[e.kind].word} · <span data-area>{e.areaName}</span>
-                  </span>
-                </span>
-                <span className="flex shrink-0 flex-col items-end gap-1">
-                  <StatusBadge tone={KIND[e.kind].tone}>{KIND[e.kind].badge}</StatusBadge>
-                  <span className="whitespace-nowrap text-sm font-semibold">{formatLagosTime(e.at)}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-3 hidden lg:block">
-            <AdminTable label="Recent activity" columns={["Vehicle", "Type", "Car park", "Time", "Status"]}>
-              {activity.map((e) => (
-                <tr key={e.key}>
-                  <td className={cell}>
-                    <span className="flex items-center gap-3">
-                      <VehicleImage size="sm" />
-                      <span className="whitespace-nowrap font-bold">{formatPlate(e.plate)}</span>
+            <ul className="mt-3 grid gap-2 lg:hidden">
+              {events.map((e) => (
+                <li key={e.key} className="min-w-0">
+                  <Link href={`/admin/visits/${e.visitId}`} aria-label={`${e.kind === "entry" ? "Entry" : "Exit"} of ${formatPlate(e.plate)}`} className="flex items-center gap-3 rounded-xl border border-edge/10 p-3 hover:bg-page">
+                    <VehicleImage size="sm" />
+                    <span className="min-w-0 flex-1">
+                      <span data-plate className="block whitespace-nowrap text-lg font-extrabold">
+                        {formatPlate(e.plate)}
+                      </span>
+                      <span className="block text-sm text-ink-soft">
+                        {e.kind === "entry" ? "↑ Entry" : "↓ Exit"} · <span data-area>{e.areaName}</span>
+                      </span>
+                      <span className="block text-sm text-ink-soft">{formatLagosTime(e.at)}</span>
                     </span>
-                  </td>
-                  <td className={`${cell} whitespace-nowrap`}>
-                    <span aria-hidden="true" className={e.kind === "entry" ? "text-success" : "text-ink-soft"}>
-                      {e.kind === "entry" ? "↑" : "↓"}{" "}
-                    </span>
-                    {KIND[e.kind].word}
-                  </td>
-                  <td data-area className={`${cell} whitespace-nowrap`}>{e.areaName}</td>
-                  <td className={`${cell} whitespace-nowrap`}>{formatLagosTime(e.at)}</td>
-                  <td className={cell}>
-                    <StatusBadge tone={KIND[e.kind].tone}>{KIND[e.kind].badge}</StatusBadge>
-                  </td>
-                </tr>
+                    <EventChip kind={e.kind} />
+                  </Link>
+                </li>
               ))}
-            </AdminTable>
-          </div>
+            </ul>
+
+            <div className="mt-3 hidden overflow-x-auto lg:block">
+              <table className="w-full min-w-[40rem] text-left">
+                <caption className="sr-only">Recent activity</caption>
+                <thead className="border-b border-edge/20 text-sm text-ink-soft">
+                  <tr>
+                    {["Vehicle", "Type", "Car park", "Time", "Status"].map((c) => (
+                      <th key={c} scope="col" className="whitespace-nowrap px-2.5 py-3 font-semibold">
+                        {c}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-edge/15">
+                  {events.map((e) => (
+                    <tr key={e.key} className="hover:bg-page">
+                      <td className="px-2.5 py-3">
+                        <span className="flex items-center gap-3">
+                          <VehicleImage size="sm" />
+                          <Link href={`/admin/visits/${e.visitId}`} aria-label={`Visit of ${formatPlate(e.plate)}`} data-plate className="whitespace-nowrap text-lg font-extrabold underline-offset-2 hover:underline">
+                            {formatPlate(e.plate)}
+                          </Link>
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-2.5 py-3">
+                        <span aria-hidden="true">{e.kind === "entry" ? "↑" : "↓"} </span>
+                        {e.kind === "entry" ? "Entry" : "Exit"}
+                      </td>
+                      <td data-area className="whitespace-nowrap px-2.5 py-3">
+                        {e.areaName}
+                      </td>
+                      <td className="whitespace-nowrap px-2.5 py-3">{formatLagosTime(e.at)}</td>
+                      <td className="px-2.5 py-3">
+                        <EventChip kind={e.kind} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
       </section>
-      </div>
 
       {/* On a wide screen the side menu already lists these, so the list is for phones */}
       <section aria-label="Manage" className="lg:hidden">

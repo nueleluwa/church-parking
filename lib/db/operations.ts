@@ -276,26 +276,6 @@ export async function listRecentActivity(today: string, limit = 40): Promise<Act
   return events.sort((a, b) => b.at.localeCompare(a.at)).slice(0, limit);
 }
 
-/** How the same service went the last time it ran before `before` (a service date), for "up or down on last time". */
-export async function previousServiceCounts(
-  serviceId: number,
-  before: string,
-): Promise<{ date: string; checkedIn: number; released: number } | null> {
-  const { data, error } = await db()
-    .from("visits")
-    .select("service_date, status")
-    .eq("service_id", serviceId)
-    .lt("service_date", before)
-    .order("service_date", { ascending: false })
-    .limit(2000);
-  if (error) fail(error.message);
-  const rows = (data ?? []) as { service_date: string; status: string }[];
-  if (rows.length === 0) return null;
-  const date = rows[0].service_date;
-  const same = rows.filter((r) => r.service_date === date);
-  return { date, checkedIn: same.length, released: same.filter((r) => r.status === "released").length };
-}
-
 // ---------- The Sweep screen ----------
 
 /** Every car recorded as parked right now (each car has at most one open visit), with its service times and any "Still here" marks. */

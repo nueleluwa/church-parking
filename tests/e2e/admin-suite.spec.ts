@@ -8,8 +8,8 @@ test.setTimeout(300_000);
 test("the admin overview shows today's numbers and the way to every admin screen; wide screens get a side menu", async ({ page }) => {
   await adminSignIn(page);
   await page.goto("/admin");
-  await expect(page.getByRole("heading", { name: "Parking operations" })).toBeVisible({ timeout: 60_000 });
-  for (const label of ["Checked in", "Released", "Still parked", "Exceptions"]) {
+  await expect(page.getByRole("main").getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible({ timeout: 60_000 });
+  for (const label of ["Cars checked in", "Cars left", "Currently parked", "Active alerts"]) {
     await expect(page.locator("main").getByText(label, { exact: true }).first()).toBeVisible();
   }
   for (const row of ["Reports", "Services", "QR Signs", "Users", "Car Parks"]) {

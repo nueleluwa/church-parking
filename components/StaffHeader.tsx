@@ -19,7 +19,7 @@ const SCREENS: Record<string, { title: string; back: string }> = {
   "/staff/more": { title: "More", back: "/staff" },
   "/staff/dashboard": { title: "Live Board", back: "/staff" },
   "/staff/sweep": { title: "Sweep", back: "/staff" },
-  "/admin": { title: "Admin", back: "/staff" },
+  "/admin": { title: "Dashboard", back: "/staff" },
   "/admin/areas": { title: "Car Parks", back: "/admin" },
   "/admin/services": { title: "Services", back: "/admin" },
   "/admin/users": { title: "Users", back: "/admin" },

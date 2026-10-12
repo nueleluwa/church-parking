@@ -10,3 +10,4 @@ export * from "./insights";
 export * from "./settings";
 export * from "./vehicles";
 export * from "./member-plates";
+export * from "./dashboard";

@@ -3,7 +3,12 @@
 What each admin screen is for. Admins see every screen below. Coordinators (team leads) see the live board, the sweep and **Visits**. Attendants see only the attendant tools. On a wide screen the menu is down the left; on a phone it is the tab bar and the **Admin** tab.
 
 ## Dashboard
-Today's numbers for the chosen service: checked in, released, still parked, and exceptions. Checked in and Released show an arrow for up or down against the same service last time. Tap a number, or a car park card, to see those visits. Recent activity lists the latest entries and exits.
+Administrators only. An overview of parking activity, with two filters at the top: the **period** (Today, Yesterday, Last 7 days, Last 30 days, or a chosen date) and the **service** (All services, or one). The choice is kept in the address, and each filter keeps the other. Dates are Lagos dates.
+
+- **Four cards.** *Cars checked in* (visits made in the period), *Cars left* (visits released at the exit in the period; a visit closed as missed is not a release), *Currently parked* and *Active alerts*. Each opens the screen that lists what it counts, so the numbers agree: the first two open Visits for the same dates and service, the last two open Live Parking.
+- **Live figures.** *Currently parked* and *Active alerts* describe right now. When another period is chosen they say so ("Live now, not for yesterday") and do not change with the date. *Currently parked* follows the service filter; *Active alerts* counts only unresolved alerts (for the chosen service, if one is chosen).
+- **Parking areas.** One card per car park that is switched on: *Currently parked* (live), *Checked in* and *Released* (for the period and service). Text only: there are no spaces-left or percentage figures, because capacity is not set. A card opens Visits for that car park, and **View all areas** opens Car Parks.
+- **Recent activity.** The latest entries (a check-in, at the time it happened) and exits (a recorded release, at the time it happened), newest first, with the car illustration, the type, the car park, the time (Lagos) and the status. The plate opens the visit, **View all** opens Visits, and a line says how many events there are in all. A car is never shown as leaving because it dropped off a list.
 
 ## Live Parking and Sweep
 The live board updates every few seconds without reloading, and shows when it last did (**Live · Updated 10:42:08**). Choose the service from the list (the real services and their times) or press **Refresh** to ask straight away.

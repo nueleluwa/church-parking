@@ -61,3 +61,4 @@ export * from "./settings";
 export * from "./sweep";
 export * from "./vehicle-register";
 export * from "./member-admin";
+export * from "./dashboard-overview";
