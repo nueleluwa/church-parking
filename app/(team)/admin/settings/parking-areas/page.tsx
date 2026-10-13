@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { IconPlus } from "@/components/icons";
-import { field } from "@/components/ui";
 import { countParkedNowIn, listAllAreas } from "@/lib/db";
 import { requireStaff } from "@/lib/staff-auth";
 import { AdminForm } from "../../AdminForm";
@@ -56,7 +55,7 @@ export default async function ParkingAreasPage({ searchParams }: { searchParams:
             <AdminForm action={addAreaAction} submitLabel="Add car park" clearOnSuccess>
               <label className="block font-medium">
                 Name of the car park
-                <input name="name" required minLength={2} maxLength={40} autoComplete="off" className={field} />
+                <input name="name" required minLength={2} maxLength={40} autoComplete="off" className="input" />
               </label>
             </AdminForm>
           </div>

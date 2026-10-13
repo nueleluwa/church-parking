@@ -83,7 +83,7 @@ export function SearchBox({
         ))}
       </div>
 
-      <form onSubmit={submit} className="space-y-3">
+      <form noValidate onSubmit={submit} className="space-y-3">
         <label className="block font-medium">
           {current.label}
           <span className="relative mt-1 block">

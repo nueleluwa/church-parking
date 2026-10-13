@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { IconPlus, IconSearch } from "@/components/icons";
-import { field } from "@/components/ui";
 import { listAllServices } from "@/lib/db";
 import { serviceProgress, type ServiceProgress } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
@@ -31,11 +30,11 @@ function ServiceFields({ service }: { service?: Service }) {
       {service && <input type="hidden" name="id" value={service.id} />}
       <label className="block font-medium">
         Name
-        <input name="name" required maxLength={60} defaultValue={service?.name ?? ""} autoComplete="off" className={field} />
+        <input name="name" required maxLength={60} defaultValue={service?.name ?? ""} autoComplete="off" className="input" />
       </label>
       <label className="block font-medium">
         Day
-        <select name="weekday" defaultValue={service?.weekday ?? 0} className={field}>
+        <select name="weekday" defaultValue={service?.weekday ?? 0} className="input">
           {DAYS.map((d, i) => (
             <option key={d} value={i}>
               {d}
@@ -46,11 +45,11 @@ function ServiceFields({ service }: { service?: Service }) {
       <div className="grid grid-cols-2 gap-3">
         <label className="block min-w-0 font-medium">
           Starts
-          <input name="starts" type="time" required defaultValue={service ? hhmm(service.starts_at) : "07:30"} className={field} />
+          <input name="starts" type="time" required defaultValue={service ? hhmm(service.starts_at) : "07:30"} className="input" />
         </label>
         <label className="block min-w-0 font-medium">
           Ends
-          <input name="ends" type="time" required defaultValue={service ? hhmm(service.ends_at) : "09:30"} className={field} />
+          <input name="ends" type="time" required defaultValue={service ? hhmm(service.ends_at) : "09:30"} className="input" />
         </label>
       </div>
       <label className="flex items-center gap-3 font-medium">
@@ -105,12 +104,12 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
           Change a service&apos;s name or times. Drivers are put into the right service from these times. Switch a service off instead of deleting it, so old records keep their service.
         </SectionHead>
 
-        <form aria-label="Filters" className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,2fr)_1fr_1fr_auto] sm:items-end">
+        <form noValidate aria-label="Filters" className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,2fr)_1fr_1fr_auto] sm:items-end">
           <label className="col-span-2 block text-sm font-medium sm:col-span-1">
             Search by name
             <span className="relative mt-1 block">
               <IconSearch aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-soft" />
-              <input name="q" defaultValue={q} autoComplete="off" placeholder="Search services…" className={`${field} !mt-0 !py-2.5 !pl-11 !text-base`} />
+              <input name="q" defaultValue={q} autoComplete="off" placeholder="Search services…" className="input !mt-0 !pl-11" />
             </span>
           </label>
           <label className="block text-sm font-medium">

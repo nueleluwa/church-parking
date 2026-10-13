@@ -76,7 +76,7 @@ export function VehicleItem({ vehicle }: { vehicle: Vehicle }) {
       />
 
       {mode === "edit" && (
-        <form action={action} className="mt-3 space-y-3">
+        <form noValidate action={action} className="mt-3 space-y-3">
           <input type="hidden" name="vehicleId" value={vehicle.id} />
           <label className="block font-medium">
             Make and model
@@ -100,7 +100,7 @@ export function VehicleItem({ vehicle }: { vehicle: Vehicle }) {
       )}
 
       {mode === "remove" && (
-        <form action={removeVehicle} className="mt-3 space-y-3 rounded-2xl border-2 border-danger p-3">
+        <form noValidate action={removeVehicle} className="mt-3 space-y-3 rounded-2xl border-2 border-danger p-3">
           <input type="hidden" name="vehicleId" value={vehicle.id} />
           <p className="font-semibold">Remove this car from your account? You can add it again later.</p>
           <div className="grid grid-cols-2 gap-3">

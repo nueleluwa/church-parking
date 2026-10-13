@@ -70,7 +70,7 @@ export default async function SweepHistoryPage({ searchParams }: { searchParams:
         </Link>
       </header>
 
-      <form aria-label="Filters" className="rounded-2xl border border-edge/15 bg-card p-4">
+      <form noValidate aria-label="Filters" className="rounded-2xl border border-edge/15 bg-card p-4">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_1.4fr_auto] sm:items-end">
           <label className="block text-sm font-medium">
             From

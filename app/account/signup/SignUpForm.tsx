@@ -12,7 +12,7 @@ export function SignUpForm({ next }: { next: string }) {
   const { bind } = useFields({ name: "", phone: "" });
   const pinProps = { inputMode: "numeric" as const, maxLength: 4, autoComplete: "new-password", required: true };
   return (
-    <form action={action} className="space-y-4">
+    <form noValidate action={action} className="space-y-4">
       <input type="hidden" name="next" value={next} />
       <label className="block font-medium">
         Your name

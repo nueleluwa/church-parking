@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { Spinner } from "@/components/Spinner";
-import { errorBox, field, okBox, primaryButton, secondaryButton } from "@/components/ui";
+import { errorBox, okBox, primaryButton, secondaryButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import type { AreaRecord } from "@/lib/db";
 import { AdminForm } from "../../AdminForm";
@@ -54,11 +54,11 @@ function Row({ area }: { area: AreaRow }) {
       </div>
 
       {editing && (
-        <form action={action} className="mt-4 space-y-3">
+        <form noValidate action={action} className="mt-4 space-y-3">
           <input type="hidden" name="areaId" value={area.id} />
           <label className="block font-medium">
             New name
-            <input {...bind("name")} required maxLength={60} autoFocus autoComplete="off" className={field} />
+            <input {...bind("name")} required maxLength={60} autoFocus autoComplete="off" className="input" />
           </label>
           {state.error && (
             <p role="alert" className={errorBox}>

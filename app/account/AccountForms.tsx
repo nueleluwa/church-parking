@@ -35,7 +35,7 @@ export function AddVehicleForm() {
   }
 
   return (
-    <form action={action} className="space-y-3">
+    <form noValidate action={action} className="space-y-3">
       <label className="block font-medium">
         Plate number
         <input
@@ -67,7 +67,7 @@ export function ChangePinForm() {
   const [state, action, pending] = useActionState<FormState, FormData>(changePin, {});
   const pin = { inputMode: "numeric" as const, maxLength: 4, required: true };
   return (
-    <form action={action} className="space-y-3">
+    <form noValidate action={action} className="space-y-3">
       <PasswordField label="Your PIN now" name="current" autoComplete="current-password" {...pin} />
       <PasswordField label="New PIN (4 numbers)" name="pin" autoComplete="new-password" {...pin} />
       <PasswordField label="Type the new PIN again" name="pin2" autoComplete="new-password" {...pin} />
@@ -82,7 +82,7 @@ export function ChangePinForm() {
 export function DeleteAccountForm() {
   const [state, action, pending] = useActionState<FormState, FormData>(deleteAccount, {});
   return (
-    <form action={action} className="space-y-3">
+    <form noValidate action={action} className="space-y-3">
       <p>
         This removes your name, phone number and saved cars. Your past visits stay in the church
         records, with no name on them.

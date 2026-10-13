@@ -11,23 +11,24 @@ import { field } from "./ui";
  */
 export function PasswordField({
   label,
+  compact = false,
   ...input
-}: { label: string } & Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "className" | "id">) {
+}: { label: string; /** The admin look: the same 44px field as every admin form. */ compact?: boolean } & Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "className" | "id">) {
   const id = useId();
   const [shown, setShown] = useState(false);
   return (
     <div>
-      <label htmlFor={id} className="block font-medium">
+      <label htmlFor={id} className={compact ? "label" : "block font-medium"}>
         {label}
       </label>
       <div className="relative">
-        <input {...input} id={id} type={shown ? "text" : "password"} className={`${field} pr-14`} />
+        <input {...input} id={id} type={shown ? "text" : "password"} className={`${compact ? "input" : field} pr-14`} />
         <button
           type="button"
           onClick={() => setShown((s) => !s)}
           aria-pressed={shown}
           aria-label={shown ? "Hide what I typed" : "Show what I typed"}
-          className="absolute bottom-0 right-1 top-2 flex w-12 items-center justify-center rounded-full text-ink-soft hover:text-ink focus-visible:outline-4 focus-visible:outline-edge"
+          className={`absolute bottom-0 right-1 flex w-12 items-center justify-center rounded-full text-ink-soft hover:text-ink focus-visible:outline-4 focus-visible:outline-edge ${compact ? "top-1.5" : "top-2"}`}
         >
           {shown ? <IconEyeOff className="h-6 w-6" /> : <IconEye className="h-6 w-6" />}
         </button>

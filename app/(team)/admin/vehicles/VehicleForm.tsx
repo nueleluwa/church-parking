@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { Spinner } from "@/components/Spinner";
-import { errorBox, field } from "@/components/ui";
+import { errorBox } from "@/components/ui";
 import { findMembersAction, saveVehicleAction, type MemberChoice, type VehicleFormState } from "../vehicle-actions";
 
 export type FormVehicle = {
@@ -26,7 +26,7 @@ const TYPES = [
   { value: "other", label: "Other" },
 ];
 
-const input = `${field} !mt-1 !py-2.5 !text-base`;
+const input = "input";
 const note = "mt-1 text-sm font-medium text-accent";
 
 /**

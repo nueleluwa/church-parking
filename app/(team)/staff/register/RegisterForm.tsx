@@ -62,7 +62,7 @@ export function RegisterForm({ areas, initialPlate = "" }: { areas: { slug: stri
   }
 
   return (
-    <form ref={formRef} action={action} className="space-y-4">
+    <form noValidate ref={formRef} action={action} className="space-y-4">
       <input type="hidden" name="forMember" value={forMember ? "yes" : ""} />
       <label className="block font-medium">
         Area

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { IconCar, IconClock, IconLock, IconPlus, IconSearch, IconUsers } from "@/components/icons";
 import { PageNumbers } from "@/components/Pager";
 import { VehicleImage } from "@/components/VehicleImage";
-import { field } from "@/components/ui";
 import { memberSummary, searchMemberList } from "@/lib/db";
 import {
   MEMBER_PAGE_SIZES,
@@ -93,7 +92,7 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
           </Link>
         </div>
 
-        <form aria-label="Filters" className="mb-4 space-y-3">
+        <form noValidate aria-label="Filters" className="mb-4 space-y-3">
           {size !== 20 && <input type="hidden" name="size" value={size} />}
           {since && <input type="hidden" name="joined" value="month" />}
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-[minmax(0,2fr)_1fr_1fr]">
@@ -101,7 +100,7 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
               Search by name, phone number or vehicle number
               <span className="relative mt-1 block">
                 <IconSearch aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-soft" />
-                <input name="q" defaultValue={q} autoComplete="off" placeholder="Search by name, phone number or vehicle number…" className={`${field} !mt-0 !pl-11`} />
+                <input name="q" defaultValue={q} autoComplete="off" placeholder="Search by name, phone number or vehicle number…" className="input !mt-0 !pl-11" />
               </span>
             </label>
             <label className="block text-sm font-medium">

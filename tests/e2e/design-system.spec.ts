@@ -266,3 +266,85 @@ test("every data screen has a skeleton: each page folder has a loading screen of
     expect(fs.existsSync(path.join(root, own, "loading.tsx")), `${own} needs its own loading screen`).toBe(true);
   }
 });
+
+test("dropdowns, checkboxes, radio buttons, dates and the disclosure arrow use our own styling, and phone dark mode does not repaint them", async ({ page }) => {
+  await adminSignIn(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  // Even when the device asks for dark mode, controls stay in our light, church style
+  await page.emulateMedia({ colorScheme: "dark" });
+
+  await gotoReady(page, VISITS);
+  const selects = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLSelectElement>("main select")].filter((el) => el.getClientRects().length > 0).map((el) => {
+      const s = getComputedStyle(el);
+      return { name: el.name, appearance: s.appearance, background: s.backgroundColor, radius: parseFloat(s.borderTopLeftRadius), paddingRight: parseFloat(s.paddingRight), colorScheme: getComputedStyle(document.documentElement).colorScheme };
+    }),
+  );
+  expect(selects.length).toBeGreaterThan(2);
+  for (const s of selects) {
+    expect(["none", "base-select"], `select ${s.name} is drawn by the browser (${s.appearance})`).toContain(s.appearance);
+    expect(s.background, `select ${s.name} background`).toBe("rgb(255, 255, 255)");
+    expect(s.radius, `select ${s.name} corners`).toBeGreaterThanOrEqual(12);
+    expect(s.paddingRight, `select ${s.name} leaves room for our arrow`).toBeGreaterThanOrEqual(36);
+    expect(s.colorScheme).toBe("light");
+  }
+
+  // Dates: our field and our icon
+  const dates = await page.evaluate(() =>
+    [...document.querySelectorAll<HTMLInputElement>('main input[type="date"]')].map((el) => { const s = getComputedStyle(el); return { appearance: s.appearance, image: s.backgroundImage.slice(0, 30), radius: parseFloat(s.borderTopLeftRadius) }; }),
+  );
+  expect(dates.length).toBeGreaterThan(1);
+  for (const d of dates) {
+    expect(d.appearance).toBe("none");
+    expect(d.image).toContain("url(");
+    expect(d.radius).toBeGreaterThanOrEqual(12);
+  }
+
+  // Checkboxes and radio buttons: a drawn box with a red tick or dot, not the browser's blue one
+  await gotoReady(page, "/admin/vehicles");
+  const box = main(page).locator('table.dt tbody input[type="checkbox"]').first();
+  await expect(box).toBeVisible({ timeout: 60_000 });
+  const unchecked = await box.evaluate((el) => { const s = getComputedStyle(el); return { appearance: s.appearance, radius: s.borderTopLeftRadius, border: s.borderTopColor }; });
+  expect(unchecked.appearance).toBe("none");
+  expect(unchecked.radius).toBe("6px");
+  await box.check();
+  // The colour eases in over a moment, so wait for it to settle
+  await expect.poll(() => box.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(179, 18, 27)");
+  expect(await box.evaluate((el) => getComputedStyle(el).backgroundImage)).toContain("url(");
+  await box.uncheck();
+
+  await page.goto("/admin/vehicles?add=1");
+  const panel = page.getByRole("dialog", { name: "Add vehicle" });
+  const member = panel.getByRole("radio", { name: "Member" });
+  await member.check();
+  await expect.poll(() => member.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(179, 18, 27)");
+  const radio = await member.evaluate((el) => { const s = getComputedStyle(el); return { appearance: s.appearance, radius: s.borderTopLeftRadius }; });
+  expect(radio.appearance).toBe("none");
+  expect(parseFloat(radio.radius)).toBeGreaterThanOrEqual(10);
+
+  // The disclosure arrow on a <details> is ours (no triangle marker)
+  await page.goto("/admin/settings/parking-areas");
+  const summary = main(page).locator("summary").first();
+  await expect(summary).toBeVisible({ timeout: 60_000 });
+  const arrow = await summary.evaluate((el) => ({ list: getComputedStyle(el).listStyleType, after: getComputedStyle(el, "::after").content }));
+  expect(arrow.list).toBe("none");
+  expect(arrow.after).not.toBe("none");
+});
+
+test("no form on a team screen uses the browser's own validation bubble: a missing value is explained in the page's own words", async ({ page }) => {
+  await adminSignIn(page);
+  for (const url of [...MODULES.map((m) => m.url), "/admin/vehicles?add=1", "/admin/users?add=1", "/admin/settings/services?add=1", "/admin/settings/parking-areas?add=1", "/admin/users?tab=staff&add=1"]) {
+    await page.goto(url);
+    await expect(main(page).locator("h1").first()).toBeVisible({ timeout: 60_000 });
+    const loose = await page.evaluate(() => [...document.querySelectorAll<HTMLFormElement>("form")].filter((f) => !f.noValidate).map((f) => f.getAttribute("aria-label") ?? f.action));
+    expect(loose, `${url} has forms that would show the browser's bubble`).toEqual([]);
+  }
+
+  // An empty required field: our message, and the field is focused
+  await page.goto("/admin/settings/services?add=1");
+  const panel = page.getByRole("dialog", { name: "Add service" });
+  await panel.getByLabel("Name").fill("");
+  await panel.getByRole("button", { name: "Add service" }).click();
+  await expect(panel.getByRole("alert")).toContainText("Please check “Name”.");
+  await expect(panel.getByLabel("Name")).toBeFocused();
+});

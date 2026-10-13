@@ -31,7 +31,7 @@ export function SaveDetailsCard({ token }: { token: string }) {
           ›
         </span>
       </summary>
-      <form action={action} className="mt-4 space-y-3">
+      <form noValidate action={action} className="mt-4 space-y-3">
         <input type="hidden" name="token" value={token} />
         <PasswordField label="Choose a PIN (4 numbers)" name="pin" {...pin} />
         <PasswordField label="Type the PIN again" name="pin2" {...pin} />

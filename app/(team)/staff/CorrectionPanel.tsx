@@ -40,7 +40,7 @@ export function CorrectionPanel({ visitId, context }: { visitId: string; context
   return (
     <details className="mt-4 rounded-2xl border-2 border-edge/30 bg-page p-3 text-left">
       <summary className="cursor-pointer font-semibold">Corrections (coordinator)</summary>
-      <form onSubmit={submit} className="mt-3 space-y-3">
+      <form noValidate onSubmit={submit} className="mt-3 space-y-3">
         <label className="block font-medium">
           What do you want to do?
           <select value={action} onChange={(e) => setAction(e.target.value as CorrectionAction)} className={field}>

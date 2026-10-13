@@ -4,7 +4,6 @@ import { AdminTable, cell } from "@/components/AdminTable";
 import { PasswordField } from "@/components/PasswordField";
 import { StatusBadge } from "@/components/StatusBadge";
 import { VehicleImage } from "@/components/VehicleImage";
-import { field } from "@/components/ui";
 import { getMemberById, listMemberVehicles, memberHistory } from "@/lib/db";
 import { formatLagosDate, formatVisitTime } from "@/lib/format";
 import { formatPlate, memberState } from "@/lib/rules";
@@ -79,15 +78,15 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
                   <input type="hidden" name="memberId" value={member.id} />
                   <label className="block font-medium">
                     Plate number
-                    <input name="plate" required autoComplete="off" autoCapitalize="characters" maxLength={14} className={`${field} uppercase`} />
+                    <input name="plate" required autoComplete="off" autoCapitalize="characters" maxLength={14} className="input uppercase" />
                   </label>
                   <label className="block font-medium">
                     Make and model (optional)
-                    <input name="make" autoComplete="off" className={field} />
+                    <input name="make" autoComplete="off" className="input" />
                   </label>
                   <label className="block font-medium">
                     Colour (optional)
-                    <input name="colour" autoComplete="off" className={field} />
+                    <input name="colour" autoComplete="off" className="input" />
                   </label>
                 </AdminForm>
               </div>
@@ -100,17 +99,17 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
               <input type="hidden" name="memberId" value={member.id} />
               <label className="block font-medium">
                 Full name
-                <input name="name" required maxLength={80} defaultValue={member.full_name} autoComplete="off" className={field} />
+                <input name="name" required maxLength={80} defaultValue={member.full_name} autoComplete="off" className="input" />
               </label>
               <label className="block font-medium">
                 Phone number
-                <input name="phone" type="tel" inputMode="tel" required defaultValue={member.phone} autoComplete="off" className={field} />
+                <input name="phone" type="tel" inputMode="tel" required defaultValue={member.phone} autoComplete="off" className="input" />
               </label>
             </AdminForm>
             <div id="pin" className="scroll-mt-24">
               <AdminForm action={resetMemberPinAction} submitLabel="Set PIN and unlock" variant="secondary" clearOnSuccess>
                 <input type="hidden" name="memberId" value={member.id} />
-                <PasswordField label="New PIN (4 numbers)" name="pin" inputMode="numeric" pattern="\d{4}" maxLength={4} required autoComplete="new-password" />
+                <PasswordField compact label="New PIN (4 numbers)" name="pin" inputMode="numeric" pattern="\d{4}" maxLength={4} required autoComplete="new-password" />
               </AdminForm>
               <p className="mt-1 text-xs text-ink-soft">Also unlocks the account. Check who they are first, and tell them the PIN in person.</p>
             </div>

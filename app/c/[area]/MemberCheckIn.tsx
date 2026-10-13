@@ -143,7 +143,7 @@ export function MemberCheckIn({
         )}
 
         {confirming && chosen && !(state.blocked && dismissed !== state) && (
-          <form action={action} onSubmitCapture={stampKey} className="space-y-5">
+          <form noValidate action={action} onSubmitCapture={stampKey} className="space-y-5">
             <input type="hidden" name="area" value={areaSlug} />
             <input type="hidden" name="vehicleId" value={chosen.id} />
             <input type="hidden" name="key" defaultValue="" ref={keyRef} />

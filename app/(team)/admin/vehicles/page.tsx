@@ -108,7 +108,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
         <MetricCard id="vh-inactive" label="Inactive vehicles" value={counts.inactive} note="Cannot be checked in" href="/admin/vehicles?status=inactive" icon={<IconLock className="h-5 w-5" />} />
       </MetricRow>
 
-      <form aria-label="Filters" className="surface space-y-4">
+      <form noValidate aria-label="Filters" className="surface space-y-4">
         {size !== 20 && <input type="hidden" name="size" value={size} />}
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-[1fr_1fr_1fr_minmax(0,1.6fr)]">
           <label className="block text-sm font-medium">
@@ -142,7 +142,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
             Search by plate number
             <span className="relative mt-1 block">
               <IconSearch aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-soft" />
-              <input name="q" defaultValue={plate} autoComplete="off" autoCapitalize="characters" placeholder="Search by plate number…" className={`${field} !mt-0 !py-2.5 !pl-11 !text-base uppercase`} />
+              <input name="q" defaultValue={plate} autoComplete="off" autoCapitalize="characters" placeholder="Search by plate number…" className="input !mt-0 !pl-11 uppercase" />
             </span>
           </label>
         </div>

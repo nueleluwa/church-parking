@@ -6,7 +6,6 @@ import { MetricCard, MetricRow } from "@/components/ds/MetricCard";
 import { PageHeader } from "@/components/ds/PageHeader";
 import { VehicleIdentity } from "@/components/ds/VehicleIdentity";
 import { PageNumbers } from "@/components/Pager";
-import { field } from "@/components/ui";
 import { countParkedNowIn, countVisitsByStatus, listActiveAreas, listAllServices, searchVisits } from "@/lib/db";
 import {
   VISITS_PAGE_SIZE,
@@ -132,7 +131,7 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
         />
       </MetricRow>
 
-      <form aria-label="Filters" className="space-y-3 rounded-2xl border border-edge/15 bg-card p-4">
+      <form noValidate aria-label="Filters" className="space-y-3 rounded-2xl border border-edge/15 bg-card p-4">
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-[minmax(0,1.6fr)_1fr_1fr_1fr]">
           <div className="col-span-2 grid grid-cols-2 gap-3 xl:col-span-1">
             <label className="block text-sm font-medium">
@@ -183,7 +182,7 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
             Search by vehicle number
             <span className="relative mt-1 block">
               <IconSearch aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-soft" />
-              <input name="q" defaultValue={plate} autoComplete="off" autoCapitalize="characters" placeholder="Search by vehicle number…" className={`${field} !mt-0 !py-2.5 !pl-11 !text-base uppercase`} />
+              <input name="q" defaultValue={plate} autoComplete="off" autoCapitalize="characters" placeholder="Search by vehicle number…" className="input !mt-0 !pl-11 uppercase" />
             </span>
           </label>
           <div className="flex gap-2">

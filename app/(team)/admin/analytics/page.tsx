@@ -187,7 +187,7 @@ export default async function AnalyticsPage({
         Insights from your parking operations
       </PageHeader>
 
-      <form aria-label="Filters" className={`${card} space-y-4`}>
+      <form noValidate aria-label="Filters" className={`${card} space-y-4`}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-[1fr_1fr_1.2fr_1.2fr_auto] lg:items-end">
           <label className="block text-sm font-medium">
             From

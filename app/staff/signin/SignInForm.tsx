@@ -11,7 +11,7 @@ export function SignInForm() {
   // The phone number is kept after a wrong password. The password is cleared on purpose.
   const { bind } = useFields({ phone: "" });
   return (
-    <form action={action} className="space-y-4">
+    <form noValidate action={action} className="space-y-4">
       <label className="block font-medium">
         Phone number
         <input {...bind("phone")} type="tel" inputMode="tel" autoComplete="username" required className={field} />

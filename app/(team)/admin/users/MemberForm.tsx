@@ -4,11 +4,11 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { PasswordField } from "@/components/PasswordField";
 import { Spinner } from "@/components/Spinner";
-import { errorBox, field } from "@/components/ui";
+import { errorBox } from "@/components/ui";
 import { IconPlus } from "@/components/icons";
 import { createMemberAction, type MemberFormState } from "../member-actions";
 
-const input = `${field} !mt-1 !py-2.5 !text-base`;
+const input = "input";
 const note = "mt-1 text-sm font-medium text-accent";
 const MAX_CARS = 4;
 
@@ -63,7 +63,7 @@ export function MemberForm({ doneHref }: { doneHref: string }) {
         </label>
 
         <div className="text-sm">
-          <PasswordField label="PIN (4 numbers) *" name="pin" inputMode="numeric" maxLength={4} autoComplete="new-password" />
+          <PasswordField compact label="PIN (4 numbers) *" name="pin" inputMode="numeric" maxLength={4} autoComplete="new-password" />
           <span className="mt-1 block text-xs text-ink-soft">The member signs in with their phone number and this PIN. Tell it to them in person, after checking who they are.</span>
           {errors.pin && (
             <span role="alert" className={`block ${note}`}>

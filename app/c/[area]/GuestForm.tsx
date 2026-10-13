@@ -6,6 +6,7 @@ import { Plate } from "@/components/Plate";
 import { Spinner } from "@/components/Spinner";
 import { errorBox, field, outlineButton, redButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
+import { firstProblem } from "@/components/validate";
 import { keyForAttempt } from "@/lib/check-in-key";
 import { normalisePlate } from "@/lib/rules/plates";
 import { checkInAsGuest, type CheckInState } from "./actions";
@@ -40,12 +41,20 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
   }
   const showBlocked = Boolean(state.blocked) && dismissed !== state;
 
+  const [problem, setProblem] = useState("");
   function review() {
-    if (formRef.current?.reportValidity()) setConfirmedAt(state);
+    const found = formRef.current ? firstProblem(formRef.current) : null;
+    if (found) {
+      setProblem(found.message);
+      found.el.focus();
+      return;
+    }
+    setProblem("");
+    setConfirmedAt(state);
   }
 
   return (
-    <form ref={formRef} action={action} onSubmitCapture={stampKey} className="space-y-4">
+    <form ref={formRef} action={action} onSubmitCapture={stampKey} noValidate className="space-y-4">
       <input type="hidden" name="area" value={areaSlug} />
       <input type="hidden" name="key" defaultValue="" ref={keyRef} />
 
@@ -111,6 +120,11 @@ export function GuestForm({ areaSlug, services, defaultServiceId }: Props) {
           />
         </label>
 
+        {problem && (
+          <p role="alert" className={errorBox}>
+            {problem}
+          </p>
+        )}
         {state.error && !state.blocked && (
           <p role="alert" className={errorBox}>
             {state.error}

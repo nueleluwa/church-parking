@@ -4,7 +4,6 @@ import { Chip } from "@/components/ds/Chip";
 import { MetricRow } from "@/components/ds/MetricCard";
 import { PageNumbers } from "@/components/Pager";
 import { PasswordField } from "@/components/PasswordField";
-import { field } from "@/components/ui";
 import { listStaff, recentActivityByStaff, staffLastActive, type StaffRecord } from "@/lib/db";
 import { formatVisitTime } from "@/lib/format";
 import { MEMBER_PAGE_SIZES, initials, lagosParts, pageNumbers, parseMemberPageSize, parseMemberStatus, registerRange } from "@/lib/rules";
@@ -100,7 +99,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
           </Link>
         </div>
 
-        <form aria-label="Filters" className="mb-4 space-y-3">
+        <form noValidate aria-label="Filters" className="mb-4 space-y-3">
           <input type="hidden" name="tab" value="staff" />
           {size !== 20 && <input type="hidden" name="size" value={size} />}
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-[minmax(0,2fr)_1fr_1fr]">
@@ -108,7 +107,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
               Search by name or phone number
               <span className="relative mt-1 block">
                 <IconSearch aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-soft" />
-                <input name="q" defaultValue={q} autoComplete="off" placeholder="Search by name or phone number…" className={`${field} !mt-0 !pl-11`} />
+                <input name="q" defaultValue={q} autoComplete="off" placeholder="Search by name or phone number…" className="input !mt-0 !pl-11" />
               </span>
             </label>
             <label className="block text-sm font-medium">
@@ -247,15 +246,15 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
             <AdminForm action={createStaffAction} submitLabel="Create account" clearOnSuccess>
               <label className="block font-medium">
                 Full name
-                <input name="name" required maxLength={80} autoComplete="off" className={field} />
+                <input name="name" required maxLength={80} autoComplete="off" className="input" />
               </label>
               <label className="block font-medium">
                 Phone number
-                <input name="phone" type="tel" inputMode="tel" required autoComplete="off" className={field} />
+                <input name="phone" type="tel" inputMode="tel" required autoComplete="off" className="input" />
               </label>
               <label className="block font-medium">
                 Role
-                <select name="role" defaultValue="attendant" className={field}>
+                <select name="role" defaultValue="attendant" className="input">
                   {ROLES.map((r) => (
                     <option key={r.value} value={r.value}>
                       {r.label}
@@ -263,7 +262,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
                   ))}
                 </select>
               </label>
-              <PasswordField label="Password (at least 10 characters)" name="password" required minLength={10} autoComplete="new-password" />
+              <PasswordField compact label="Password (at least 10 characters)" name="password" required minLength={10} autoComplete="new-password" />
             </AdminForm>
           </div>
         </Panel>
@@ -282,11 +281,11 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
               <input type="hidden" name="intent" value="edit_details" />
               <label className="block font-medium">
                 Full name
-                <input name="name" required maxLength={80} defaultValue={managing.full_name} autoComplete="off" className={field} />
+                <input name="name" required maxLength={80} defaultValue={managing.full_name} autoComplete="off" className="input" />
               </label>
               <label className="block font-medium">
                 Phone number
-                <input name="phone" type="tel" inputMode="tel" required defaultValue={managing.phone} autoComplete="off" className={field} />
+                <input name="phone" type="tel" inputMode="tel" required defaultValue={managing.phone} autoComplete="off" className="input" />
               </label>
             </AdminForm>
 
@@ -295,7 +294,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
               <input type="hidden" name="intent" value="set_role" />
               <label className="block font-medium">
                 Role
-                <select name="role" defaultValue={managing.role} className={field}>
+                <select name="role" defaultValue={managing.role} className="input">
                   {ROLES.map((r) => (
                     <option key={r.value} value={r.value}>
                       {r.label}
@@ -308,7 +307,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
             <AdminForm action={manageStaffAction} submitLabel="Set new password" variant="secondary">
               <input type="hidden" name="staffId" value={managing.id} />
               <input type="hidden" name="intent" value="reset_password" />
-              <PasswordField label="New password (at least 10 characters)" name="password" minLength={10} autoComplete="new-password" />
+              <PasswordField compact label="New password (at least 10 characters)" name="password" minLength={10} autoComplete="new-password" />
             </AdminForm>
 
             <AdminForm action={manageStaffAction} submitLabel={managing.active ? "Switch account off" : "Switch account on"} variant="secondary">

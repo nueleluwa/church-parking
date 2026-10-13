@@ -36,6 +36,14 @@ export function AdminForm({
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // Our own required-field message, instead of the browser's speech bubble (which looks different on every device)
+    const missing = [...e.currentTarget.elements].find((el): el is HTMLInputElement => el instanceof HTMLInputElement && el.willValidate && !el.checkValidity());
+    if (missing) {
+      const label = (missing.labels?.[0]?.textContent ?? missing.name ?? "").split("*").join("").trim();
+      setState({ error: label ? `Please check “${label}”.` : "Please check the details and try again." });
+      missing.focus();
+      return;
+    }
     const data = new FormData(e.currentTarget);
     start(async () => {
       let result: AdminState;
@@ -55,7 +63,7 @@ export function AdminForm({
   }
 
   return (
-    <form ref={formRef} onSubmit={submit} className="space-y-3">
+    <form ref={formRef} onSubmit={submit} noValidate className="space-y-3">
       {children}
       {state.error && (
         <p role="alert" className={errorBox}>
