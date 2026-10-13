@@ -227,3 +227,30 @@ export const IconTrend = (p: IconProps) => (
     <path d="M7 15l4-4 3 3 5-6" />
   </Icon>
 );
+
+export const IconArrowUp = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 19V5M6 11l6-6 6 6" />
+  </Icon>
+);
+
+export const IconArrowDown = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 5v14M6 13l6 6 6-6" />
+  </Icon>
+);
+
+export const IconX = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </Icon>
+);
+
+/** Icon sizes, so the same kind of icon is the same size on every screen. */
+export const ICON = {
+  nav: "h-5 w-5",
+  card: "h-5 w-5",
+  inline: "h-4 w-4",
+  chip: "h-3.5 w-3.5",
+  empty: "h-8 w-8",
+} as const;

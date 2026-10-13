@@ -59,9 +59,9 @@ export default async function VisitDetailsPage({
 
   return (
     <>
-      <section className="rounded-card bg-card p-4 shadow-sm">
+      <section className="surface">
         <div className="flex items-center gap-3">
-          <VehicleImage size="md" />
+          <VehicleImage size="lg" />
           <div className="min-w-0 flex-1">
             <Plate plate={v.plate} size="lg" align="start" variant="plain" />
             {details && <p className="truncate text-base text-ink-soft">{details}</p>}
@@ -88,8 +88,8 @@ export default async function VisitDetailsPage({
 
       {tab === "details" && (
         <div className="grid items-start gap-4 lg:grid-cols-3">
-        <section aria-label="Details" className="rounded-card bg-card p-4 shadow-sm lg:col-span-2">
-          <h2 className="text-lg font-bold">Details</h2>
+        <section aria-label="Details" className="surface lg:col-span-2">
+          <h2 className="t-card">Details</h2>
           <FactList className="mt-1 divide-y divide-edge/15">
             <FactRow icon={<IconClock className="h-5 w-5" />} label="Service">
               <span className="block">{v.serviceName}</span>
@@ -119,8 +119,8 @@ export default async function VisitDetailsPage({
         </section>
 
 
-          <section aria-label="Actions" className="space-y-3 rounded-card bg-card p-4 shadow-sm">
-            <h2 className="text-lg font-bold">Actions</h2>
+          <section aria-label="Actions" className="surface space-y-3">
+            <h2 className="t-card">Actions</h2>
             {v.status === "parked" && !v.held ? (
               <VisitActions visitId={v.id} plate={v.plate} />
             ) : (
@@ -136,8 +136,8 @@ export default async function VisitDetailsPage({
       )}
 
       {tab === "driver" && (
-        <section aria-label="Driver" className="rounded-card bg-card p-4 shadow-sm">
-          <h2 className="text-lg font-bold">Driver</h2>
+        <section aria-label="Driver" className="surface">
+          <h2 className="t-card">Driver</h2>
           <FactList className="mt-1 divide-y divide-edge/15">
             <FactRow icon={<IconUser className="h-5 w-5" />} label="Pass type">
               <StatusBadge tone="neutral">{v.isGuest ? "GUEST" : "MEMBER"}</StatusBadge>
@@ -158,8 +158,8 @@ export default async function VisitDetailsPage({
       )}
 
       {tab === "timeline" && (
-      <section aria-label="Timeline" className="rounded-card bg-card p-4 shadow-sm">
-        <h2 className="text-lg font-bold">Timeline</h2>
+      <section aria-label="Timeline" className="surface">
+        <h2 className="t-card">Timeline</h2>
         <ol className="mt-2 divide-y divide-edge/15">
           {v.timeline.map((e, i) => (
             <li key={`${e.at}-${i}`} className="flex gap-3 py-2">

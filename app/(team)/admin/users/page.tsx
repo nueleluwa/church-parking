@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/ds/PageHeader";
 import { UnderlineTabs } from "@/components/UnderlineTabs";
 import { requireStaff } from "@/lib/staff-auth";
 import { MembersTab, type MembersSearch } from "./MembersTab";
@@ -22,10 +23,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <header>
-        <h1 className="text-2xl font-extrabold">Users</h1>
-        <p className="text-ink-soft">Manage church members and staff accounts for the parking system.</p>
-      </header>
+      <PageHeader title="Users">Manage church members and staff accounts for the parking system.</PageHeader>
       <UnderlineTabs
         label="Users"
         tabs={[

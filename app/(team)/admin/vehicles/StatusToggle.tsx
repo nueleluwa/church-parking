@@ -2,12 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { useToast } from "@/components/ds/Toast";
 import { Spinner } from "@/components/Spinner";
 import { setVehiclesActiveAction } from "../vehicle-actions";
 
 /** Activate or deactivate one vehicle, asking first. An open visit is left alone. */
 export function StatusToggle({ id, active, hasOpenVisit }: { id: string; active: boolean; hasOpenVisit: boolean }) {
   const router = useRouter();
+  const toast = useToast();
   const [asking, setAsking] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
@@ -16,6 +18,7 @@ export function StatusToggle({ id, active, hasOpenVisit }: { id: string; active:
     start(async () => {
       const r = await setVehiclesActiveAction([id], !active);
       setMessage({ ok: r.ok, text: r.message });
+      if (r.ok) toast.success("Vehicle status updated.");
       setAsking(false);
       router.refresh();
     });
@@ -23,7 +26,7 @@ export function StatusToggle({ id, active, hasOpenVisit }: { id: string; active:
 
   return (
     <div>
-      <button type="button" onClick={() => setAsking(true)} disabled={pending} className="inline-flex min-h-11 items-center rounded-full border-2 border-edge/70 bg-white px-5 font-semibold hover:bg-page disabled:opacity-60">
+      <button type="button" onClick={() => setAsking(true)} disabled={pending} className="btn btn-outline">
         {active ? "Deactivate" : "Activate"}
       </button>
       {asking && (
@@ -34,10 +37,10 @@ export function StatusToggle({ id, active, hasOpenVisit }: { id: string; active:
               : "Activate this vehicle? It can be checked in again."}
           </p>
           <div className="mt-3 flex gap-2">
-            <button type="button" onClick={() => setAsking(false)} disabled={pending} className="min-h-10 flex-1 rounded-full border-2 border-edge/70 bg-white px-4 font-semibold hover:bg-page">
+            <button type="button" onClick={() => setAsking(false)} disabled={pending} className="btn btn-outline btn-sm flex-1 !rounded-full">
               Cancel
             </button>
-            <button type="button" onClick={run} disabled={pending} className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-full bg-accent px-4 font-semibold text-white hover:bg-accent-dark disabled:opacity-60">
+            <button type="button" onClick={run} disabled={pending} className="btn btn-primary btn-sm flex-1 !rounded-full">
               {pending && <Spinner />}
               Yes, {active ? "deactivate" : "activate"}
             </button>

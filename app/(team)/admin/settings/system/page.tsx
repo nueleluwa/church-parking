@@ -18,7 +18,7 @@ export default async function SystemPage() {
     <>
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <section aria-label="The system" className={card}>
-          <h2 className="text-lg font-bold">The system</h2>
+          <h2 className="t-card">The system</h2>
           <dl className="divide-y divide-edge/15">
             <Row label="Church">{settings.churchName}</Row>
             <Row label="Address of the app">{host}</Row>
@@ -29,7 +29,7 @@ export default async function SystemPage() {
           </dl>
         </section>
         <section aria-label="Backups and resets" className={card}>
-          <h2 className="text-lg font-bold">Backups, restores and resets</h2>
+          <h2 className="t-card">Backups, restores and resets</h2>
           <p className="mt-2">
             These are done on the server by the developer, not from this screen, so there are no backup or reset buttons here. The activity log below is
             never cleared from the app: it is the record of who did what.
@@ -38,28 +38,28 @@ export default async function SystemPage() {
       </div>
 
       <section aria-label="Activity log" className={card}>
-        <h2 className="text-lg font-bold">Activity log</h2>
+        <h2 className="t-card">Activity log</h2>
         <p className="text-sm text-ink-soft">The latest {log.length} things staff and admins did. Drivers&apos; details are never shown here.</p>
         {log.length === 0 ? (
           <p className="mt-2 text-ink-soft">Nothing yet.</p>
         ) : (
           <div className="mt-2 overflow-x-auto" role="region" aria-label="Activity log table, scroll sideways on a small screen" tabIndex={0}>
-            <table className="w-full min-w-[34rem] text-left text-sm">
-              <thead className="text-ink-soft">
+            <table className="dt min-w-[34rem]">
+              <thead>
                 <tr>
-                  <th className="py-2 pr-3 font-medium">When</th>
-                  <th className="py-2 pr-3 font-medium">What happened</th>
-                  <th className="py-2 pr-3 font-medium">Who</th>
-                  <th className="py-2 font-medium">Reason</th>
+                  <th className="dt-th">When</th>
+                  <th className="dt-th">What happened</th>
+                  <th className="dt-th">Who</th>
+                  <th className="dt-th">Reason</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-edge/15">
+              <tbody>
                 {log.map((e) => (
                   <tr key={e.id}>
-                    <td className="whitespace-nowrap py-2 pr-3">
+                    <td className="dt-td whitespace-nowrap">
                       {formatLagosDate(e.at)}, {formatLagosTime(e.at)}
                     </td>
-                    <td className="py-2 pr-3 font-semibold">
+                    <td className="dt-td font-semibold">
                       {e.visitId ? (
                         <Link href={`/admin/visits/${e.visitId}`} className="underline">
                           {e.what}
@@ -68,8 +68,8 @@ export default async function SystemPage() {
                         e.what
                       )}
                     </td>
-                    <td className="py-2 pr-3">{e.by ?? "The system"}</td>
-                    <td className="py-2 text-ink-soft">{e.reason ?? ""}</td>
+                    <td className="dt-td">{e.by ?? "The system"}</td>
+                    <td className="dt-td text-ink-soft">{e.reason ?? ""}</td>
                   </tr>
                 ))}
               </tbody>

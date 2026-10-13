@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { BottomNav } from "@/app/(team)/staff/BottomNav";
+import { ToastProvider } from "@/components/ds/Toast";
 import { SideNav } from "@/components/SideNav";
 import { StaffHeader } from "@/components/StaffHeader";
 import { hasRole } from "@/lib/rules";
@@ -24,15 +25,19 @@ export function StaffChrome({ staff, children, systemName = "Church Parking" }: 
   const admin = hasRole(staff.role, "admin");
   const roleName = admin ? "Parking Admin" : coordinator ? "Coordinator" : "Attendant";
   return (
-    <>
+    <ToastProvider>
       {coordinator && <SideNav admin={admin} name={staff.name} role={roleName} initials={initialsOf(staff.name)} systemName={systemName} />}
       <div className={coordinator ? "lg:pl-64 print:pl-0" : ""}>
         <div className="print:hidden">
           <StaffHeader initials={initialsOf(staff.name)} wide={coordinator} />
         </div>
+        {/* Admin and coordinator pages: a 16px gutter on a phone, 24px on a tablet, 32px on a desktop, and a steady 24px between sections.
+            The width follows the screen (wide tables use it) but stops where a line of cards would become too long to scan. */}
         <main
-          className={`mx-auto space-y-4 px-4 pb-28 pt-5 print:max-w-none print:p-0 ${
-            coordinator ? "max-w-md lg:max-w-5xl lg:pb-10 xl:max-w-7xl" : "max-w-md"
+          className={`mx-auto print:max-w-none print:p-0 ${
+            coordinator
+              ? "max-w-md space-y-5 px-4 pb-28 pt-6 sm:max-w-3xl sm:space-y-6 sm:px-6 lg:max-w-5xl lg:px-8 lg:pb-12 lg:pt-8 xl:max-w-7xl 2xl:max-w-[100rem]"
+              : "max-w-md space-y-4 px-4 pb-28 pt-5"
           }`}
         >
           {children}
@@ -41,6 +46,6 @@ export function StaffChrome({ staff, children, systemName = "Church Parking" }: 
       <div className="lg:hidden print:hidden">
         <BottomNav coordinator={coordinator} admin={admin} />
       </div>
-    </>
+    </ToastProvider>
   );
 }

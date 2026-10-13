@@ -540,7 +540,8 @@ test("only an administrator can use Users, and the old addresses do not let anyo
     const page = await (await browser.newContext()).newPage();
     await staffSignIn(page, lead.phone, lead.password);
     for (const path of ["/admin/users", "/admin/users?tab=staff", "/admin/users?add=1", "/admin/members", "/admin/staff", `/admin/members/${m.id}`]) {
-      await page.goto(path);
+      // A redirect that happens while the page is streaming can abort the load, so wait only for the first answer
+      await page.goto(path, { waitUntil: "commit" }).catch(() => undefined);
       await expect(page, path).toHaveURL(/\/staff$/, { timeout: 60_000 });
     }
   } finally {
@@ -568,7 +569,7 @@ test("both tabs and their panels fit every screen width from 320 to 1440 without
         }
       }
       await page.goto("/admin/users?q=Zqw");
-      if (width >= 1280) await expect(main(page).getByRole("table", { name: "Members" })).toBeVisible({ timeout: 60_000 });
+      if (width >= 1440) await expect(main(page).getByRole("table", { name: "Members" })).toBeVisible({ timeout: 60_000 });
       else await expect(main(page).locator("li").filter({ hasText: "Zqw Width Member" })).toBeVisible({ timeout: 60_000 });
     }
   } finally {

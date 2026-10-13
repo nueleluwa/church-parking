@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { IconCheck, IconLock, IconPlus, IconSearch, IconUser, IconUsers } from "@/components/icons";
+import { Chip } from "@/components/ds/Chip";
+import { MetricRow } from "@/components/ds/MetricCard";
 import { PageNumbers } from "@/components/Pager";
 import { PasswordField } from "@/components/PasswordField";
 import { field } from "@/components/ui";
@@ -19,19 +21,17 @@ const ROLES = [
   { value: "admin", label: "Admin" },
 ];
 const roleLabel = (r: string) => ROLES.find((x) => x.value === r)?.label ?? r;
-const inputClass = `${field} !mt-1 !py-2.5 !text-base`;
+const inputClass = "input";
 
 function StaffChip({ active }: { active: boolean }) {
   return active ? (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-edge/70 bg-white px-2.5 py-0.5 text-sm font-semibold text-ink">
-      <IconCheck aria-hidden="true" className="h-3.5 w-3.5" />
+    <Chip tone="on" icon={<IconCheck className="h-3.5 w-3.5" />}>
       Active
-    </span>
+    </Chip>
   ) : (
-    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-edge/15 bg-panel px-2.5 py-0.5 text-sm font-semibold text-ink-soft">
-      <IconLock aria-hidden="true" className="h-3.5 w-3.5" />
+    <Chip tone="off" icon={<IconLock className="h-3.5 w-3.5" />}>
       Off
-    </span>
+    </Chip>
   );
 }
 
@@ -79,14 +79,14 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
 
   return (
     <>
-      <section aria-label="Summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <MetricRow>
         <Summary id="s-admins" label="Admins" value={activeCount("admin")} note="Active accounts" href="/admin/users?tab=staff&role=admin&status=active" icon={<IconUser className="h-5 w-5" />} />
         <Summary id="s-coordinators" label="Coordinators" value={activeCount("coordinator")} note="Active accounts" href="/admin/users?tab=staff&role=coordinator&status=active" icon={<IconUsers className="h-5 w-5" />} />
         <Summary id="s-attendants" label="Attendants" value={activeCount("attendant")} note="Active accounts" href="/admin/users?tab=staff&role=attendant&status=active" icon={<IconUsers className="h-5 w-5" />} />
         <Summary id="s-off" label="Switched off" value={all.filter((s) => !s.active).length} note="Cannot sign in" href="/admin/users?tab=staff&status=inactive" icon={<IconLock className="h-5 w-5" />} />
-      </section>
+      </MetricRow>
 
-      <section aria-label="Staff accounts" className="rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
+      <section aria-label="Staff accounts" className="surface">
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-extrabold">
@@ -94,7 +94,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
             </h2>
             <p className="text-sm text-ink-soft">Everyone on the team has their own account. Switch an account off when someone leaves: they are signed out at once.</p>
           </div>
-          <Link href={scope({ add: "1", page: "" })} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-accent px-6 font-semibold text-white hover:bg-accent-dark">
+          <Link href={scope({ add: "1", page: "" })} className="btn btn-primary">
             <IconPlus aria-hidden="true" className="h-5 w-5" />
             Add staff account
           </Link>
@@ -108,7 +108,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
               Search by name or phone number
               <span className="relative mt-1 block">
                 <IconSearch aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-soft" />
-                <input name="q" defaultValue={q} autoComplete="off" placeholder="Search by name or phone number…" className={`${field} !mt-0 !py-2.5 !pl-11 !text-base`} />
+                <input name="q" defaultValue={q} autoComplete="off" placeholder="Search by name or phone number…" className={`${field} !mt-0 !pl-11`} />
               </span>
             </label>
             <label className="block text-sm font-medium">
@@ -132,10 +132,10 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
             </label>
           </div>
           <div className="flex gap-2 sm:justify-end">
-            <Link href="/admin/users?tab=staff" className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full border-2 border-edge/70 bg-white px-6 font-semibold hover:bg-page sm:flex-none">
+            <Link href="/admin/users?tab=staff" className="btn btn-outline flex-1 sm:flex-none">
               Reset
             </Link>
-            <button className="min-h-12 flex-1 rounded-full bg-accent px-6 font-semibold text-white hover:bg-accent-dark sm:flex-none">Apply filters</button>
+            <button className="btn btn-primary flex-1 sm:flex-none">Apply filters</button>
           </div>
         </form>
 
@@ -150,7 +150,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
           </p>
         ) : (
           <>
-            <ul className="grid gap-3 xl:hidden">
+            <ul className="grid gap-3 wide:hidden">
               {rows.map((s) => (
                 <li key={s.id} className="flex min-w-0 items-start gap-3 rounded-xl border border-edge/10 p-3">
                   <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-panel text-sm font-extrabold">
@@ -173,22 +173,22 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
               ))}
             </ul>
 
-            <div className="hidden overflow-x-auto xl:block">
-              <table className="w-full min-w-[52rem] text-left">
+            <div className="hidden overflow-x-auto wide:block">
+              <table className="dt min-w-[52rem]">
                 <caption className="sr-only">Staff accounts</caption>
-                <thead className="border-b border-edge/20 text-sm text-ink-soft">
+                <thead>
                   <tr>
                     {["Name", "Role", "Phone (sign-in)", "Last activity", "Status", "Date created", "Actions"].map((c) => (
-                      <th key={c} scope="col" className="whitespace-nowrap px-2.5 py-3 font-semibold">
+                      <th key={c} scope="col" className="dt-th">
                         {c}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-edge/15">
+                <tbody>
                   {rows.map((s) => (
-                    <tr key={s.id} className="hover:bg-page">
-                      <td className="px-2.5 py-3">
+                    <tr key={s.id}>
+                      <td className="dt-td">
                         <span className="flex items-center gap-3">
                           <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-panel text-sm font-extrabold">
                             {initials(s.full_name)}
@@ -199,15 +199,15 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
                           </span>
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-2.5 py-3">{roleLabel(s.role)}</td>
-                      <td className="whitespace-nowrap px-2.5 py-3">{s.phone}</td>
-                      <td className="px-2.5 py-3 text-ink-soft">{lastActive.has(s.id) ? formatVisitTime(lastActive.get(s.id)!) : "None yet"}</td>
-                      <td className="px-2.5 py-3">
+                      <td className="dt-td whitespace-nowrap">{roleLabel(s.role)}</td>
+                      <td className="dt-td whitespace-nowrap">{s.phone}</td>
+                      <td className="dt-td text-ink-soft">{lastActive.has(s.id) ? formatVisitTime(lastActive.get(s.id)!) : "None yet"}</td>
+                      <td className="dt-td">
                         <StaffChip active={s.active} />
                       </td>
-                      <td className="whitespace-nowrap px-2.5 py-3">{lagosParts(s.created_at).date}</td>
-                      <td className="px-2.5 py-3">
-                        <Link href={scope({ manage: s.id, page: keepPage })} aria-label={`Manage ${s.full_name}`} className="inline-flex min-h-10 items-center rounded-lg border border-edge/30 bg-white px-4 font-semibold hover:bg-page">
+                      <td className="dt-td whitespace-nowrap">{lagosParts(s.created_at).date}</td>
+                      <td className="dt-td">
+                        <Link href={scope({ manage: s.id, page: keepPage })} aria-label={`Manage ${s.full_name}`} className="btn btn-quiet">
                           Manage
                         </Link>
                       </td>

@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { IconCar, IconChevronRight, IconLock, IconPlus, IconSearch, IconUser, IconUsers } from "@/components/icons";
+import { IconCar, IconLock, IconPlus, IconSearch, IconUser, IconUsers } from "@/components/icons";
+import { EmptyState } from "@/components/ds/EmptyState";
+import { MetricCard, MetricRow } from "@/components/ds/MetricCard";
+import { PageHeader } from "@/components/ds/PageHeader";
+import { VehicleIdentity } from "@/components/ds/VehicleIdentity";
 import { PageNumbers } from "@/components/Pager";
-import { VehicleImage } from "@/components/VehicleImage";
 import { field } from "@/components/ui";
 import { getVehicleDetail, registerCounts, searchRegister, type RegisterRow } from "@/lib/db";
 import {
@@ -21,6 +24,7 @@ import {
   typeLabel,
 } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
+import { Panel } from "../Panel";
 import { StatusChip } from "./StatusChip";
 import { VehicleForm } from "./VehicleForm";
 import { BulkRegister } from "./BulkRegister";
@@ -31,24 +35,6 @@ export const dynamic = "force-dynamic";
 type Search = { q?: string; type?: string; owner?: string; status?: string; size?: string; page?: string; add?: string; edit?: string; notice?: string; plate?: string };
 
 const inputClass = `${field} !mt-1 !py-2.5 !text-base`;
-
-function Summary({ label, value, note, href, id, icon }: { label: string; value: number; note: string; href: string; id: string; icon: React.ReactNode }) {
-  return (
-    <Link href={href} className="flex items-center gap-3 rounded-2xl border border-edge/15 bg-card p-4 hover:bg-page">
-      <span aria-hidden="true" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-page text-ink sm:flex">
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-medium text-ink-soft">{label}</span>
-        <span data-testid={id} className="block text-3xl font-extrabold leading-tight">
-          {value}
-        </span>
-        <span className="block text-xs text-ink-soft">{note}</span>
-      </span>
-      <IconChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-ink-soft" />
-    </Link>
-  );
-}
 
 const registered = (v: RegisterRow) => (v.createdAt ? lagosParts(v.createdAt).date : "Not recorded");
 
@@ -97,16 +83,17 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold">Vehicles</h1>
-          <p className="text-ink-soft">Manage all vehicles registered in the church parking system.</p>
-        </div>
-        <Link href={scope({ page: "", add: "1" })} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-accent px-6 font-semibold text-white hover:bg-accent-dark">
-          <IconPlus aria-hidden="true" className="h-5 w-5" />
-          Add vehicle
-        </Link>
-      </header>
+      <PageHeader
+        title="Vehicles"
+        actions={
+          <Link href={scope({ page: "", add: "1" })} className="btn btn-primary">
+            <IconPlus aria-hidden="true" className="h-5 w-5" />
+            Add vehicle
+          </Link>
+        }
+      >
+        Manage all vehicles registered in the church parking system.
+      </PageHeader>
 
       {notice && (
         <p role="status" className="rounded-xl border-2 border-success bg-success-soft p-3 font-medium">
@@ -114,14 +101,14 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
         </p>
       )}
 
-      <section aria-label="Summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <Summary id="vh-total" label="Total vehicles" value={counts.total} note="Every vehicle in the register" href="/admin/vehicles" icon={<IconCar className="h-5 w-5" />} />
-        <Summary id="vh-member" label="Member vehicles" value={counts.activeMember} note="Active, saved by a member" href="/admin/vehicles?owner=member&status=active" icon={<IconUsers className="h-5 w-5" />} />
-        <Summary id="vh-guest" label="Guest vehicles" value={counts.activeGuest} note="Active, not linked to a member" href="/admin/vehicles?owner=guest&status=active" icon={<IconUser className="h-5 w-5" />} />
-        <Summary id="vh-inactive" label="Inactive vehicles" value={counts.inactive} note="Cannot be checked in" href="/admin/vehicles?status=inactive" icon={<IconLock className="h-5 w-5" />} />
-      </section>
+      <MetricRow>
+        <MetricCard id="vh-total" label="Total vehicles" value={counts.total} note="Every vehicle in the register" href="/admin/vehicles" icon={<IconCar className="h-5 w-5" />} />
+        <MetricCard id="vh-member" label="Member vehicles" value={counts.activeMember} note="Active, saved by a member" href="/admin/vehicles?owner=member&status=active" icon={<IconUsers className="h-5 w-5" />} />
+        <MetricCard id="vh-guest" label="Guest vehicles" value={counts.activeGuest} note="Active, not linked to a member" href="/admin/vehicles?owner=guest&status=active" icon={<IconUser className="h-5 w-5" />} />
+        <MetricCard id="vh-inactive" label="Inactive vehicles" value={counts.inactive} note="Cannot be checked in" href="/admin/vehicles?status=inactive" icon={<IconLock className="h-5 w-5" />} />
+      </MetricRow>
 
-      <form aria-label="Filters" className="space-y-3 rounded-2xl border border-edge/15 bg-card p-4">
+      <form aria-label="Filters" className="surface space-y-4">
         {size !== 20 && <input type="hidden" name="size" value={size} />}
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-[1fr_1fr_1fr_minmax(0,1.6fr)]">
           <label className="block text-sm font-medium">
@@ -160,86 +147,76 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
           </label>
         </div>
         <div className="flex gap-2 sm:justify-end">
-          <Link href="/admin/vehicles" className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full border-2 border-edge/70 bg-white px-6 font-semibold hover:bg-page sm:flex-none">
+          <Link href="/admin/vehicles" className="btn btn-outline flex-1 sm:flex-none">
             Reset
           </Link>
-          <button className="min-h-12 flex-1 rounded-full bg-accent px-6 font-semibold text-white hover:bg-accent-dark sm:flex-none">Apply filters</button>
+          <button className="btn btn-primary flex-1 sm:flex-none">Apply filters</button>
         </div>
       </form>
 
-      <section aria-label="Vehicles" className="rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
+      <section aria-label="Vehicles" className="surface">
         <h2 className="mb-3 text-xl font-extrabold">
           Vehicles (<span data-testid="vh-count">{total}</span>)
         </h2>
 
         {rows.length === 0 ? (
-          <p className="rounded-xl bg-page p-4 font-medium">
-            {filtersOn ? "No vehicles match these filters. " : "No vehicles are registered yet. "}
-            {filtersOn && (
-              <Link href="/admin/vehicles" className="font-semibold text-accent underline">
-                Reset filters
-              </Link>
-            )}
-          </p>
+          <EmptyState
+            action={
+              filtersOn && (
+                <Link href="/admin/vehicles" className="font-semibold text-accent underline">
+                  Reset filters
+                </Link>
+              )
+            }
+          >
+            {filtersOn ? "No vehicles match these filters." : "No vehicles are registered yet."}
+          </EmptyState>
         ) : (
           <BulkRegister>
-            <ul className="grid gap-3 xl:hidden">
+            <ul className="grid gap-3 wide:hidden">
               {rows.map((v) => (
-                <li key={v.id} className="flex min-w-0 items-start gap-3 rounded-xl border border-edge/10 p-3">
+                <li key={v.id} className="row-card !items-start">
                   <input type="checkbox" name="ids" value={v.id} aria-label={`Select ${formatPlate(v.plate)}`} className="mt-2 h-5 w-5 shrink-0 accent-[#141414]" />
-                  <Link href={`/admin/vehicles/${v.id}`} aria-label={`Vehicle ${formatPlate(v.plate)}`} className="flex min-w-0 flex-1 items-center gap-3 hover:opacity-80">
-                    <VehicleImage size="sm" />
-                    <span className="min-w-0 flex-1">
-                      <span data-plate className="block whitespace-nowrap text-lg font-extrabold">
-                        {formatPlate(v.plate)}
-                      </span>
-                      <span className="block truncate text-sm text-ink-soft">{[v.type ? typeLabel(v.type) : null, describeVehicle({ make: v.make, colour: v.colour })].filter(Boolean).join(" · ") || "No details"}</span>
-                      <span className="block text-sm text-ink-soft">{v.ownerId ? `Member · ${v.ownerName ?? ""}` : "Guest vehicle"}</span>
-                      <span className="mt-1 block">
+                  <Link href={`/admin/vehicles/${v.id}`} aria-label={`Vehicle ${formatPlate(v.plate)}`} className="min-w-0 flex-1 hover:opacity-80">
+                    <VehicleIdentity plate={v.plate} summary={[v.type ? typeLabel(v.type) : null, describeVehicle({ make: v.make, colour: v.colour })].filter(Boolean).join(" · ") || "No details"}>
+                      <span className="t-support block">{v.ownerId ? `Member · ${v.ownerName ?? ""}` : "Guest vehicle"}</span>
+                      <span className="mt-1.5 block">
                         <StatusChip active={v.active} />
                       </span>
-                    </span>
+                    </VehicleIdentity>
                   </Link>
                 </li>
               ))}
             </ul>
 
-            <div className="hidden overflow-x-auto xl:block">
-              <table className="w-full min-w-[56rem] text-left">
+            <div className="hidden overflow-x-auto wide:block">
+              <table className="dt min-w-[56rem]">
                 <caption className="sr-only">Vehicles</caption>
-                <thead className="border-b border-edge/20 text-sm text-ink-soft">
+                <thead>
                   <tr>
-                    <th scope="col" className="w-10 px-2.5 py-3">
+                    <th scope="col" className="dt-th w-10">
                       <input type="checkbox" data-select-all aria-label="Select all vehicles on this page" className="h-5 w-5 accent-[#141414]" />
                     </th>
                     {["Vehicle", "Ownership", "Linked member / owner", "Status", "Date registered", "Actions"].map((c) => (
-                      <th key={c} scope="col" className="whitespace-nowrap px-2.5 py-3 font-semibold">
+                      <th key={c} scope="col" className="dt-th">
                         {c}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-edge/15">
+                <tbody>
                   {rows.map((v) => {
                     const details = [v.type ? typeLabel(v.type) : null, describeVehicle({ make: v.make, colour: v.colour })].filter(Boolean).join(" · ");
                     return (
-                      <tr key={v.id} className="hover:bg-page">
-                        <td className="px-2.5 py-3">
+                      <tr key={v.id}>
+                        <td className="dt-td">
                           <input type="checkbox" name="ids" value={v.id} aria-label={`Select ${formatPlate(v.plate)}`} className="h-5 w-5 accent-[#141414]" />
                         </td>
-                        <td className="px-2.5 py-3">
-                          <span className="flex items-center gap-3">
-                            <VehicleImage size="sm" />
-                            <span className="min-w-0">
-                              <Link href={`/admin/vehicles/${v.id}`} aria-label={`Vehicle ${formatPlate(v.plate)}`} data-plate className="block whitespace-nowrap text-lg font-extrabold underline-offset-2 hover:underline">
-                                {formatPlate(v.plate)}
-                              </Link>
-                              <span className="block truncate text-sm text-ink-soft">{details || "No details"}</span>
-                            </span>
-                          </span>
+                        <td className="dt-td max-w-[20rem]">
+                          <VehicleIdentity plate={v.plate} href={`/admin/vehicles/${v.id}`} ariaLabel={`Vehicle ${formatPlate(v.plate)}`} summary={details || "No details"} />
                         </td>
-                        <td className="whitespace-nowrap px-2.5 py-3">{v.ownerId ? "Member" : "Guest"}</td>
-                        <td className="px-2.5 py-3">
+                        <td className="dt-td whitespace-nowrap">{v.ownerId ? "Member" : "Guest"}</td>
+                        <td className="dt-td">
                           {v.ownerId ? (
                             <Link href={`/admin/members/${v.ownerId}`} className="font-semibold underline-offset-2 hover:underline">
                               {v.ownerName ?? "Member"}
@@ -248,16 +225,16 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
                             <span className="text-ink-soft">Guest vehicle</span>
                           )}
                         </td>
-                        <td className="px-2.5 py-3">
+                        <td className="dt-td">
                           <StatusChip active={v.active} />
                         </td>
-                        <td className="whitespace-nowrap px-2.5 py-3">{registered(v)}</td>
-                        <td className="px-2.5 py-3">
+                        <td className="dt-td whitespace-nowrap">{registered(v)}</td>
+                        <td className="dt-td">
                           <span className="flex gap-2">
-                            <Link href={`/admin/vehicles/${v.id}`} aria-label={`View vehicle ${formatPlate(v.plate)}`} className="inline-flex min-h-10 items-center rounded-lg border border-edge/30 bg-white px-4 font-semibold hover:bg-page">
+                            <Link href={`/admin/vehicles/${v.id}`} aria-label={`View vehicle ${formatPlate(v.plate)}`} className="btn btn-quiet">
                               View
                             </Link>
-                            <Link href={scope({ edit: v.id, page: page > 1 ? String(page) : "" })} aria-label={`Edit vehicle ${formatPlate(v.plate)}`} className="inline-flex min-h-10 items-center rounded-lg border border-edge/30 bg-white px-4 font-semibold hover:bg-page">
+                            <Link href={scope({ edit: v.id, page: page > 1 ? String(page) : "" })} aria-label={`Edit vehicle ${formatPlate(v.plate)}`} className="btn btn-quiet">
                               Edit
                             </Link>
                           </span>
@@ -294,29 +271,17 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
       </section>
 
       {panel && (
-        <div className="fixed inset-0 z-[60] flex justify-end">
-          <Link href={scope({ page: page > 1 ? String(page) : "" })} aria-label="Close panel" className="absolute inset-0 bg-night/40" />
-          <section role="dialog" aria-modal="true" aria-labelledby="panel-title" className="relative flex h-full w-full min-w-0 flex-col bg-white shadow-xl sm:max-w-md">
-            <header className="flex items-center gap-3 border-b border-edge/15 px-5 py-4">
-              <VehicleImage size="sm" />
-              <h2 id="panel-title" className="flex-1 text-xl font-extrabold">
-                {panel === "add" ? "Add vehicle" : `Edit ${formatPlate(editing!.plate)}`}
-              </h2>
-              <Link href={scope({ page: page > 1 ? String(page) : "" })} aria-label="Close" className="flex h-10 w-10 items-center justify-center rounded-full text-2xl leading-none hover:bg-page">
-                ×
-              </Link>
-            </header>
-            <VehicleForm
-              key={editing?.id ?? "new"}
-              doneHref={scope({ page: page > 1 ? String(page) : "" })}
-              vehicle={
-                editing
-                  ? { id: editing.id, plate: editing.plate, type: editing.type ?? "", make: editing.make ?? "", colour: editing.colour ?? "", active: editing.active, ownerId: editing.ownerId, ownerName: editing.ownerName }
-                  : undefined
-              }
-            />
-          </section>
-        </div>
+        <Panel title={panel === "add" ? "Add vehicle" : `Edit ${formatPlate(editing!.plate)}`} closeHref={scope({ page: page > 1 ? String(page) : "" })}>
+          <VehicleForm
+            key={editing?.id ?? "new"}
+            doneHref={scope({ page: page > 1 ? String(page) : "" })}
+            vehicle={
+              editing
+                ? { id: editing.id, plate: editing.plate, type: editing.type ?? "", make: editing.make ?? "", colour: editing.colour ?? "", active: editing.active, ownerId: editing.ownerId, ownerName: editing.ownerName }
+                : undefined
+            }
+          />
+        </Panel>
       )}
     </>
   );

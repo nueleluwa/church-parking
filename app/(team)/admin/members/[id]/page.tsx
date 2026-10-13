@@ -42,7 +42,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
       </Link>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold">{member.full_name}</h1>
+          <h1 className="t-page">{member.full_name}</h1>
           <p className="text-ink-soft">
             {member.phone} · joined {formatLagosDate(member.created_at)}
             {member.last_seen_at && ` · last seen ${formatVisitTime(member.last_seen_at)}`}
@@ -53,8 +53,8 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
 
       <div className="grid items-start gap-4 lg:grid-cols-3">
         <div className="space-y-4">
-          <section aria-label="Saved cars" className="rounded-card bg-card p-4 shadow-sm">
-            <h2 className="text-lg font-bold">Saved cars</h2>
+          <section aria-label="Saved cars" className="surface">
+            <h2 className="t-card">Saved cars</h2>
             {cars.length === 0 ? (
               <p className="mt-2 text-ink-soft">No saved cars.</p>
             ) : (
@@ -94,8 +94,8 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
             </details>
           </section>
 
-          <section aria-label="Manage this member" className="space-y-5 rounded-card bg-card p-4 shadow-sm">
-            <h2 className="text-lg font-bold">Manage</h2>
+          <section aria-label="Manage this member" className="surface space-y-5">
+            <h2 className="t-card">Manage</h2>
             <AdminForm action={updateMemberAction} submitLabel="Save name and phone" variant="secondary">
               <input type="hidden" name="memberId" value={member.id} />
               <label className="block font-medium">
@@ -119,12 +119,12 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
         </div>
 
         <section aria-label="Visits" className="space-y-3 lg:col-span-2">
-          <h2 className="px-1 text-lg font-bold">Latest visits</h2>
+          <h2 className="t-section">Latest visits</h2>
           {history.length === 0 ? (
-            <p className="rounded-card bg-card p-4 font-medium shadow-sm">No visits yet.</p>
+            <p className="surface font-medium">No visits yet.</p>
           ) : (
             <>
-              <ul className="divide-y divide-edge/15 rounded-card bg-card px-4 shadow-sm lg:hidden">
+              <ul className="divide-y divide-edge/15 rounded-2xl border border-edge/15 bg-card px-4 lg:hidden">
                 {history.map((h) => (
                   <li key={h.reference + h.checkedInAt} className="flex items-center gap-3 py-3">
                     <span className="min-w-0 flex-1">

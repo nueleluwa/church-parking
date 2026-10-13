@@ -46,7 +46,7 @@ export default async function QrSignsPage() {
             {signs.map((s) => (
               <li key={s.id} className="rounded-xl border border-edge/15 p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-lg font-bold">{s.name}</h3>
+                  <h3 className="t-card">{s.name}</h3>
                   <Chip tone="on">Active</Chip>
                 </div>
                 <div
@@ -80,7 +80,7 @@ export default async function QrSignsPage() {
       </section>
 
       <section aria-label="The general sign" className={card}>
-        <h2 className="text-lg font-bold">General sign</h2>
+        <h2 className="t-card">General sign</h2>
         <p className="mt-1 text-sm text-ink-soft">
           One QR code for the whole church. Drivers scan it, then choose their car park. Put it where people arrive, such as the gate or the church door. The
           signs above are still quicker, because the car park is already chosen.

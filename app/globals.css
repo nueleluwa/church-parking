@@ -39,10 +39,152 @@
   --color-edge: #141414;
 
   --radius-card: 1.25rem;
+
+  /* A table needs about 1000px of workspace; below this width a list shows as cards instead. */
+  --breakpoint-wide: 90rem;
 }
 
 body {
   background: var(--color-page);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+/*
+ * The admin design system: one set of sizes for the team screens (dashboard, visits, vehicles, users, settings, sweep...), so every
+ * page uses the same card padding, type scale, buttons, fields and tables. Drivers' screens and the attendant tools keep their larger
+ * touch-first controls from components/ui.ts. Colours are the brand tokens above: no other accent is added.
+ */
+@layer components {
+  /* Type scale: page title, section heading, card heading, metric, body, supporting text */
+  .t-page {
+    @apply text-2xl leading-tight font-extrabold tracking-tight sm:text-[1.75rem] lg:text-[1.875rem];
+  }
+  .t-section {
+    @apply text-lg leading-snug font-extrabold sm:text-xl;
+  }
+  .t-card {
+    @apply text-base leading-snug font-bold sm:text-[1.0625rem];
+  }
+  .t-metric {
+    @apply text-3xl leading-none font-extrabold tabular-nums;
+  }
+  .t-body {
+    @apply text-[0.9375rem] leading-relaxed;
+  }
+  .t-support {
+    @apply text-sm leading-snug text-ink-soft;
+  }
+  .t-meta {
+    @apply text-xs leading-snug text-ink-soft sm:text-[0.8125rem];
+  }
+
+  /* Surfaces: one card, with the padding and radius every page shares */
+  .surface {
+    @apply rounded-2xl border border-edge/15 bg-card p-4 sm:p-5;
+  }
+  .surface-tint {
+    @apply rounded-2xl bg-blush p-4 sm:p-5;
+  }
+  .metric {
+    @apply flex min-h-[6.5rem] items-center gap-3 rounded-2xl border border-edge/15 bg-card p-4 sm:gap-4 sm:p-5;
+  }
+  .metric-icon {
+    @apply hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-page text-ink sm:flex;
+  }
+
+  /* Buttons: 44px high (40px for the small row actions), one radius, one focus ring */
+  .btn {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 py-2 text-center text-[0.9375rem] leading-tight font-semibold whitespace-normal transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-edge disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-primary {
+    @apply bg-accent text-white hover:bg-accent-dark;
+  }
+  .btn-dark {
+    @apply bg-action text-white hover:bg-action-dark;
+  }
+  .btn-outline {
+    @apply border-2 border-edge/70 bg-white text-ink hover:bg-page;
+  }
+  .btn-danger {
+    @apply border-2 border-accent bg-white text-accent hover:bg-blush;
+  }
+  .btn-sm {
+    @apply min-h-10 rounded-lg px-3.5 py-1.5 text-sm;
+  }
+  .btn-quiet {
+    @apply min-h-10 rounded-lg border border-edge/30 bg-white px-3.5 py-1.5 text-sm text-ink hover:bg-page;
+  }
+
+  /* Forms: labels above, 44px fields, help text and errors under the field */
+  .label {
+    @apply block text-sm leading-snug font-semibold;
+  }
+  .input {
+    @apply mt-1.5 block min-h-11 w-full rounded-xl border border-edge/30 bg-white px-3.5 py-2 text-[0.9375rem] placeholder:text-ink-soft/60 focus:border-edge focus:ring-4 focus:ring-blush focus:outline-none;
+  }
+  .help {
+    @apply mt-1.5 block text-sm font-normal text-ink-soft;
+  }
+  .field-error {
+    @apply mt-1.5 block text-sm font-medium text-accent;
+  }
+  .form-stack {
+    @apply space-y-4;
+  }
+
+  /* Tables: the same header, row padding and dividers everywhere */
+  .dt {
+    @apply w-full text-left text-[0.9375rem];
+  }
+  .dt thead {
+    @apply border-b border-edge/20 text-sm text-ink-soft;
+  }
+  .dt-th {
+    @apply px-2.5 py-3 text-sm font-semibold whitespace-nowrap;
+  }
+  .dt tbody {
+    @apply divide-y divide-edge/15;
+  }
+  .dt-td {
+    @apply px-2.5 py-3 align-middle;
+  }
+  .dt tbody tr {
+    @apply hover:bg-page;
+  }
+
+  /* The list shown instead of a table on a narrow screen */
+  .row-card {
+    @apply flex min-w-0 items-center gap-3 rounded-xl border border-edge/10 p-3 hover:bg-page;
+  }
+
+  /* Status chips: words and a small mark, in black, grey and red only */
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-sm leading-snug font-semibold whitespace-nowrap;
+  }
+  .chip-on {
+    @apply border-edge/70 bg-white text-ink;
+  }
+  .chip-off {
+    @apply border-edge/15 bg-panel text-ink-soft;
+  }
+  .chip-alert {
+    @apply border-accent bg-white text-accent;
+  }
+
+  /* Skeletons: neutral blocks that keep the shape of what is loading */
+  .skeleton {
+    @apply animate-pulse rounded-lg bg-panel motion-reduce:animate-none;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

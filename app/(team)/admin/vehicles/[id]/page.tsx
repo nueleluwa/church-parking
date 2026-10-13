@@ -60,10 +60,10 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
         All vehicles
       </Link>
 
-      <header className="flex flex-wrap items-center gap-4 rounded-2xl border border-edge/15 bg-card p-4">
+      <header className="surface flex flex-wrap items-center gap-4">
         <VehicleImage size="lg" />
         <div className="min-w-0 flex-1">
-          <h1 data-plate className="text-3xl font-extrabold">
+          <h1 data-plate className="t-page">
             {formatPlate(v.plate)}
           </h1>
           <p className="mt-1">
@@ -71,7 +71,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
           </p>
         </div>
         <div className="flex flex-wrap items-start gap-2">
-          <Link href={`/admin/vehicles?edit=${v.id}`} className="inline-flex min-h-11 items-center rounded-full bg-accent px-5 font-semibold text-white hover:bg-accent-dark">
+          <Link href={`/admin/vehicles?edit=${v.id}`} className="btn btn-primary">
             Edit vehicle
           </Link>
           <StatusToggle id={v.id} active={v.active} hasOpenVisit={Boolean(v.openVisit)} />
@@ -79,7 +79,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
       </header>
 
       <section aria-label="Details" className="rounded-2xl border border-edge/15 bg-card p-4">
-        <h2 className="mb-2 text-lg font-extrabold">Details</h2>
+        <h2 className="t-card mb-3">Details</h2>
         <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
           {facts.map(([k, val]) => (
             <div key={k}>
@@ -91,7 +91,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
       </section>
 
       <section aria-label="Current visit" className="rounded-2xl border border-edge/15 bg-card p-4">
-        <h2 className="mb-2 text-lg font-extrabold">Current visit</h2>
+        <h2 className="t-card mb-3">Current visit</h2>
         {v.openVisit ? (
           <Link href={`/admin/visits/${v.openVisit.id}`} className="flex items-center gap-3 rounded-xl border border-edge/10 p-3 hover:bg-page">
             <span className="min-w-0 flex-1">
@@ -108,7 +108,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
       </section>
 
       <section aria-label="Visit history" className="rounded-2xl border border-edge/15 bg-card p-4">
-        <h2 className="mb-2 text-lg font-extrabold">Visit history</h2>
+        <h2 className="t-card mb-3">Visit history</h2>
         {v.visits.length === 0 ? (
           <p className="text-ink-soft">No visits yet.</p>
         ) : (
@@ -139,7 +139,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
       </section>
 
       <section aria-label="Changes to this vehicle" className="rounded-2xl border border-edge/15 bg-card p-4">
-        <h2 className="mb-2 text-lg font-extrabold">Changes to this vehicle</h2>
+        <h2 className="t-card mb-3">Changes to this vehicle</h2>
         {v.history.length === 0 ? (
           <p className="text-ink-soft">No changes have been recorded since the register began keeping them.</p>
         ) : (

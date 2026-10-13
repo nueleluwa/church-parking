@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { IconAlert, IconCalendar, IconCar, IconPin, IconReport, IconTrend, IconUsers } from "@/components/icons";
-import { field } from "@/components/ui";
 import { listAllServices } from "@/lib/db";
 import {
   CATEGORIES,
@@ -34,7 +33,7 @@ const ICONS: Record<ReportCategoryId, React.ReactNode> = {
   alerts: <IconAlert className="h-6 w-6" />,
 };
 
-const input = `${field} !mt-1 !py-2.5 !text-base`;
+const input = "input";
 
 /**
  * AD-4: pick a kind of report, set the dates and service, and download each report as a CSV. The reports are defined in
@@ -73,10 +72,10 @@ export default async function ReportsPage({
 
   return (
     <>
-      <header className="flex flex-wrap items-start justify-between gap-4">
+      <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
         <div className="lg:max-w-[16rem]">
-          <h1 className="text-2xl font-extrabold">Reports</h1>
-          <p className="text-ink-soft">Generate and download reports from your parking data.</p>
+          <h1 className="t-page">Reports</h1>
+          <p className="mt-1.5 text-[0.9375rem] leading-snug text-ink-soft">Generate and download reports from your parking data.</p>
         </div>
 
         <form aria-label="Report filters" className="w-full space-y-2 lg:w-auto">
@@ -101,7 +100,7 @@ export default async function ReportsPage({
                 ))}
               </select>
             </label>
-            <button className="col-span-2 min-h-12 rounded-full bg-night px-6 font-semibold text-white lg:col-span-1">Apply</button>
+            <button className="btn btn-dark col-span-2 lg:col-span-1">Apply</button>
           </div>
           <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm lg:justify-end">
             {presets.map((p) => (
@@ -159,7 +158,7 @@ export default async function ReportsPage({
         </ul>
       </nav>
 
-      <section aria-label={`${category.name} reports`} className="rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
+      <section aria-label={`${category.name} reports`} className="surface">
         <h2 className="text-xl font-extrabold">{category.name} reports</h2>
         <p className="text-ink-soft">{CATEGORY_INTRO[category.id]}</p>
         <p className="mb-4 mt-1 text-sm text-ink-soft" data-testid="report-scope">

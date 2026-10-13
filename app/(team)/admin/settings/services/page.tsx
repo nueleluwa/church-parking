@@ -133,10 +133,10 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
             </select>
           </label>
           <div className="col-span-2 flex gap-2 sm:col-span-1">
-            <Link href="/admin/settings/services" className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full border-2 border-edge/70 bg-white px-5 font-semibold hover:bg-page">
+            <Link href="/admin/settings/services" className="btn btn-outline flex-1">
               Reset
             </Link>
-            <button className="min-h-12 flex-1 rounded-full bg-accent px-5 font-semibold text-white hover:bg-accent-dark">Apply</button>
+            <button className="btn btn-primary flex-1">Apply</button>
           </div>
         </form>
 
@@ -157,7 +157,7 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
                 return (
                   <li key={s.id} className="flex min-w-0 items-center gap-3 rounded-xl border border-edge/10 p-3">
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-lg font-bold">{s.name}</span>
+                      <span className="block truncate t-card">{s.name}</span>
                       <span className="block text-sm text-ink-soft">
                         {DAYS[s.weekday]} · {hhmm(s.starts_at)} to {hhmm(s.ends_at)}
                       </span>
@@ -165,7 +165,7 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
                         <Chip tone={p.tone}>{p.label}</Chip>
                       </span>
                     </span>
-                    <Link href={scope({ edit: String(s.id) })} aria-label={`Edit ${s.name} (${DAYS[s.weekday]})`} className="inline-flex min-h-10 items-center rounded-lg border border-edge/30 bg-white px-4 font-semibold hover:bg-page">
+                    <Link href={scope({ edit: String(s.id) })} aria-label={`Edit ${s.name} (${DAYS[s.weekday]})`} className="btn btn-quiet">
                       Edit
                     </Link>
                   </li>
@@ -174,31 +174,31 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
             </ul>
 
             <div className="hidden overflow-x-auto lg:block">
-              <table className="w-full min-w-[40rem] text-left">
+              <table className="dt min-w-[40rem]">
                 <caption className="sr-only">Services</caption>
-                <thead className="border-b border-edge/20 text-sm text-ink-soft">
+                <thead>
                   <tr>
                     {["Service", "Day", "Start", "End", "Status", "Actions"].map((c) => (
-                      <th key={c} scope="col" className="whitespace-nowrap px-2.5 py-3 font-semibold">
+                      <th key={c} scope="col" className="dt-th">
                         {c}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-edge/15">
+                <tbody>
                   {services.map((s) => {
                     const p = PROGRESS[serviceProgress(now, s)];
                     return (
-                      <tr key={s.id} className="hover:bg-page">
-                        <td className="px-2.5 py-3 font-bold">{s.name}</td>
-                        <td className="whitespace-nowrap px-2.5 py-3">{DAYS[s.weekday]}</td>
-                        <td className="whitespace-nowrap px-2.5 py-3">{hhmm(s.starts_at)}</td>
-                        <td className="whitespace-nowrap px-2.5 py-3">{hhmm(s.ends_at)}</td>
-                        <td className="px-2.5 py-3">
+                      <tr key={s.id}>
+                        <td className="dt-td font-bold">{s.name}</td>
+                        <td className="dt-td whitespace-nowrap">{DAYS[s.weekday]}</td>
+                        <td className="dt-td whitespace-nowrap">{hhmm(s.starts_at)}</td>
+                        <td className="dt-td whitespace-nowrap">{hhmm(s.ends_at)}</td>
+                        <td className="dt-td">
                           <Chip tone={p.tone}>{p.label}</Chip>
                         </td>
-                        <td className="px-2.5 py-3">
-                          <Link href={scope({ edit: String(s.id) })} aria-label={`Edit ${s.name} (${DAYS[s.weekday]})`} className="inline-flex min-h-10 items-center rounded-lg border border-edge/30 bg-white px-4 font-semibold hover:bg-page">
+                        <td className="dt-td">
+                          <Link href={scope({ edit: String(s.id) })} aria-label={`Edit ${s.name} (${DAYS[s.weekday]})`} className="btn btn-quiet">
                             Edit
                           </Link>
                         </td>
@@ -212,8 +212,8 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
         )}
       </section>
 
-      <section aria-label="Service selection rules" className="rounded-2xl bg-blush p-4 sm:p-5">
-        <h2 className="text-lg font-bold">Service selection rules</h2>
+      <section aria-label="Service selection rules" className="surface-tint">
+        <h2 className="t-card">Service selection rules</h2>
         <ol className="mt-2 list-decimal space-y-1 pl-5">
           <li>Pick the next service that starts within 30 minutes.</li>
           <li>Otherwise pick the service in progress.</li>
@@ -225,7 +225,7 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
       {sp.add && (
         <Panel title="Add service" closeHref={scope()}>
           <div className="flex-1 overflow-y-auto px-5 py-4">
-            <AdminForm action={saveServiceAction} submitLabel="Add service" clearOnSuccess>
+            <AdminForm action={saveServiceAction} submitLabel="Add service" clearOnSuccess savedMessage="Service added to the schedule.">
               <ServiceFields />
             </AdminForm>
           </div>
@@ -234,7 +234,7 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
       {editing && !sp.add && (
         <Panel title={`Edit ${editing.name}`} closeHref={scope()}>
           <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
-            <AdminForm action={saveServiceAction} submitLabel="Save service">
+            <AdminForm action={saveServiceAction} submitLabel="Save service" savedMessage="Service schedule updated.">
               <ServiceFields service={editing} />
             </AdminForm>
             <p className="rounded-xl bg-page p-3 text-sm text-ink-soft">Visits already made keep this service, whatever its name or times become. To stop drivers using it, switch it off rather than deleting it.</p>

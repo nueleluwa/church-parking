@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { useToast } from "@/components/ds/Toast";
 import { IconMore } from "@/components/icons";
 import { setMemberActiveAction } from "../member-actions";
 
@@ -12,6 +13,7 @@ import { setMemberActiveAction } from "../member-actions";
  */
 export function RowMenu({ id, name, active }: { id: string; name: string; active: boolean }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [asking, setAsking] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
@@ -21,6 +23,7 @@ export function RowMenu({ id, name, active }: { id: string; name: string; active
     start(async () => {
       const r = await setMemberActiveAction(id, !active);
       setMessage({ ok: Boolean(r.ok), text: r.message ?? r.error ?? "" });
+      if (r.ok) toast.success("Member account updated.");
       setAsking(false);
       setOpen(false);
       router.refresh();

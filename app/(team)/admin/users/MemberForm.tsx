@@ -148,10 +148,10 @@ export function MemberForm({ doneHref }: { doneHref: string }) {
       </div>
 
       <div className="flex gap-3 border-t border-edge/15 bg-white px-5 py-4">
-        <button type="button" onClick={() => router.push(doneHref)} disabled={pending} className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full border-2 border-edge/70 bg-white px-6 font-semibold hover:bg-page disabled:opacity-60">
+        <button type="button" onClick={() => router.push(doneHref)} disabled={pending} className="btn btn-outline flex-1">
           Cancel
         </button>
-        <button disabled={pending} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-accent px-6 font-semibold text-white hover:bg-accent-dark disabled:opacity-60">
+        <button disabled={pending} className="btn btn-primary flex-1">
           {pending && <Spinner />}
           {pending ? "Saving..." : "Save member"}
         </button>

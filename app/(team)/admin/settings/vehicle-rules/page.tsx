@@ -20,7 +20,7 @@ export default async function VehicleRulesPage() {
       </p>
       <div className="grid items-start gap-4 lg:grid-cols-2">
         <section aria-label="Vehicle identification" className={card}>
-          <h2 className="text-lg font-bold">Vehicle identification</h2>
+          <h2 className="t-card">Vehicle identification</h2>
           <dl className="divide-y divide-edge/15">
             <Row label="Number plates">Stored in capitals, letters and digits only, shown like PHC 234 AB</Row>
             <Row label="Searching">Capitals and spaces do not matter; 0 and O, 1 and I match each other</Row>
@@ -29,7 +29,7 @@ export default async function VehicleRulesPage() {
           </dl>
         </section>
         <section aria-label="Check-in and release rules" className={card}>
-          <h2 className="text-lg font-bold">Check-in and release</h2>
+          <h2 className="t-card">Check-in and release</h2>
           <dl className="divide-y divide-edge/15">
             <Row label="Open visits for one car">Only one at a time</Row>
             <Row label="Two claims on one plate">The first claim on the day wins; the second is refused and raises an alert</Row>
@@ -40,7 +40,7 @@ export default async function VehicleRulesPage() {
           </dl>
         </section>
         <section aria-label="Service selection rules" className={card}>
-          <h2 className="text-lg font-bold">Service selection rules</h2>
+          <h2 className="t-card">Service selection rules</h2>
           <ol className="mt-2 list-decimal space-y-1 pl-5">
             <li>Pick the next service that starts within 30 minutes.</li>
             <li>Otherwise pick the service in progress.</li>
@@ -55,7 +55,7 @@ export default async function VehicleRulesPage() {
           </p>
         </section>
         <section aria-label="Security limits" className={card}>
-          <h2 className="text-lg font-bold">Security limits</h2>
+          <h2 className="t-card">Security limits</h2>
           <dl className="divide-y divide-edge/15">
             <Row label="Check-ins per phone number">{RATE_LIMITS.phone.max} an hour</Row>
             <Row label="Check-ins per internet address">

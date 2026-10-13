@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { IconAlert, IconCheck, IconChevronRight } from "@/components/icons";
 import { PageNumbers } from "@/components/Pager";
-import { VehicleImage } from "@/components/VehicleImage";
+import { VehicleIdentity } from "@/components/ds/VehicleIdentity";
 import { field } from "@/components/ui";
 import { listSweepHistory, type SweepHistoryRow } from "@/lib/db";
 import { formatPlate, lagosDate, lagosParts, pageNumbers, parseRange, rangeDays } from "@/lib/rules";
@@ -62,7 +62,7 @@ export default async function SweepHistoryPage({ searchParams }: { searchParams:
     <>
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold">Sweep history</h1>
+          <h1 className="t-page">Sweep history</h1>
           <p className="text-ink-soft">What was recorded in each sweep: who, when, and the outcome.</p>
         </div>
         <Link href="/staff/sweep" className="inline-flex min-h-12 items-center rounded-full border-2 border-edge/70 bg-white px-5 font-semibold hover:bg-page">
@@ -89,10 +89,10 @@ export default async function SweepHistoryPage({ searchParams }: { searchParams:
             </select>
           </label>
           <div className="col-span-2 flex gap-2 sm:col-span-1">
-            <Link href="/staff/sweep/history" className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full border-2 border-edge/70 bg-white px-5 font-semibold hover:bg-page">
+            <Link href="/staff/sweep/history" className="btn btn-outline flex-1">
               Reset
             </Link>
-            <button className="min-h-12 flex-1 rounded-full bg-accent px-5 font-semibold text-white hover:bg-accent-dark">Apply</button>
+            <button className="btn btn-primary flex-1">Apply</button>
           </div>
         </div>
         {error && (
@@ -102,7 +102,7 @@ export default async function SweepHistoryPage({ searchParams }: { searchParams:
         )}
       </form>
 
-      <section aria-label="Sweep outcomes" className="rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
+      <section aria-label="Sweep outcomes" className="surface">
         <h2 className="mb-3 text-xl font-extrabold">
           Sweep outcomes (<span data-testid="history-count">{total}</span>)
         </h2>
@@ -110,66 +110,57 @@ export default async function SweepHistoryPage({ searchParams }: { searchParams:
           <p className="rounded-xl bg-page p-4 font-medium">No sweep outcomes were recorded in these dates.</p>
         ) : (
           <>
-            <ul className="grid gap-3 xl:hidden">
+            <ul className="grid gap-3 wide:hidden">
               {rows.map((r) => (
                 <li key={r.id}>
-                  <Link href={`/admin/visits/${r.visitId}`} aria-label={`Visit of ${formatPlate(r.plate)}`} className="flex items-center gap-3 rounded-xl border border-edge/10 p-3 hover:bg-page">
-                    <VehicleImage size="sm" />
-                    <span className="min-w-0 flex-1">
-                      <span data-plate className="block whitespace-nowrap text-lg font-extrabold">
-                        {formatPlate(r.plate)}
-                      </span>
-                      <span className="block text-sm text-ink-soft">
+                  <Link href={`/admin/visits/${r.visitId}`} aria-label={`Visit of ${formatPlate(r.plate)}`} className="row-card">
+                    <VehicleIdentity plate={r.plate} detail={false}>
+                      <span className="t-support block">
                         <span data-area>{r.areaName}</span> · {r.serviceName}
                       </span>
-                      <span className="block text-sm text-ink-soft">
+                      <span className="t-support block">
                         {lagosParts(r.at).date} {lagosParts(r.at).time} · {r.staff ?? "The system"}
                       </span>
-                      <span className="mt-1 block">
+                      <span className="mt-1.5 block">
                         <Outcome row={r} />
                       </span>
-                    </span>
+                    </VehicleIdentity>
                     <IconChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-ink-soft" />
                   </Link>
                 </li>
               ))}
             </ul>
-            <div className="hidden overflow-x-auto xl:block">
-              <table className="w-full min-w-[46rem] text-left">
+            <div className="hidden overflow-x-auto wide:block">
+              <table className="dt min-w-[46rem]">
                 <caption className="sr-only">Sweep outcomes</caption>
-                <thead className="border-b border-edge/20 text-sm text-ink-soft">
+                <thead>
                   <tr>
                     {["When", "Vehicle", "Service", "Parking area", "Outcome", "Recorded by", "What it means"].map((c) => (
-                      <th key={c} scope="col" className="whitespace-nowrap px-2.5 py-3 font-semibold">
+                      <th key={c} scope="col" className="dt-th">
                         {c}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-edge/15">
+                <tbody>
                   {rows.map((r) => (
-                    <tr key={r.id} className="hover:bg-page">
-                      <td className="whitespace-nowrap px-2.5 py-3">
+                    <tr key={r.id}>
+                      <td className="dt-td whitespace-nowrap">
                         <span className="block">{lagosParts(r.at).date}</span>
                         <span className="block text-sm text-ink-soft">{lagosParts(r.at).time}</span>
                       </td>
-                      <td className="px-2.5 py-3">
-                        <span className="flex items-center gap-3">
-                          <VehicleImage size="sm" />
-                          <Link href={`/admin/visits/${r.visitId}`} aria-label={`Visit of ${formatPlate(r.plate)}`} data-plate className="whitespace-nowrap text-lg font-extrabold underline-offset-2 hover:underline">
-                            {formatPlate(r.plate)}
-                          </Link>
-                        </span>
+                      <td className="dt-td max-w-[20rem]">
+                        <VehicleIdentity plate={r.plate} detail={false} href={`/admin/visits/${r.visitId}`} ariaLabel={`Visit of ${formatPlate(r.plate)}`} />
                       </td>
-                      <td className="px-2.5 py-3">{r.serviceName}</td>
-                      <td data-area className="whitespace-nowrap px-2.5 py-3">
+                      <td className="dt-td">{r.serviceName}</td>
+                      <td data-area className="dt-td whitespace-nowrap">
                         {r.areaName}
                       </td>
-                      <td className="px-2.5 py-3">
+                      <td className="dt-td">
                         <Outcome row={r} />
                       </td>
-                      <td className="px-2.5 py-3">{r.staff ?? "The system"}</td>
-                      <td className="px-2.5 py-3 text-sm text-ink-soft">
+                      <td className="dt-td">{r.staff ?? "The system"}</td>
+                      <td className="dt-td text-sm text-ink-soft">
                         {OUTCOMES[r.outcome].note}
                         {r.sweepServiceName && <span className="block">Sweep of {r.sweepServiceName}</span>}
                       </td>

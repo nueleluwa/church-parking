@@ -20,11 +20,12 @@ import { MemberChip } from "./MemberChip";
 import { MemberForm } from "./MemberForm";
 import { Panel } from "../Panel";
 import { RowMenu } from "./RowMenu";
+import { MetricRow } from "@/components/ds/MetricCard";
 import { Summary } from "./Summary";
 
 export type MembersSearch = { q?: string; status?: string; cars?: string; joined?: string; size?: string; page?: string; add?: string; notice?: string };
 
-const inputClass = `${field} !mt-1 !py-2.5 !text-base`;
+const inputClass = "input";
 
 /**
  * The Members tab: the numbers, the filters, and one page of members with their saved-car counts. Names and phone numbers are
@@ -71,14 +72,14 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
         </p>
       )}
 
-      <section aria-label="Summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <MetricRow>
         <Summary id="u-total" label="Total members" value={summary.total} note="Registered accounts" href="/admin/users" icon={<IconUsers className="h-5 w-5" />} />
         <Summary id="u-vehicles" label="Registered vehicles" value={summary.vehicles} note="Across all members" href="/admin/users?cars=with" icon={<IconCar className="h-5 w-5" />} />
         <Summary id="u-new" label="New this month" value={summary.newThisMonth} note="Members added" href="/admin/users?joined=month" icon={<IconClock className="h-5 w-5" />} />
         <Summary id="u-inactive" label="Inactive members" value={summary.inactive} note="Not active" href="/admin/users?status=inactive" icon={<IconLock className="h-5 w-5" />} />
-      </section>
+      </MetricRow>
 
-      <section aria-label="Members" className="rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
+      <section aria-label="Members" className="surface">
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-extrabold">
@@ -86,7 +87,7 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
             </h2>
             <p className="text-sm text-ink-soft">View and manage church members and their registered vehicles.</p>
           </div>
-          <Link href={scope({ add: "1", page: "" })} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-accent px-6 font-semibold text-white hover:bg-accent-dark">
+          <Link href={scope({ add: "1", page: "" })} className="btn btn-primary">
             <IconPlus aria-hidden="true" className="h-5 w-5" />
             Add member
           </Link>
@@ -100,7 +101,7 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
               Search by name, phone number or vehicle number
               <span className="relative mt-1 block">
                 <IconSearch aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-soft" />
-                <input name="q" defaultValue={q} autoComplete="off" placeholder="Search by name, phone number or vehicle number…" className={`${field} !mt-0 !py-2.5 !pl-11 !text-base`} />
+                <input name="q" defaultValue={q} autoComplete="off" placeholder="Search by name, phone number or vehicle number…" className={`${field} !mt-0 !pl-11`} />
               </span>
             </label>
             <label className="block text-sm font-medium">
@@ -121,10 +122,10 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
             </label>
           </div>
           <div className="flex gap-2 sm:justify-end">
-            <Link href="/admin/users" className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full border-2 border-edge/70 bg-white px-6 font-semibold hover:bg-page sm:flex-none">
+            <Link href="/admin/users" className="btn btn-outline flex-1 sm:flex-none">
               Reset
             </Link>
-            <button className="min-h-12 flex-1 rounded-full bg-accent px-6 font-semibold text-white hover:bg-accent-dark sm:flex-none">Apply filters</button>
+            <button className="btn btn-primary flex-1 sm:flex-none">Apply filters</button>
           </div>
         </form>
 
@@ -139,7 +140,7 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
           </p>
         ) : (
           <>
-            <ul className="grid gap-3 xl:hidden">
+            <ul className="grid gap-3 wide:hidden">
               {rows.map((m) => (
                 <li key={m.id} className="flex min-w-0 items-start gap-3 rounded-xl border border-edge/10 p-3">
                   <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-panel text-sm font-extrabold">
@@ -160,22 +161,22 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
               ))}
             </ul>
 
-            <div className="hidden overflow-x-auto xl:block">
-              <table className="w-full min-w-[52rem] text-left">
+            <div className="hidden overflow-x-auto wide:block">
+              <table className="dt min-w-[52rem]">
                 <caption className="sr-only">Members</caption>
-                <thead className="border-b border-edge/20 text-sm text-ink-soft">
+                <thead>
                   <tr>
                     {["Member name", "Phone number", "Vehicles", "Status", "Date joined", "Actions"].map((c) => (
-                      <th key={c} scope="col" className="whitespace-nowrap px-2.5 py-3 font-semibold">
+                      <th key={c} scope="col" className="dt-th">
                         {c}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-edge/15">
+                <tbody>
                   {rows.map((m) => (
-                    <tr key={m.id} className="hover:bg-page">
-                      <td className="px-2.5 py-3">
+                    <tr key={m.id}>
+                      <td className="dt-td">
                         <span className="flex items-center gap-3">
                           <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-panel text-sm font-extrabold">
                             {initials(m.fullName)}
@@ -185,20 +186,20 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
                           </Link>
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-2.5 py-3">{m.phone}</td>
-                      <td className="px-2.5 py-3">
+                      <td className="dt-td whitespace-nowrap">{m.phone}</td>
+                      <td className="dt-td">
                         <span className="flex items-center gap-2">
                           {m.vehicleCount > 0 && <VehicleImage size="sm" className="!w-10" />}
                           {m.vehicleCount}
                         </span>
                       </td>
-                      <td className="px-2.5 py-3">
+                      <td className="dt-td">
                         <MemberChip state={memberState({ active: m.active, locked_until: m.lockedUntil }, now)} />
                       </td>
-                      <td className="whitespace-nowrap px-2.5 py-3">{lagosParts(m.createdAt).date}</td>
-                      <td className="px-2.5 py-3">
+                      <td className="dt-td whitespace-nowrap">{lagosParts(m.createdAt).date}</td>
+                      <td className="dt-td">
                         <span className="flex items-center gap-2">
-                          <Link href={`/admin/members/${m.id}`} aria-label={`View member ${m.fullName}`} className="inline-flex min-h-10 items-center rounded-lg border border-edge/30 bg-white px-4 font-semibold hover:bg-page">
+                          <Link href={`/admin/members/${m.id}`} aria-label={`View member ${m.fullName}`} className="btn btn-quiet">
                             View
                           </Link>
                           <RowMenu id={m.id} name={m.fullName} active={m.active} />

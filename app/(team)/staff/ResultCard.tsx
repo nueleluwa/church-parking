@@ -1,5 +1,6 @@
 "use client";
 
+import { useToast } from "@/components/ds/Toast";
 import { useState, useTransition } from "react";
 import { FactList, FactRow } from "@/components/FactRow";
 import { IconAlert, IconCalendar, IconCheck, IconClock, IconFlag, IconPin, IconTimer, IconUser } from "@/components/icons";
@@ -39,6 +40,7 @@ type Props = {
 export function ResultCard({ card, method, onDone, doneLabel, corrections, areas = [], station = null }: Props) {
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
+  const toast = useToast();
   const [finished, setFinished] = useState<"released" | "held" | null>(null);
   const [phone, setPhone] = useState<string | null>(null);
   // The car park can be corrected here, so what is shown follows the correction
@@ -79,6 +81,7 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections, areas
       if (r.ok) {
         buzz(80);
         setFinished("released");
+        toast.success("Vehicle released successfully.");
       } else {
         buzz([120, 80, 120]);
         setMessage(r.message);
@@ -91,6 +94,7 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections, areas
       if (r.ok) {
         buzz([200, 100, 200]);
         setFinished("held");
+        toast.success("Car held. The coordinator has been alerted.");
       } else setMessage(r.message);
     });
   }
@@ -100,6 +104,7 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections, areas
       if (r.ok) {
         setCleared(true);
         setMessage(null);
+        toast.success("The hold was lifted.");
       } else setMessage(r.message);
     });
   }
@@ -112,6 +117,7 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections, areas
         setMoveChoice("");
         setMessage(null);
         setNotice(`Car park changed to ${r.areaName}.`);
+        toast.success("Car park updated.");
       } else {
         setNotice(null);
         setMessage(r.message);

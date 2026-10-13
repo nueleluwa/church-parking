@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { IconAlert, IconCar, IconCheck, IconChevronRight, IconClock, IconLogout, IconSearch } from "@/components/icons";
+import { Chip } from "@/components/ds/Chip";
+import { EmptyState } from "@/components/ds/EmptyState";
+import { MetricCard, MetricRow } from "@/components/ds/MetricCard";
+import { PageHeader } from "@/components/ds/PageHeader";
+import { VehicleIdentity } from "@/components/ds/VehicleIdentity";
 import { PageNumbers } from "@/components/Pager";
-import { VehicleImage } from "@/components/VehicleImage";
 import { field } from "@/components/ui";
 import { countParkedNowIn, countVisitsByStatus, listActiveAreas, listAllServices, searchVisits } from "@/lib/db";
 import {
   VISITS_PAGE_SIZE,
   VISIT_STATUSES,
-  describeVehicle,
   durationText,
   formatPlate,
   hasRole,
@@ -36,59 +39,21 @@ const addDays = (date: string, n: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-/** A status in words and a small symbol, in the church's black, grey and red only. */
-function Chip({ status, held }: { status: VisitStatus; held: boolean }) {
-  const look =
-    status === "parked"
-      ? "border-edge/70 bg-white text-ink"
-      : status === "released"
-        ? "border-edge/15 bg-panel text-ink-soft"
-        : "border-accent bg-white text-accent";
+/** A visit's status in words and a small mark, in the church's black, grey and red only. */
+function VisitChip({ status, held }: { status: VisitStatus; held: boolean }) {
+  const tone = status === "parked" ? "on" : status === "released" ? "off" : "alert";
   const icon = status === "parked" ? <IconCheck className="h-3.5 w-3.5" /> : status === "released" ? <IconLogout className="h-3.5 w-3.5" /> : <IconAlert className="h-3.5 w-3.5" />;
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
-      <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-sm font-semibold ${look}`}>
-        {icon}
+      <Chip tone={tone} icon={icon}>
         {statusLabel(status)}
-      </span>
-      {held && <span className="whitespace-nowrap rounded-full border border-accent px-2.5 py-0.5 text-sm font-semibold text-accent">On hold</span>}
+      </Chip>
+      {held && <Chip tone="alert">On hold</Chip>}
     </span>
   );
 }
 
-function Summary({
-  label,
-  value,
-  note,
-  href,
-  id,
-  icon,
-}: {
-  label: string;
-  value: number;
-  note: string;
-  href: string;
-  id: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <Link href={href} className="flex items-center gap-3 rounded-2xl border border-edge/15 bg-card p-4 hover:bg-page">
-      <span aria-hidden="true" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-page text-ink sm:flex">
-        {icon}
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-medium text-ink-soft">{label}</span>
-        <span data-testid={id} className="block text-3xl font-extrabold leading-tight">
-          {value}
-        </span>
-        <span className="block text-xs text-ink-soft">{note}</span>
-      </span>
-      <IconChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-ink-soft" />
-    </Link>
-  );
-}
-
-const inputClass = `${field} !mt-1 !py-2.5 !text-base`;
+const inputClass = "input";
 
 /**
  * Every visit, by dates, service, parking area, status and plate, a page at a time. A row is one visit (a car's stay), not an entry or an exit.
@@ -144,13 +109,10 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
 
   return (
     <>
-      <header>
-        <h1 className="text-2xl font-extrabold">Visits</h1>
-        <p className="text-ink-soft">View and manage all parking visits. Each visit represents a vehicle&apos;s entry and exit record.</p>
-      </header>
+      <PageHeader title="Visits">View and manage all parking visits. Each visit represents a vehicle&apos;s entry and exit record.</PageHeader>
 
-      <section aria-label="Summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <Summary
+      <MetricRow>
+        <MetricCard
           id="v-total"
           label="Total visits"
           value={periodTotal}
@@ -158,9 +120,9 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
           href={href({ status: "", page: "" })}
           icon={<IconCar className="h-5 w-5" />}
         />
-        <Summary id="v-checked-in" label="Checked in" value={counts.parked} note={`Open visits · ${periodNote.toLowerCase()}`} href={href({ status: "parked", page: "" })} icon={<IconCheck className="h-5 w-5" />} />
-        <Summary id="v-released" label="Released" value={counts.released} note={`Released at the exit · ${periodNote.toLowerCase()}`} href={href({ status: "released", page: "" })} icon={<IconLogout className="h-5 w-5" />} />
-        <Summary
+        <MetricCard id="v-checked-in" label="Checked in" value={counts.parked} note={`Open visits · ${periodNote.toLowerCase()}`} href={href({ status: "parked", page: "" })} icon={<IconCheck className="h-5 w-5" />} />
+        <MetricCard id="v-released" label="Released" value={counts.released} note={`Released at the exit · ${periodNote.toLowerCase()}`} href={href({ status: "released", page: "" })} icon={<IconLogout className="h-5 w-5" />} />
+        <MetricCard
           id="v-parked-now"
           label="Currently parked"
           value={parkedNow}
@@ -168,7 +130,7 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
           href={`/admin/visits?${new URLSearchParams({ from: today, to: today, status: "parked", ...(service ? { service: String(service.id) } : {}), ...(area ? { area: area.slug } : {}) })}`}
           icon={<IconClock className="h-5 w-5" />}
         />
-      </section>
+      </MetricRow>
 
       <form aria-label="Filters" className="space-y-3 rounded-2xl border border-edge/15 bg-card p-4">
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-[minmax(0,1.6fr)_1fr_1fr_1fr]">
@@ -225,10 +187,10 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
             </span>
           </label>
           <div className="flex gap-2">
-            <Link href="/admin/visits" className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full border-2 border-edge/70 bg-white px-6 font-semibold hover:bg-page sm:flex-none">
+            <Link href="/admin/visits" className="btn btn-outline flex-1 sm:flex-none">
               Reset
             </Link>
-            <button className="min-h-12 flex-1 rounded-full bg-accent px-6 font-semibold text-white hover:bg-accent-dark sm:flex-none">Apply filters</button>
+            <button className="btn btn-primary flex-1 sm:flex-none">Apply filters</button>
           </div>
         </div>
         <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -248,7 +210,7 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
         </p>
       </form>
 
-      <section aria-label="Visits" className="rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
+      <section aria-label="Visits" className="surface">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-extrabold">
             Visits (<span data-testid="v-count">{matching}</span>)
@@ -264,85 +226,75 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
         </div>
 
         {rows.length === 0 ? (
-          <p className="rounded-xl bg-page p-4 font-medium">
-            No visits match these filters.{" "}
-            {filtersOn && (
-              <Link href="/admin/visits" className="font-semibold text-accent underline">
-                Reset filters
-              </Link>
-            )}
-          </p>
+          <EmptyState
+            action={
+              filtersOn && (
+                <Link href="/admin/visits" className="font-semibold text-accent underline">
+                  Reset filters
+                </Link>
+              )
+            }
+          >
+            No visits match these filters.
+          </EmptyState>
         ) : (
           <>
-            <ul className="grid gap-3 xl:hidden">
+            <ul className="grid gap-3 wide:hidden">
               {rows.map((v) => {
                 const d = visitDuration(v);
                 return (
-                  <li key={v.id}>
-                    <Link href={view(v)} aria-label={`Visit of ${formatPlate(v.plate)}`} className="flex items-center gap-3 rounded-xl border border-edge/10 p-3 hover:bg-page">
-                      <VehicleImage size="sm" />
-                      <span className="min-w-0 flex-1">
-                        <span data-plate className="block whitespace-nowrap text-lg font-extrabold">
-                          {formatPlate(v.plate)}
-                        </span>
-                        <span className="block text-sm text-ink-soft">
+                  <li key={v.id} className="min-w-0">
+                    <Link href={view(v)} aria-label={`Visit of ${formatPlate(v.plate)}`} className="row-card">
+                      <VehicleIdentity plate={v.plate} detail={false}>
+                        <span className="t-support block">
                           <span data-area>{v.areaName}</span> · {v.serviceName}
                         </span>
-                        <span className="block text-sm text-ink-soft">
+                        <span className="t-support block">
                           {v.member ? "Member" : "Guest"} · {entry(v).date} {entry(v).time}
                           {v.releasedAt && ` → ${lagosParts(v.releasedAt).time}`}
                           {d !== null && ` · ${durationText(d)}`}
                         </span>
-                        <span className="mt-1 block">
-                          <Chip status={v.status} held={v.held} />
+                        <span className="mt-1.5 block">
+                          <VisitChip status={v.status} held={v.held} />
                         </span>
-                      </span>
-                      <IconChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-ink-soft" />
+                      </VehicleIdentity>
+                      <IconChevronRight aria-hidden="true" className="ml-auto h-5 w-5 shrink-0 text-ink-soft" />
                     </Link>
                   </li>
                 );
               })}
             </ul>
 
-            <div className="hidden overflow-x-auto xl:block">
-              <table className="w-full min-w-[56rem] text-left">
+            <div className="hidden overflow-x-auto wide:block">
+              <table className="dt min-w-[56rem]">
                 <caption className="sr-only">Visits</caption>
-                <thead className="border-b border-edge/20 text-sm text-ink-soft">
+                <thead>
                   <tr>
                     {["Vehicle", "Type", "Service", "Parking area", "Entry time", "Exit time", "Duration", "Status", "Actions"].map((c) => (
-                      <th key={c} scope="col" className="whitespace-nowrap px-2.5 py-3 font-semibold">
+                      <th key={c} scope="col" className="dt-th">
                         {c}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-edge/15">
+                <tbody>
                   {rows.map((v) => {
                     const d = visitDuration(v);
-                    const details = describeVehicle({ make: v.make, colour: v.colour });
                     return (
-                      <tr key={v.id} className="hover:bg-page">
-                        <td className="px-2.5 py-3">
-                          <span className="flex items-center gap-3">
-                            <VehicleImage size="sm" />
-                            <span className="min-w-0">
-                              <Link href={view(v)} aria-label={`Visit of ${formatPlate(v.plate)}`} data-plate className="block whitespace-nowrap text-lg font-extrabold underline-offset-2 hover:underline">
-                                {formatPlate(v.plate)}
-                              </Link>
-                              {details && <span className="block truncate text-sm text-ink-soft">{details}</span>}
-                            </span>
-                          </span>
+                      <tr key={v.id}>
+                        <td className="dt-td max-w-[20rem]">
+                          <VehicleIdentity plate={v.plate} make={v.make} colour={v.colour} href={view(v)} ariaLabel={`Visit of ${formatPlate(v.plate)}`} />
                         </td>
-                        <td className="px-2.5 py-3 whitespace-nowrap">{v.member ? "Member" : "Guest"}</td>
-                        <td className="px-2.5 py-3">{v.serviceName}</td>
-                        <td data-area className="px-2.5 py-3 whitespace-nowrap">
+                        <td className="dt-td whitespace-nowrap">{v.member ? "Member" : "Guest"}</td>
+                        <td className="dt-td">{v.serviceName}</td>
+                        <td data-area className="dt-td whitespace-nowrap">
                           {v.areaName}
                         </td>
-                        <td className="px-2.5 py-3 whitespace-nowrap">
+                        <td className="dt-td whitespace-nowrap">
                           <span className="block">{entry(v).date}</span>
                           <span className="block text-sm text-ink-soft">{entry(v).time}</span>
                         </td>
-                        <td className="px-2.5 py-3 whitespace-nowrap">
+                        <td className="dt-td whitespace-nowrap">
                           {v.releasedAt ? (
                             <>
                               <span className="block">{lagosParts(v.releasedAt).date}</span>
@@ -352,12 +304,12 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
                             <span className="text-ink-soft">{v.status === "parked" ? "Not yet released" : "-"}</span>
                           )}
                         </td>
-                        <td className="px-2.5 py-3 whitespace-nowrap">{d === null ? <span className="text-ink-soft">-</span> : durationText(d)}</td>
-                        <td className="px-2.5 py-3">
-                          <Chip status={v.status} held={v.held} />
+                        <td className="dt-td whitespace-nowrap">{d === null ? <span className="text-ink-soft">-</span> : durationText(d)}</td>
+                        <td className="dt-td">
+                          <VisitChip status={v.status} held={v.held} />
                         </td>
-                        <td className="px-2.5 py-3">
-                          <Link href={view(v)} aria-label={`View visit of ${formatPlate(v.plate)}`} className="inline-flex min-h-10 items-center rounded-lg border border-edge/30 bg-white px-4 font-semibold hover:bg-page">
+                        <td className="dt-td">
+                          <Link href={view(v)} aria-label={`View visit of ${formatPlate(v.plate)}`} className="btn btn-quiet">
                             View
                           </Link>
                         </td>

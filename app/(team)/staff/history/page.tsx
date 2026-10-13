@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { IconChevronRight } from "@/components/icons";
 import { StatusBadge } from "@/components/StatusBadge";
-import { VehicleImage } from "@/components/VehicleImage";
+import { VehicleIdentity } from "@/components/ds/VehicleIdentity";
 import { listRecentActivity } from "@/lib/db";
 import { formatLagosTime } from "@/lib/format";
 import { formatPlate, lagosDate } from "@/lib/rules";
@@ -39,13 +39,12 @@ export default async function HistoryPage() {
                   aria-label={`${k.word}: ${formatPlate(e.plate)}`}
                   className="flex items-center gap-3 px-4 py-3 hover:bg-page"
                 >
-                  <VehicleImage size="sm" />
                   <span className="min-w-0 flex-1">
-                    <span className="block whitespace-nowrap text-lg font-extrabold">{formatPlate(e.plate)}</span>
-                    <span className="block text-sm text-ink-soft">
-                      <span>{k.word}</span> <span aria-hidden="true">•</span> <span data-area>{e.areaName}</span>
-                    </span>
-                    {details && <span className="block text-sm text-ink-soft">{details}</span>}
+                    <VehicleIdentity plate={e.plate} summary={details}>
+                      <span className="t-support block">
+                        <span>{k.word}</span> <span aria-hidden="true">•</span> <span data-area>{e.areaName}</span>
+                      </span>
+                    </VehicleIdentity>
                   </span>
                   <span className="flex shrink-0 flex-col items-end gap-1 text-xs">
                     <span className="whitespace-nowrap text-sm font-semibold">{formatLagosTime(e.at)}</span>

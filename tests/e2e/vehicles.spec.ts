@@ -439,7 +439,7 @@ test("an unknown vehicle page is not found; the register works at every screen w
       expect(await page.evaluate(() => window.innerWidth), `the view is wider than the ${width}px screen`).toBe(width);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(overflow, `sideways scroll at ${width}px`).toBeLessThanOrEqual(1);
-      if (width >= 1280) {
+      if (width >= 1440) {
         await expect(main(page).getByRole("columnheader", { name: "Linked member / owner" })).toBeVisible();
         await expect(main(page).getByRole("link", { name: `Edit vehicle ${spaced(car.plate)}` })).toBeVisible();
       } else {

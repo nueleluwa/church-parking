@@ -1,10 +1,12 @@
 "use client";
 
+import { useToast } from "@/components/ds/Toast";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { IconAlert, IconCheck, IconClock } from "@/components/icons";
-import { VehicleImage } from "@/components/VehicleImage";
+import { Chip as DsChip } from "@/components/ds/Chip";
+import { VehicleIdentity } from "@/components/ds/VehicleIdentity";
 import { elapsedText, formatPlate, SWEEP_SORTS, type SweepSort } from "@/lib/rules";
 import { sweepAction, sweepStillHereManyAction } from "../ops-actions";
 
@@ -45,21 +47,16 @@ function Elapsed({ since, initial }: { since: string; initial: number }) {
 function Chip({ row }: { row: BoardRow }) {
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
-      <span
-        className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2.5 py-0.5 text-sm font-semibold ${
-          row.overstaying ? "border-accent bg-white text-accent" : "border-edge/70 bg-white text-ink"
-        }`}
-      >
-        {row.overstaying ? <IconAlert className="h-3.5 w-3.5" /> : <IconCheck className="h-3.5 w-3.5" />}
+      <DsChip tone={row.overstaying ? "alert" : "on"} icon={row.overstaying ? <IconAlert className="h-3.5 w-3.5" /> : <IconCheck className="h-3.5 w-3.5" />}>
         {row.overstaying ? "Overstaying" : "On site"}
-      </span>
-      {row.stillHere && <span className="whitespace-nowrap rounded-full border border-edge/20 bg-panel px-2.5 py-0.5 text-sm font-semibold text-ink-soft">Marked still here</span>}
-      {row.held && <span className="whitespace-nowrap rounded-full border border-accent px-2.5 py-0.5 text-sm font-semibold text-accent">On hold</span>}
+      </DsChip>
+      {row.stillHere && <DsChip tone="off">Marked still here</DsChip>}
+      {row.held && <DsChip tone="alert">On hold</DsChip>}
     </span>
   );
 }
 
-const outline = "inline-flex min-h-10 items-center justify-center rounded-lg border border-edge/30 bg-white px-3 font-semibold hover:bg-page disabled:opacity-60";
+const outline = "btn btn-quiet";
 
 /**
  * The cars on site, with the actions a sweep allows. Marking a car "Still here" keeps its visit open; marking it "Gone" closes it as a missed
@@ -89,7 +86,13 @@ export function SweepBoard({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [page, setPage] = useState(1);
   const [confirm, setConfirm] = useState<{ kind: "gone"; id: string } | { kind: "many" } | null>(null);
+  const toast = useToast();
   const [notice, setNotice] = useState<{ ok: boolean; message: string } | null>(null);
+  /** The message next to the list, and a toast: both only after the server has answered. */
+  const notify = (ok: boolean, message: string) => {
+    setNotice({ ok, message });
+    if (ok) toast.success("Sweep updated.");
+  };
   const [pending, start] = useTransition();
   const [pick, setPick] = useState(services[0]?.id ? String(services[0].id) : "");
 
@@ -125,10 +128,10 @@ export function SweepBoard({
       const r = await sweepAction(id, false, sweepService?.id ?? rows.find((x) => x.id === id)!.serviceId);
       if (r.ok) {
         setHere((h) => new Set(h).add(id));
-        setNotice({ ok: true, message: "Marked Still here. The visit stays open." });
+        notify(true, "Marked Still here. The visit stays open.");
         router.refresh();
       } else {
-        setNotice({ ok: false, message: r.message });
+        notify(false, r.message);
       }
     });
   }
@@ -144,10 +147,10 @@ export function SweepBoard({
           next.delete(id);
           return next;
         });
-        setNotice({ ok: true, message: "Closed as a missed check-out. This is not a release." });
+        notify(true, "Closed as a missed check-out. This is not a release.");
         router.refresh();
       } else {
-        setNotice({ ok: false, message: r.message });
+        notify(false, r.message);
       }
     });
   }
@@ -160,7 +163,7 @@ export function SweepBoard({
       setHere((h) => new Set([...h, ...r.done]));
       // Anything that could not be marked stays selected, so it can be looked at again
       setSelected(new Set(r.failed.map((f) => f.visitId)));
-      setNotice({ ok: r.ok, message: r.message });
+      notify(r.ok, r.message);
       router.refresh();
     });
   }
@@ -193,7 +196,7 @@ export function SweepBoard({
 
   return (
     <div className="grid items-start gap-4 min-[1700px]:grid-cols-[minmax(0,1fr)_20rem]">
-      <section aria-label="Vehicles on site" className="rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
+      <section aria-label="Vehicles on site" className="surface">
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-xl font-extrabold">
@@ -251,85 +254,73 @@ export function SweepBoard({
               Select all {shown.length} on this page
             </label>
 
-            <ul className="grid gap-3 xl:hidden">
+            <ul className="grid gap-3 wide:hidden">
               {shown.map((r) => (
                 <li key={r.id} className="rounded-xl border border-edge/10 p-3">
                   <div className="flex items-start gap-3">
                     <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggle(r.id)} aria-label={`Select ${formatPlate(r.plate)}`} className="mt-1 h-5 w-5 shrink-0 accent-[var(--color-accent)]" />
-                    <VehicleImage size="sm" />
-                    <div className="min-w-0 flex-1">
-                      <span data-plate className="block whitespace-nowrap text-lg font-extrabold">
-                        {formatPlate(r.plate)}
-                      </span>
-                      <span className="block text-sm text-ink-soft">
+                    <VehicleIdentity plate={r.plate} detail={false}>
+                      <span className="t-support block">
                         {r.serviceName} · {r.serviceTimes}
                       </span>
-                      <span className="block text-sm text-ink-soft">
+                      <span className="t-support block">
                         <span data-area>{r.areaName}</span> · {r.entryDate} {r.entryTime}
                       </span>
-                      <span className="flex items-center gap-1 text-sm text-ink-soft">
+                      <span className="t-support flex items-center gap-1">
                         <IconClock className="h-4 w-4" /> <Elapsed since={r.checkedInAt} initial={r.elapsed} />
                       </span>
-                      <span className="mt-1 block">
+                      <span className="mt-1.5 block">
                         <Chip row={{ ...r, stillHere: stillHere(r) }} />
                       </span>
-                    </div>
+                    </VehicleIdentity>
                   </div>
                   <div className="mt-3">{actions(r)}</div>
                 </li>
               ))}
             </ul>
 
-            <div className="hidden overflow-x-auto xl:block">
-              <table className="w-full min-w-[46rem] text-left">
+            <div className="hidden overflow-x-auto wide:block">
+              <table className="dt min-w-[46rem]">
                 <caption className="sr-only">Vehicles on site</caption>
-                <thead className="border-b border-edge/20 text-sm text-ink-soft">
+                <thead>
                   <tr>
-                    <th scope="col" className="w-9 px-2 py-3">
+                    <th scope="col" className="dt-th w-9">
                       <input type="checkbox" checked={onPage} onChange={togglePage} aria-label="Select all on this page" className="h-5 w-5 accent-[var(--color-accent)]" />
                     </th>
                     {["Vehicle", "Service", "Parking area", "Entry time", "Duration", "Status", "Actions"].map((c) => (
-                      <th key={c} scope="col" className="whitespace-nowrap px-2 py-3 font-semibold">
+                      <th key={c} scope="col" className="dt-th">
                         {c}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-edge/15">
+                <tbody>
                   {shown.map((r) => (
-                    <tr key={r.id} className="hover:bg-page">
-                      <td className="px-2 py-3">
+                    <tr key={r.id}>
+                      <td className="dt-td">
                         <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggle(r.id)} aria-label={`Select ${formatPlate(r.plate)}`} className="h-5 w-5 accent-[var(--color-accent)]" />
                       </td>
-                      <td className="px-2 py-3">
-                        <span className="flex items-center gap-3">
-                          <VehicleImage size="sm" />
-                          <span className="min-w-0">
-                            <Link href={`/admin/visits/${r.id}`} aria-label={`View visit of ${formatPlate(r.plate)}`} data-plate className="block whitespace-nowrap text-lg font-extrabold underline-offset-2 hover:underline">
-                              {formatPlate(r.plate)}
-                            </Link>
-                            {r.detail && <span className="block truncate text-sm text-ink-soft">{r.detail}</span>}
-                          </span>
-                        </span>
+                      <td className="dt-td max-w-[20rem]">
+                        <VehicleIdentity plate={r.plate} summary={r.detail} href={`/admin/visits/${r.id}`} ariaLabel={`View visit of ${formatPlate(r.plate)}`} />
                       </td>
-                      <td className="px-2 py-3">
+                      <td className="dt-td">
                         <span className="block">{r.serviceName}</span>
                         <span className="block text-sm text-ink-soft">{r.serviceTimes}</span>
                       </td>
-                      <td data-area className="whitespace-nowrap px-2 py-3">
+                      <td data-area className="dt-td whitespace-nowrap">
                         {r.areaName}
                       </td>
-                      <td className="whitespace-nowrap px-2 py-3">
+                      <td className="dt-td whitespace-nowrap">
                         <span className="block">{r.entryDate}</span>
                         <span className="block text-sm text-ink-soft">{r.entryTime}</span>
                       </td>
-                      <td className="whitespace-nowrap px-2 py-3">
+                      <td className="dt-td whitespace-nowrap">
                         <Elapsed since={r.checkedInAt} initial={r.elapsed} />
                       </td>
-                      <td className="px-2 py-3">
+                      <td className="dt-td">
                         <Chip row={{ ...r, stillHere: stillHere(r) }} />
                       </td>
-                      <td className="px-2 py-3">{actions(r, false)}</td>
+                      <td className="dt-td">{actions(r, false)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -358,7 +349,7 @@ export function SweepBoard({
         )}
       </section>
 
-      <aside aria-label="Sweep actions" className="space-y-4 rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
+      <aside aria-label="Sweep actions" className="space-y-4 surface">
         <div>
           <h2 className="text-lg font-extrabold">Sweep actions</h2>
           <p className="text-sm text-ink-soft">Record what you find. A car is released only at the exit, against its pass.</p>

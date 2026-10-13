@@ -10,7 +10,7 @@ export default async function NotificationsPage() {
   await requireStaff("admin");
   return (
     <section aria-label="Notifications" className={`${card} max-w-3xl`}>
-      <h2 className="text-lg font-bold">Notifications</h2>
+      <h2 className="t-card">Notifications</h2>
       <p className="mt-2">
         The system does not send emails, text messages or push notifications, so there is nothing to switch on or off here. Instead, alerts appear on
         the Live Parking board as soon as they happen, and the Live tab shows how many are open: a car that does not match, a second check-in for a car

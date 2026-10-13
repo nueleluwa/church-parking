@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { IconAlert, IconCar, IconLogout, IconSearch } from "@/components/icons";
+import { MetricCard, MetricRow } from "@/components/ds/MetricCard";
+import { PageHeader } from "@/components/ds/PageHeader";
 import { field } from "@/components/ui";
 import { countReleasedToday, listActiveAreas, listActiveServices, listOnSite } from "@/lib/db";
 import {
@@ -29,32 +31,7 @@ export const dynamic = "force-dynamic";
 type Search = { area?: string; service?: string; timing?: string; status?: string; q?: string; sort?: string; sweep?: string };
 
 const hhmm = (t: string) => t.slice(0, 5);
-const inputClass = `${field} !mt-1 !py-2.5 !text-base`;
-
-function Summary({ label, value, note, icon, id, href }: { label: string; value: string; note: string; icon: React.ReactNode; id: string; href?: string }) {
-  const body = (
-    <>
-      <span aria-hidden="true" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-page text-ink sm:flex">
-        {icon}
-      </span>
-      <span className="min-w-0">
-        <span className="block text-sm font-medium text-ink-soft">{label}</span>
-        <span data-testid={id} className="block text-3xl font-extrabold leading-tight">
-          {value}
-        </span>
-        <span className="block text-xs text-ink-soft">{note}</span>
-      </span>
-    </>
-  );
-  const box = "flex items-center gap-3 rounded-2xl border border-edge/15 bg-card p-4";
-  return href ? (
-    <Link href={href} className={`${box} hover:bg-page`}>
-      {body}
-    </Link>
-  ) : (
-    <div className={box}>{body}</div>
-  );
-}
+const inputClass = "input";
 
 /**
  * Sweep: the cars still recorded as parked, and what a team lead can record about them (Still here, or Gone). It reconciles; it never
@@ -115,19 +92,20 @@ export default async function SweepPage({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold">Sweep</h1>
-          <p className="text-ink-soft">Manage vehicles still on site and record their check-out.</p>
-        </div>
-        <Link href="/staff/sweep/history" className="inline-flex min-h-12 items-center rounded-full border-2 border-edge/70 bg-white px-5 font-semibold hover:bg-page">
-          View sweep history
-        </Link>
-      </header>
+      <PageHeader
+        title="Sweep"
+        actions={
+          <Link href="/staff/sweep/history" className="btn btn-outline">
+            View sweep history
+          </Link>
+        }
+      >
+        Manage vehicles still on site and record their check-out.
+      </PageHeader>
 
-      <section aria-label="Summary" className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-        <Summary id="sw-on-site" label="Vehicles on site" value={String(summary.onSite)} note="Currently parked" icon={<IconCar className="h-5 w-5" />} href="/staff/sweep" />
-        <Summary
+      <MetricRow>
+        <MetricCard id="sw-on-site" label="Vehicles on site" value={String(summary.onSite)} note="Currently parked" icon={<IconCar className="h-5 w-5" />} href="/staff/sweep" />
+        <MetricCard
           id="sw-overstaying"
           label="Overstaying"
           value={String(summary.overstaying)}
@@ -135,11 +113,11 @@ export default async function SweepPage({ searchParams }: { searchParams: Promis
           icon={<IconAlert className="h-5 w-5" />}
           href="/staff/sweep?status=overstaying"
         />
-        <Summary id="sw-no-record" label="No check-in record" value="Not tracked" note="Cars with no visit are added at the exit" icon={<IconSearch className="h-5 w-5" />} href="/staff/register" />
-        <Summary id="sw-released" label="Released today" value={String(releasedToday)} note="Released at the exit today" icon={<IconLogout className="h-5 w-5" />} />
-      </section>
+        <MetricCard id="sw-no-record" label="No check-in record" value="Not tracked" note="Cars with no visit are added at the exit" icon={<IconSearch className="h-5 w-5" />} href="/staff/register" />
+        <MetricCard id="sw-released" label="Released today" value={String(releasedToday)} note="Released at the exit today" icon={<IconLogout className="h-5 w-5" />} />
+      </MetricRow>
 
-      <form aria-label="Filters" className="space-y-3 rounded-2xl border border-edge/15 bg-card p-4">
+      <form aria-label="Filters" className="surface space-y-4">
         {sweepService && <input type="hidden" name="sweep" value={sweepService.id} />}
         {sort !== "oldest" && <input type="hidden" name="sort" value={sort} />}
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -192,10 +170,10 @@ export default async function SweepPage({ searchParams }: { searchParams: Promis
             </span>
           </label>
           <div className="flex gap-2">
-            <Link href={sweepService ? `/staff/sweep?sweep=${sweepService.id}` : "/staff/sweep"} className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full border-2 border-edge/70 bg-white px-6 font-semibold hover:bg-page sm:flex-none">
+            <Link href={sweepService ? `/staff/sweep?sweep=${sweepService.id}` : "/staff/sweep"} className="btn btn-outline flex-1 sm:flex-none">
               Reset
             </Link>
-            <button className="min-h-12 flex-1 rounded-full bg-accent px-6 font-semibold text-white hover:bg-accent-dark sm:flex-none">Apply filters</button>
+            <button className="btn btn-primary flex-1 sm:flex-none">Apply filters</button>
           </div>
         </div>
         <p className="text-xs text-ink-soft">

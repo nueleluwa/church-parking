@@ -30,9 +30,9 @@ export default async function GeneralSettingsPage({ searchParams }: { searchPara
   return (
     <div className="grid items-start gap-4 lg:grid-cols-2">
       <section aria-label="Church details" className={card}>
-        <h2 className="text-lg font-bold">Church details</h2>
+        <h2 className="t-card">Church details</h2>
         <p className="mb-4 text-sm text-ink-soft">Basic information used across the system.</p>
-        <AdminForm action={saveChurchSettingsAction} submitLabel="Save changes" variant="red">
+        <AdminForm action={saveChurchSettingsAction} submitLabel="Save changes" variant="red" savedMessage="Settings saved successfully.">
           <label className="block font-medium">
             Church name
             <input name="churchName" defaultValue={settings.churchName} required minLength={SETTING_LIMITS.churchName.min} maxLength={SETTING_LIMITS.churchName.max} autoComplete="off" className={input} />
@@ -61,9 +61,9 @@ export default async function GeneralSettingsPage({ searchParams }: { searchPara
       </section>
 
       <section aria-label="System preferences" className={card}>
-        <h2 className="text-lg font-bold">System preferences</h2>
+        <h2 className="t-card">System preferences</h2>
         <p className="mb-4 text-sm text-ink-soft">How the system works for your team.</p>
-        <AdminForm action={savePreferenceSettingsAction} submitLabel="Save changes" variant="red">
+        <AdminForm action={savePreferenceSettingsAction} submitLabel="Save changes" variant="red" savedMessage="Settings saved successfully.">
           <label className="block font-medium">
             Default search method
             <select name="defaultSearch" defaultValue={settings.defaultSearch} className={input}>

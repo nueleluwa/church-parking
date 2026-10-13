@@ -31,7 +31,7 @@ function Row({ area }: { area: AreaRow }) {
     <li className="py-4 first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-2 text-lg font-bold">
+          <p className="flex flex-wrap items-center gap-2 t-card">
             <span className="truncate">{shownName}</span>
             <Chip tone={area.active ? "on" : "off"}>{area.active ? "Active" : "Off"}</Chip>
           </p>
@@ -42,11 +42,11 @@ function Row({ area }: { area: AreaRow }) {
         {!editing && (
           <div className="flex flex-wrap gap-2">
             {area.active && (
-              <Link href={`/admin/settings/qr-signs/${area.slug}`} aria-label={`QR sign for ${shownName}`} className="inline-flex min-h-10 items-center rounded-lg border border-edge/30 bg-white px-4 font-semibold hover:bg-page">
+              <Link href={`/admin/settings/qr-signs/${area.slug}`} aria-label={`QR sign for ${shownName}`} className="btn btn-quiet">
                 QR sign
               </Link>
             )}
-            <button onClick={() => setEditing(true)} aria-label={`Rename ${shownName}`} className="inline-flex min-h-10 items-center rounded-lg border border-edge/30 bg-white px-4 font-semibold hover:bg-page">
+            <button onClick={() => setEditing(true)} aria-label={`Rename ${shownName}`} className="btn btn-quiet">
               Rename
             </button>
           </div>

@@ -10,8 +10,8 @@ export default async function SettingsLayout({ children }: { children: React.Rea
   return (
     <>
       <header className="print:hidden">
-        <h1 className="text-2xl font-extrabold">Settings</h1>
-        <p className="text-ink-soft">Manage your church parking system and preferences.</p>
+        <h1 className="t-page">Settings</h1>
+        <p className="mt-1.5 text-[0.9375rem] leading-snug text-ink-soft">Manage your church parking system and preferences.</p>
       </header>
       <SettingsNav />
       {children}

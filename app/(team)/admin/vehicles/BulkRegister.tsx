@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition, type ReactNode } from "react";
+import { useToast } from "@/components/ds/Toast";
 import { Spinner } from "@/components/Spinner";
 import { setVehiclesActiveAction, type BulkVehicleState } from "../vehicle-actions";
 
@@ -10,6 +11,7 @@ import { setVehiclesActiveAction, type BulkVehicleState } from "../vehicle-actio
  * Ticks apply to this page only.
  */
 export function BulkRegister({ children }: { children: ReactNode }) {
+  const toast = useToast();
   const root = useRef<HTMLDivElement>(null);
   const [count, setCount] = useState(0);
   const [ask, setAsk] = useState<"deactivate" | "activate" | null>(null);
@@ -42,6 +44,7 @@ export function BulkRegister({ children }: { children: ReactNode }) {
     start(async () => {
       const answer = await setVehiclesActiveAction(ids, active);
       setResult(answer);
+      if (answer.ok) toast.success("Vehicle status updated.");
       setAsk(null);
       clear();
     });
@@ -80,10 +83,10 @@ export function BulkRegister({ children }: { children: ReactNode }) {
                   : "They can be checked in again."}
               </p>
               <div className="mt-3 flex gap-2">
-                <button type="button" onClick={() => setAsk(null)} disabled={pending} className="min-h-10 flex-1 rounded-full border-2 border-edge/70 bg-white px-4 font-semibold hover:bg-page">
+                <button type="button" onClick={() => setAsk(null)} disabled={pending} className="btn btn-outline btn-sm flex-1 !rounded-full">
                   Cancel
                 </button>
-                <button type="button" onClick={() => run(ask === "activate")} disabled={pending} className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-full bg-accent px-4 font-semibold text-white hover:bg-accent-dark disabled:opacity-60">
+                <button type="button" onClick={() => run(ask === "activate")} disabled={pending} className="btn btn-primary btn-sm flex-1 !rounded-full">
                   {pending && <Spinner />}
                   Yes, {word.toLowerCase()}
                 </button>

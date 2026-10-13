@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ActivityChart, DurationColumns } from "@/components/charts";
+import { PageHeader } from "@/components/ds/PageHeader";
 import { IconCar, IconClock, IconDownload, IconLogout, IconUsers } from "@/components/icons";
-import { field } from "@/components/ui";
 import { listActiveAreas, listAllServices, listParkedNow, listReportVisits } from "@/lib/db";
 import {
   activitySeries,
@@ -51,14 +51,14 @@ function Kpi({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="flex h-full items-start gap-3 rounded-2xl border border-edge/15 bg-card p-4">
-      <span aria-hidden="true" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-page text-ink sm:flex">
+    <div className="metric h-full !items-start">
+      <span aria-hidden="true" className="metric-icon">
         {icon}
       </span>
       <div className="min-w-0">
         <p className="text-sm font-medium text-ink-soft">{label}</p>
-        <p className="flex flex-wrap items-baseline gap-x-2">
-          <span data-testid={id} className="text-3xl font-extrabold leading-tight">
+        <p className="mt-1 flex flex-wrap items-baseline gap-x-2">
+          <span data-testid={id} className="t-metric">
             {value}
           </span>
           {trend !== null && trend !== 0 && (
@@ -67,7 +67,7 @@ function Kpi({
             </span>
           )}
         </p>
-        <p className="text-xs text-ink-soft">{trend !== null ? versus : note}</p>
+        <p className="mt-1.5 text-xs leading-snug text-ink-soft">{trend !== null ? versus : note}</p>
       </div>
     </div>
   );
@@ -96,7 +96,7 @@ function RankList({ rows, empty }: { rows: { id: number; name: string; count: nu
   );
 }
 
-const card = "rounded-2xl border border-edge/15 bg-card p-4 sm:p-5";
+const card = "surface";
 
 /**
  * AD-5: analytics for a chosen period, service and car park. Every number is worked out from the visit records
@@ -175,33 +175,31 @@ export default async function AnalyticsPage({
 
   return (
     <>
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold">Analytics</h1>
-          <p className="text-ink-soft">Insights from your parking operations</p>
-        </div>
-        <a
-          href={exportHref}
-          className="inline-flex min-h-12 items-center gap-2 rounded-full bg-accent px-6 font-semibold text-white hover:bg-accent-dark"
-        >
-          <IconDownload className="h-5 w-5" />
-          Export CSV
-        </a>
-      </header>
+      <PageHeader
+        title="Analytics"
+        actions={
+          <a href={exportHref} className="btn btn-primary">
+            <IconDownload className="h-5 w-5" />
+            Export CSV
+          </a>
+        }
+      >
+        Insights from your parking operations
+      </PageHeader>
 
-      <form aria-label="Filters" className={`${card} space-y-3`}>
+      <form aria-label="Filters" className={`${card} space-y-4`}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-[1fr_1fr_1.2fr_1.2fr_auto] lg:items-end">
           <label className="block text-sm font-medium">
             From
-            <input type="date" name="from" defaultValue={range.from} max={today} required className={`${field} !mt-1 !py-2.5 !text-base`} />
+            <input type="date" name="from" defaultValue={range.from} max={today} required className={`input`} />
           </label>
           <label className="block text-sm font-medium">
             To
-            <input type="date" name="to" defaultValue={range.to} max={today} required className={`${field} !mt-1 !py-2.5 !text-base`} />
+            <input type="date" name="to" defaultValue={range.to} max={today} required className={`input`} />
           </label>
           <label className="col-span-2 block text-sm font-medium lg:col-span-1">
             Service
-            <select name="service" defaultValue={service ? String(service.id) : ""} className={`${field} !mt-1 !py-2.5 !text-base`}>
+            <select name="service" defaultValue={service ? String(service.id) : ""} className={`input`}>
               <option value="">All services</option>
               {services.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -212,7 +210,7 @@ export default async function AnalyticsPage({
           </label>
           <label className="col-span-2 block text-sm font-medium lg:col-span-1">
             Parking area
-            <select name="area" defaultValue={area?.slug ?? ""} className={`${field} !mt-1 !py-2.5 !text-base`}>
+            <select name="area" defaultValue={area?.slug ?? ""} className={`input`}>
               <option value="">All areas</option>
               {areas.map((a) => (
                 <option key={a.slug} value={a.slug}>
@@ -221,7 +219,7 @@ export default async function AnalyticsPage({
               ))}
             </select>
           </label>
-          <button className="col-span-2 min-h-12 rounded-full bg-night px-6 font-semibold text-white lg:col-span-1">Show analytics</button>
+          <button className="btn btn-dark col-span-2 lg:col-span-1">Show analytics</button>
         </div>
         <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           {presets.map((preset) => (
@@ -243,7 +241,7 @@ export default async function AnalyticsPage({
         </p>
       </form>
 
-      <section aria-label="Summary" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section aria-label="Summary" className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Kpi id="a-checked-in" label="Cars checked in" value={String(k.checkedIn)} note="Visits in this period" trend={vs(k.checkedIn, p.checkedIn)} versus={versus} icon={<IconCar className="h-5 w-5" />} />
         <Kpi id="a-left" label="Cars left" value={String(k.left)} note="Released at the exit" trend={vs(k.left, p.left)} versus={versus} icon={<IconLogout className="h-5 w-5" />} />
         <Kpi
@@ -260,7 +258,7 @@ export default async function AnalyticsPage({
 
       <div className="grid gap-4 lg:grid-cols-3">
         <section aria-label="Vehicle activity" className={`${card} lg:col-span-2`}>
-          <h2 className="text-lg font-bold">Vehicle activity</h2>
+          <h2 className="t-card">Vehicle activity</h2>
           <p className="mb-3 text-sm text-ink-soft">
             Check-ins and check-outs {activity.grain === "hour" ? "by the hour" : activity.grain === "day" ? "by day" : "by week"}. The line is cars with no
             recorded check-out, including any that left without being scanned.
@@ -277,7 +275,7 @@ export default async function AnalyticsPage({
         </section>
 
         <section aria-label="Vehicles by parking area" className={card}>
-          <h2 className="text-lg font-bold">Vehicles by parking area</h2>
+          <h2 className="t-card">Vehicles by parking area</h2>
           <p className="mb-3 text-sm text-ink-soft">Live: cars parked right now. The date range does not change this.</p>
           {parkedRows.length === 0 ? (
             <p className="text-ink-soft">No parking areas.</p>
@@ -303,12 +301,12 @@ export default async function AnalyticsPage({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section aria-label="Top parking areas by check-ins" className={card}>
-          <h2 className="text-lg font-bold">Top parking areas by check-ins</h2>
+          <h2 className="t-card">Top parking areas by check-ins</h2>
           <p className="mb-3 text-sm text-ink-soft">Cars checked in during this period</p>
           <RankList rows={areaRank} empty="No check-ins in this period." />
         </section>
         <section aria-label="Top services by check-ins" className={card}>
-          <h2 className="text-lg font-bold">Top services by check-ins</h2>
+          <h2 className="t-card">Top services by check-ins</h2>
           <p className="mb-3 text-sm text-ink-soft">Cars checked in during this period</p>
           <RankList rows={serviceRank} empty="No check-ins in this period." />
         </section>
@@ -316,13 +314,13 @@ export default async function AnalyticsPage({
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section aria-label="Average parking duration" className={card}>
-          <h2 className="text-lg font-bold">Average parking duration</h2>
+          <h2 className="t-card">Average parking duration</h2>
           <p className="mb-3 text-sm text-ink-soft">Time between check-in and check-out</p>
           {k.averageStay === null ? (
             <p className="text-ink-soft">Not enough completed visits to work this out. A visit counts once the car has been released at the exit.</p>
           ) : (
             <>
-              <p className="flex flex-wrap items-baseline gap-x-2">
+              <p className="mt-1 flex flex-wrap items-baseline gap-x-2">
                 <span className="text-3xl font-extrabold">{formatStay(k.averageStay)}</span>
                 {vs(k.averageStay, p.averageStay) !== null && vs(k.averageStay, p.averageStay) !== 0 && (
                   <span className="text-sm font-bold">
@@ -342,7 +340,7 @@ export default async function AnalyticsPage({
         </section>
 
         <section aria-label="Peak hours" className={card}>
-          <h2 className="text-lg font-bold">Peak hours</h2>
+          <h2 className="t-card">Peak hours</h2>
           <p className="mb-3 text-sm text-ink-soft">The hours with the most check-ins</p>
           {peaks.length === 0 ? (
             <p className="text-ink-soft">No check-ins in this period.</p>
