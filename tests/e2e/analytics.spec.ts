@@ -23,16 +23,22 @@ type Row = {
 
 /** The visits the page should be counting, straight from the database. */
 async function visitsBetween(from: string, to: string, filter: { area?: number; service?: number } = {}): Promise<Row[]> {
-  let q = adminClient()
-    .from("visits")
-    .select("id, status, checked_in_at, released_at, area_id, service_id, vehicles(plate)")
-    .gte("service_date", from)
-    .lte("service_date", to)
-    .limit(5000);
-  if (filter.area) q = q.eq("area_id", filter.area);
-  if (filter.service) q = q.eq("service_id", filter.service);
-  const { data } = await q;
-  return (data ?? []) as unknown as Row[];
+  // The database answers at most 1000 rows at a time, so read every page
+  const rows: Row[] = [];
+  for (let start = 0; ; start += 1000) {
+    let q = adminClient()
+      .from("visits")
+      .select("id, status, checked_in_at, released_at, area_id, service_id, vehicles(plate)")
+      .gte("service_date", from)
+      .lte("service_date", to)
+      .order("id")
+      .range(start, start + 999);
+    if (filter.area) q = q.eq("area_id", filter.area);
+    if (filter.service) q = q.eq("service_id", filter.service);
+    const { data } = await q;
+    rows.push(...((data ?? []) as unknown as Row[]));
+    if (!data || data.length < 1000) return rows;
+  }
 }
 
 const expected = (rows: Row[]) => {

@@ -64,6 +64,8 @@ test.describe("signed-in forms", () => {
     const admin = await (await browser.newContext()).newPage();
     await adminSignIn(admin);
     await admin.goto("/admin/users?tab=staff&add=1");
+    // The panel puts focus in its first field once the page is ready, so wait for that before typing
+    await expect(admin.getByRole("dialog").getByLabel("Full name")).toBeFocused({ timeout: 60_000 });
     await expectToggle(admin, /^Password \(at least 10 characters\)/, "a-long-enough-password");
     const { data: someone } = await adminClient().from("members").select("id").limit(1).single();
     await admin.goto(`/admin/members/${someone!.id}`);

@@ -345,6 +345,6 @@ test("no form on a team screen uses the browser's own validation bubble: a missi
   const panel = page.getByRole("dialog", { name: "Add service" });
   await panel.getByLabel("Name").fill("");
   await panel.getByRole("button", { name: "Add service" }).click();
-  await expect(panel.getByRole("alert")).toContainText("Please check “Name”.");
+  await expect(panel.getByRole("alert")).toContainText("Please fill in “Name”.");
   await expect(panel.getByLabel("Name")).toBeFocused();
 });

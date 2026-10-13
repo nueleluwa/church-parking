@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition, type ReactNode } from "react";
 import { useToast } from "@/components/ds/Toast";
+import { firstProblem } from "@/components/validate";
 import { Spinner } from "@/components/Spinner";
 import { errorBox, okBox, primaryButton, redButton, secondaryButton } from "@/components/ui";
 import type { AdminState } from "./admin-actions";
@@ -37,11 +38,10 @@ export function AdminForm({
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     // Our own required-field message, instead of the browser's speech bubble (which looks different on every device)
-    const missing = [...e.currentTarget.elements].find((el): el is HTMLInputElement => el instanceof HTMLInputElement && el.willValidate && !el.checkValidity());
-    if (missing) {
-      const label = (missing.labels?.[0]?.textContent ?? missing.name ?? "").split("*").join("").trim();
-      setState({ error: label ? `Please check “${label}”.` : "Please check the details and try again." });
-      missing.focus();
+    const problem = firstProblem(e.currentTarget, true);
+    if (problem) {
+      setState({ error: problem.message });
+      problem.el.focus();
       return;
     }
     const data = new FormData(e.currentTarget);
