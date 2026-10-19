@@ -19,7 +19,7 @@ const history: Tab = { href: "/staff/history", label: "History", full: "Recent s
 const live: Tab = { href: "/staff/dashboard", label: "Live", full: "Live board", icon: <IconAlert />, active: (p) => p === "/staff/dashboard" };
 const sweep: Tab = { href: "/staff/sweep", label: "Sweep", full: "Sweep", icon: <IconCheck />, active: (p) => p === "/staff/sweep" };
 const admin: Tab = { href: "/admin", label: "Admin", full: "Admin", icon: <IconCar />, active: (p) => p.startsWith("/admin") };
-const more: Tab = { href: "/staff/more", label: "More", full: "More", icon: <IconMore />, active: (p) => p === "/staff/more" || p === "/staff/service" };
+const more: Tab = { href: "/staff/more", label: "More", full: "More", icon: <IconMore />, active: (p) => p === "/staff/more" || p === "/staff/service" || p === "/staff/register/member" };
 
 /** Big tabs at the bottom of the screen, easy to reach with a thumb. */
 export function BottomNav({ coordinator, admin: isAdmin }: { coordinator: boolean; admin: boolean }) {

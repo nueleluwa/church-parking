@@ -14,6 +14,7 @@ const SCREENS: Record<string, { title: string; back: string }> = {
   "/staff/scan": { title: "Scan Pass", back: "/staff" },
   "/staff/search": { title: "Manual Lookup", back: "/staff" },
   "/staff/register": { title: "Add Car", back: "/staff" },
+  "/staff/register/member": { title: "Add Member", back: "/staff/more" },
   "/staff/history": { title: "Recent Scans", back: "/staff" },
   "/staff/service": { title: "Service Information", back: "/staff" },
   "/staff/more": { title: "More", back: "/staff" },

@@ -1,5 +1,6 @@
 export { normalisePlate, formatPlate } from "./plates";
 export { normalisePhone, maskPhone, toLocalPhone, localPhone, formatLocalPhone } from "./phone";
+export { parseMemberSearch, memberMatchCard, type MemberSearch, type MemberMatch, type MemberMatchCard } from "./staff-member";
 export { makeReference, makePassToken } from "./tokens";
 export {
   pickService,

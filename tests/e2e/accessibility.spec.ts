@@ -30,7 +30,7 @@ test("attendant screens have no automatically detectable accessibility problems"
   const attendant = await createStaff("attendant");
   try {
     await staffSignIn(page, attendant.phone, attendant.password);
-    for (const path of ["/staff", "/staff/scan", "/staff/search", "/staff/register", "/staff/history", "/staff/service", "/staff/more"]) {
+    for (const path of ["/staff", "/staff/scan", "/staff/search", "/staff/register", "/staff/register/member", "/staff/history", "/staff/service", "/staff/more"]) {
       await scan(page, path);
     }
   } finally {

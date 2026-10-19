@@ -39,6 +39,10 @@ A yellow warning names both car parks. This is usually a driver who scanned the 
 
 Tap **Add car**. Enter the plate and phone number (name is optional) and choose the car park. Give the driver the reference to remember.
 
+## Adding a new member
+
+Under **More**, tap **Add Member**. First type the driver's phone number or plate and tap **Check**, so you do not add someone twice. If nobody is found, enter their full name, Nigerian phone number and plate, then tap **Add member**. The driver can then check in with their phone number. This works only for a Nigerian number; for any other number, use **Add car** instead. The app refuses a number or plate that already belongs to a member, and your name is recorded.
+
 ## If the app stops working (paper fallback)
 
 1. Tell the coordinator at once.

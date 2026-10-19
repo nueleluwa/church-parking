@@ -1,4 +1,5 @@
 import { canAddVehicle } from "@/lib/rules/limits";
+import type { MemberMatch, MemberSearch } from "@/lib/rules/staff-member";
 import { lagosDate } from "@/lib/rules/service";
 import type { VehicleDetails } from "@/lib/rules/vehicle";
 import { db } from "./client";
@@ -247,6 +248,46 @@ export async function convertGuestToMember(token: string, pinHash: string): Prom
   const result = data as string;
   if (/^[0-9a-f-]{36}$/.test(result)) return { status: "ok", memberId: result };
   return { status: result as Exclude<ConvertResult["status"], "ok"> };
+}
+
+/**
+ * Members matching a phone number (by its local form) or a plate, with their plates, for staff who check whether
+ * someone is already registered. At most 5; the caller shows only what staff may see.
+ */
+export async function findMembersForStaff(search: MemberSearch): Promise<MemberMatch[]> {
+  let ids: string[];
+  if (search.kind === "phone") {
+    const { data, error } = await db().from("members").select("id").eq("phone_local", search.local).limit(5);
+    if (error) fail(error.message);
+    ids = (data ?? []).map((m) => m.id as string);
+  } else {
+    const { data, error } = await db()
+      .from("member_vehicles")
+      .select("member_id, vehicles!inner(plate)")
+      .eq("vehicles.plate", search.plate)
+      .limit(5);
+    if (error) fail(error.message);
+    ids = (data ?? []).map((r) => r.member_id as string);
+  }
+  if (ids.length === 0) return [];
+
+  const { data, error } = await db()
+    .from("members")
+    .select("full_name, phone, active, member_vehicles(vehicles(plate))")
+    .in("id", ids);
+  if (error) fail(error.message);
+  const rows = (data ?? []) as unknown as {
+    full_name: string;
+    phone: string;
+    active: boolean;
+    member_vehicles: { vehicles: { plate: string } }[];
+  }[];
+  return rows.map((r) => ({
+    full_name: r.full_name,
+    phone: r.phone,
+    active: r.active,
+    plates: r.member_vehicles.map((v) => v.vehicles.plate).sort(),
+  }));
 }
 
 // ---------- Members as an administrator sees them (Users screen) ----------

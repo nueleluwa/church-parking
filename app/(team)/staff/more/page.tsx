@@ -20,6 +20,7 @@ export default async function MorePage() {
         <li><MenuRow href="/staff/history" icon={<IconClock className="h-5 w-5" />} title="Recent Scans" /></li>
         <li><MenuRow href="/staff/search" icon={<IconSearch className="h-5 w-5" />} title="Manual Lookup" /></li>
         <li><MenuRow href="/staff/register" icon={<IconPlus className="h-5 w-5" />} title="Add Car" /></li>
+        <li><MenuRow href="/staff/register/member" icon={<IconUser className="h-5 w-5" />} title="Add Member" /></li>
         <li><MenuRow href="/staff/service" icon={<IconCalendar className="h-5 w-5" />} title="Service Information" /></li>
         {hasRole(staff.role, "coordinator") && (
           <>

@@ -32,7 +32,7 @@ const ITEMS: Item[] = [
     href: "/staff",
     label: "Attendant tools",
     icon: <IconScan />,
-    match: (p) => p === "/staff" || ["/staff/scan", "/staff/search", "/staff/register", "/staff/history", "/staff/service", "/staff/more"].includes(p),
+    match: (p) => p === "/staff" || ["/staff/scan", "/staff/search", "/staff/register", "/staff/register/member", "/staff/history", "/staff/service", "/staff/more"].includes(p),
   },
 ];
 
