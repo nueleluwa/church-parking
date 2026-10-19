@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseQrAreas, qrFlowEnabled } from "./qr-flow";
+import { parseQrAreas, qrFlowEnabled, readQrFlow } from "./qr-flow";
 
 describe("qrFlowEnabled", () => {
   test("off changes nothing for any car park", () => {
@@ -15,6 +15,19 @@ describe("qrFlowEnabled", () => {
   });
   test("on turns it on for every car park", () => {
     expect(qrFlowEnabled({ mode: "on", areas: [] }, "cp2")).toBe(true);
+  });
+});
+
+describe("readQrFlow", () => {
+  test("is off when nothing is set", () => {
+    expect(readQrFlow({})).toEqual({ mode: "off", areas: [] });
+  });
+  test("reads the mode and the car parks", () => {
+    expect(readQrFlow({ QR_SESSION_FLOW: "pilot", QR_SESSION_AREAS: "road, cp1" })).toEqual({ mode: "pilot", areas: ["road", "cp1"] });
+    expect(readQrFlow({ QR_SESSION_FLOW: " ON " })).toEqual({ mode: "on", areas: [] });
+  });
+  test.each(["", "yes", "true", "1", "pilot,on", "enabled"])("an unrecognised mode %j means off", (v) => {
+    expect(readQrFlow({ QR_SESSION_FLOW: v, QR_SESSION_AREAS: "cp1" }).mode).toBe("off");
   });
 });
 

@@ -12,6 +12,18 @@ export function parseQrAreas(text: string): string[] {
   return [...new Set(text.split(",").map((s) => s.trim().toLowerCase()).filter((s) => /^[a-z0-9-]{1,40}$/.test(s)))];
 }
 
+/**
+ * Reads QR_SESSION_FLOW (off, pilot, on) and QR_SESSION_AREAS (car park addresses, comma separated). A missing, empty or
+ * unrecognised mode means `off`, so a typo can never switch the new check-in on, or stop the app from starting.
+ */
+export function readQrFlow(env: Record<string, string | undefined>): QrFlowConfig {
+  const mode = (env.QR_SESSION_FLOW ?? "").trim().toLowerCase();
+  return {
+    mode: mode === "pilot" || mode === "on" ? mode : "off",
+    areas: parseQrAreas(env.QR_SESSION_AREAS ?? ""),
+  };
+}
+
 export function qrFlowEnabled(config: QrFlowConfig, areaSlug: string): boolean {
   if (config.mode === "on") return true;
   if (config.mode === "pilot") return config.areas.includes(areaSlug.toLowerCase());

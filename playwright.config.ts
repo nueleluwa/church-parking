@@ -9,6 +9,11 @@ try {
 
 const port = 3457;
 
+// The QR check-in is switched on for one test-only car park (its address is "qr-test", made and removed by the QR specs).
+// Every other car park keeps the original check-in, so the older specs are unaffected.
+process.env.QR_SESSION_FLOW = "pilot";
+process.env.QR_SESSION_AREAS = "qr-test";
+
 export default defineConfig({
   testDir: "tests/e2e",
   globalSetup: "./tests/e2e/global-setup.ts",

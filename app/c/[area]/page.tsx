@@ -13,12 +13,14 @@ import {
   listMemberVehicles,
   openPassTokensByVehicle,
 } from "@/lib/db";
+import { qrFlowConfig } from "@/lib/env";
 import { currentMember } from "@/lib/member-auth";
 import { rememberedPassTokens } from "@/lib/pass-cookie";
-import { formatPlate, hasServiceToday, lagosDate, passState, pickService, servicesForCheckIn } from "@/lib/rules";
+import { formatPlate, hasServiceToday, lagosDate, passState, pickService, qrFlowEnabled, servicesForCheckIn } from "@/lib/rules";
 import { GuestEntry } from "./GuestEntry";
 import { GuestForm } from "./GuestForm";
 import { MemberCheckIn } from "./MemberCheckIn";
+import { QrCheckIn } from "./QrCheckIn";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +33,18 @@ export default async function CheckInPage({ params }: { params: Promise<{ area: 
 
   const now = new Date();
   const today = lagosDate(now);
+
+  // A car park on the QR check-in: phone number, then confirm the registered car. No guest form, no PIN, no sign-up.
+  if (qrFlowEnabled(qrFlowConfig(), area.slug)) {
+    const all = await listActiveServices();
+    const isOpen = servicesForCheckIn(now, all).length > 0;
+    const closedMessage = isOpen
+      ? null
+      : hasServiceToday(now, all)
+        ? "The services have finished for today. Please see parking staff."
+        : "There is no service today. Check-in opens on Sunday.";
+    return <QrCheckIn areaSlug={area.slug} areaName={area.name} closedMessage={closedMessage} />;
+  }
 
   // CI-6: if this phone already has a live pass, offer it first.
   // A phone can hold several passes (a second car), so offer each one that is still good.
