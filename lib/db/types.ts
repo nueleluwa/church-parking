@@ -30,7 +30,8 @@ export type Member = {
   id: string;
   full_name: string;
   phone: string;
-  pin_hash: string;
+  /** Null for a member added without a PIN (QR flow): they cannot sign in with a PIN. */
+  pin_hash: string | null;
   failed_pins: number;
   locked_until: string | null;
   created_at: string;

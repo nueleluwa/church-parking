@@ -6,7 +6,7 @@ const MIN = 60_000;
 class FakeStore implements MemberAuthStore {
   clock = new Date("2026-10-11T08:00:00Z").getTime();
   events: { key: string; t: number }[] = [];
-  member = { id: "m1", pin_hash: "hash:1234", locked_until: null as string | null };
+  member = { id: "m1", pin_hash: "hash:1234" as string | null, locked_until: null as string | null };
 
   async getMemberByPhone(phone: string) {
     return phone === "+2348031234567" ? this.member : null;
@@ -56,6 +56,13 @@ describe("member PIN sign-in (T-4)", () => {
 
   test("an unknown phone number looks the same as a wrong PIN", async () => {
     expect(await attempt("1234", "+2348030000000")).toEqual({ status: "wrong" });
+  });
+
+  test("a member with no PIN can never sign in, whatever is typed, including the PIN the unknown-phone check uses", async () => {
+    store.member.pin_hash = null;
+    // The real store compares an unknown phone against a dummy hash of "0000"; that must not let this member in
+    store.verifyPin = async (hash, pin) => (hash ?? "hash:0000") === `hash:${pin}`;
+    for (const pin of ["0000", "1234", "9999"]) expect((await attempt(pin)).status).not.toBe("ok");
   });
 
   test("5 failures pause sign-in, even for the correct PIN, for 15 minutes", async () => {

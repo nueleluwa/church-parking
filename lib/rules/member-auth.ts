@@ -14,7 +14,7 @@ export const LOCKED_FOREVER = "9999-12-31T00:00:00.000Z";
 export const PIN_PATTERN = /^\d{4}$/;
 
 export interface MemberAuthStore {
-  getMemberByPhone(phone: string): Promise<{ id: string; pin_hash: string; locked_until: string | null; active?: boolean } | null>;
+  getMemberByPhone(phone: string): Promise<{ id: string; pin_hash: string | null; locked_until: string | null; active?: boolean } | null>;
   countFailures(key: string, windowMinutes: number): Promise<number>;
   recordFailure(key: string): Promise<void>;
   clearFailures(key: string): Promise<void>;
@@ -63,8 +63,11 @@ export async function attemptMemberSignIn(
     return { status: "paused" };
   }
 
+  // A member with no PIN (added by an admin for the QR flow) can never sign in with one. The check still runs, so it takes
+  // as long as any other, but its answer is ignored: an unknown phone is checked against a dummy hash, and a missing PIN
+  // must not be able to match that.
   const ok = await store.verifyPin(member?.pin_hash ?? null, input.pin);
-  if (ok && member) {
+  if (ok && member && member.pin_hash !== null) {
     await store.clearFailures(input.phoneKey);
     return { status: "ok", memberId: member.id };
   }
