@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { adminClient, live } from "./helpers";
+import { adminClient, live, randomPhone, randomPlate } from "./helpers";
 import { enterPhone, ensureQrArea, makeQrMember, QR_AREA, removeQrArea, removeQrMember, sha256, type QrMember } from "./qr-helpers";
 
 test.skip(!live, "needs .env.local with the Supabase key and admin login");
@@ -40,6 +40,27 @@ test("the QR car park asks for a phone number and offers no guest form or sign-u
   await page.goto("/c/cp1");
   await expect(page.getByRole("button", { name: "Continue as guest" })).toBeVisible();
   await expect(page.getByLabel("Your phone number")).toHaveCount(0);
+});
+
+test("the original guest check-in is refused for a phone check-in car park, even when its form is pointed there directly", async ({ page }) => {
+  const db = adminClient();
+  const plate = randomPlate("GX");
+  const phone = randomPhone();
+  await page.goto("/c/cp1");
+  await page.getByRole("button", { name: "Continue as guest" }).click();
+  await page.getByLabel("Your name").fill("Zqq Direct Guest");
+  await page.getByLabel("Phone number").fill(phone);
+  await page.getByLabel("Plate number").fill(plate);
+  // Point the form at the phone check-in car park, as a hand-made request would
+  await page.evaluate((slug) => {
+    (document.querySelector('input[name="area"]') as HTMLInputElement).value = slug;
+  }, QR_AREA);
+  await page.getByRole("button", { name: "Get my pass" }).click();
+  await page.getByRole("button", { name: "Yes, get my pass" }).click();
+  await expect(page.getByText("This car park uses phone check-in.")).toBeVisible({ timeout: 30_000 });
+  expect(page.url()).not.toContain("/p/");
+  expect((await db.from("vehicles").select("id").eq("plate", plate)).data).toHaveLength(0);
+  expect((await db.from("guests").select("id").eq("full_name", "Zqq Direct Guest")).data).toHaveLength(0);
 });
 
 test("a number that is not a registered member gets one answer and creates nothing", async ({ page }) => {

@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
+import { qrFlowConfig } from "@/lib/env";
 import { currentMember } from "@/lib/member-auth";
+import { publicSignUpOpen } from "@/lib/rules";
 import { SignUpForm } from "./SignUpForm";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +18,19 @@ export default async function MemberSignUpPage({
   const { next = "" } = await searchParams;
   const safeNext = SAFE_NEXT.test(next) ? next : "";
   if (await currentMember()) redirect(safeNext || "/account");
+  if (!publicSignUpOpen(qrFlowConfig())) {
+    return (
+      <>
+        <AppHeader />
+        <main className="mx-auto max-w-md space-y-4 px-4 pb-8 pt-5">
+          <div className="rounded-card bg-card p-5 shadow-sm">
+            <h1 className="text-2xl font-bold">Accounts are added by the parking team</h1>
+            <p className="mt-2 text-ink-soft">Please see parking staff. They will add you, and then you can check in with your phone number.</p>
+          </div>
+        </main>
+      </>
+    );
+  }
   return (
     <>
       <AppHeader />

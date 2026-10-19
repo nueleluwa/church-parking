@@ -22,7 +22,8 @@ import {
   PIN_MESSAGES,
   startMemberSession,
 } from "@/lib/member-auth";
-import { checkVehicleDetails, normalisePhone, normalisePlate, PIN_PATTERN } from "@/lib/rules";
+import { qrFlowConfig } from "@/lib/env";
+import { checkVehicleDetails, normalisePhone, normalisePlate, PIN_PATTERN, publicSignUpOpen } from "@/lib/rules";
 
 export type FormState = { error?: string; ok?: string };
 
@@ -44,6 +45,8 @@ const signUpSchema = z
   .refine((v) => v.pin === v.pin2, { message: "The two PINs are different.", path: ["pin2"] });
 
 export async function signUp(_prev: FormState, formData: FormData): Promise<FormState> {
+  // With phone check-in on everywhere there is no public self-registration (members are added by an administrator or by staff)
+  if (!publicSignUpOpen(qrFlowConfig())) return { error: "Accounts are added by the parking team. Please see parking staff." };
   const parsed = signUpSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Please check your details." };

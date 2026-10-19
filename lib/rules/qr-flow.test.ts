@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseQrAreas, qrFlowEnabled, readQrFlow } from "./qr-flow";
+import { parseQrAreas, publicSignUpOpen, qrFlowEnabled, readQrFlow } from "./qr-flow";
 
 describe("qrFlowEnabled", () => {
   test("off changes nothing for any car park", () => {
@@ -15,6 +15,14 @@ describe("qrFlowEnabled", () => {
   });
   test("on turns it on for every car park", () => {
     expect(qrFlowEnabled({ mode: "on", areas: [] }, "cp2")).toBe(true);
+  });
+});
+
+describe("publicSignUpOpen", () => {
+  test("stays open while the original check-in is in use anywhere, closes when phone check-in is on everywhere", () => {
+    expect(publicSignUpOpen({ mode: "off", areas: [] })).toBe(true);
+    expect(publicSignUpOpen({ mode: "pilot", areas: ["road"] })).toBe(true);
+    expect(publicSignUpOpen({ mode: "on", areas: [] })).toBe(false);
   });
 });
 

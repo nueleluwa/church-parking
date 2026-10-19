@@ -24,6 +24,15 @@ export function readQrFlow(env: Record<string, string | undefined>): QrFlowConfi
   };
 }
 
+/**
+ * Whether anyone may still create a member account on their own (the PIN sign-up). Once phone check-in is on for every car park
+ * there is no public self-registration: members are added by an administrator or by staff, and an unknown number is sent to staff.
+ * While it is off or only piloting, sign-up stays open for the car parks that still use the original check-in.
+ */
+export function publicSignUpOpen(config: QrFlowConfig): boolean {
+  return config.mode !== "on";
+}
+
 export function qrFlowEnabled(config: QrFlowConfig, areaSlug: string): boolean {
   if (config.mode === "on") return true;
   if (config.mode === "pilot") return config.areas.includes(areaSlug.toLowerCase());

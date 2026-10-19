@@ -10,13 +10,14 @@ import {
   listMemberVehicles,
   openPassTokensByVehicle,
 } from "@/lib/db";
-import { serverEnv } from "@/lib/env";
+import { qrFlowConfig, serverEnv } from "@/lib/env";
 import { currentMember, ipKey } from "@/lib/member-auth";
 import { rememberedPassTokens, rememberPass } from "@/lib/pass-cookie";
 import {
   claimGuestVisit,
   claimMemberVisit,
   lagosDate,
+  qrFlowEnabled,
   normalisePhone,
   normalisePlate,
   passState,
@@ -44,6 +45,7 @@ const MESSAGES = {
   vehicle_inactive: "This vehicle is not active. Please see an attendant.",
   rate_limited: "Too many tries. Please wait a few minutes, or see an attendant.",
   member_has_open_visit: "You already have a car checked in. Check it out first, or see an attendant.",
+  qr_sign: "This car park uses phone check-in. Please scan the sign again, or see an attendant.",
   finished: "The services have finished for today. Please see an attendant.",
   bad_service: "Please choose a service that has not finished.",
 } as const;
@@ -74,6 +76,8 @@ export async function checkInAsGuest(_prev: CheckInState, formData: FormData): P
     ipKey("ip", secret),
   ]);
   if (!area) return { error: "This parking sign isn't working. Please see an attendant." };
+  // A car park on phone check-in does not take guests: this action can be called directly, so the page not offering it is not enough
+  if (qrFlowEnabled(qrFlowConfig(), area.slug)) return { error: MESSAGES.qr_sign, blocked: true };
 
   const now = new Date();
   const today = lagosDate(now);
@@ -139,6 +143,7 @@ export async function checkInMember(_prev: CheckInState, formData: FormData): Pr
     listActiveServices(),
   ]);
   if (!area) return { error: "This parking sign isn't working. Please see an attendant." };
+  if (qrFlowEnabled(qrFlowConfig(), area.slug)) return { error: MESSAGES.qr_sign, blocked: true };
 
   const vehicle = vehicles.find((v) => v.id === parsed.data.vehicleId);
   if (!vehicle) return { error: "We cannot check in this car. Please see an attendant." };
