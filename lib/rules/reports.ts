@@ -14,6 +14,8 @@ export type ReportVisit = {
   releasedAt: string | null;
   releasedByName: string | null;
   isGuest: boolean;
+  /** Times a repeat check-in replaced the visit's checkout code (phone check-in). Absent or 0 for every other visit. */
+  credentialReissues?: number;
 };
 
 export type Counts = { checkedIn: number; released: number; stillParked: number; missed: number };

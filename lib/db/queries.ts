@@ -31,10 +31,17 @@ export async function findVehicleByPlate(plate: string): Promise<Vehicle | null>
   return unwrap<Vehicle>(res);
 }
 
+/**
+ * The columns of a visit these helpers return. Listed on purpose, never "*": a visit row also holds the checkout credential's
+ * hash, which must not travel to code that only needs the visit.
+ */
+const VISIT_COLUMNS =
+  "id, reference, pass_token, vehicle_id, member_id, guest_id, service_id, area_id, service_date, status, checked_in_at, checked_in_by, released_at, released_by, release_method";
+
 export async function findOpenVisitByVehicle(vehicleId: string): Promise<Visit | null> {
   const res = await db()
     .from("visits")
-    .select("*")
+    .select(VISIT_COLUMNS)
     .eq("vehicle_id", vehicleId)
     .eq("status", "parked")
     .maybeSingle();
@@ -42,6 +49,6 @@ export async function findOpenVisitByVehicle(vehicleId: string): Promise<Visit |
 }
 
 export async function getVisitByToken(token: string): Promise<Visit | null> {
-  const res = await db().from("visits").select("*").eq("pass_token", token).maybeSingle();
+  const res = await db().from("visits").select(VISIT_COLUMNS).eq("pass_token", token).maybeSingle();
   return unwrap<Visit>(res);
 }

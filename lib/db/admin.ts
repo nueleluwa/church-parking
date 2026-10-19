@@ -220,6 +220,7 @@ type VisitJoin = {
   checked_in_at: string;
   released_at: string | null;
   guest_id: string | null;
+  credential_reissues: number | null;
   vehicles: { plate: string };
   services: { name: string };
   areas: { name: string };
@@ -237,7 +238,7 @@ export async function listReportVisits(from: string, to: string): Promise<Report
     const { data, error } = await db()
       .from("visits")
       .select(
-        "id, service_date, service_id, area_id, status, release_method, reference, checked_in_at, released_at, guest_id, " +
+        "id, service_date, service_id, area_id, status, release_method, reference, checked_in_at, released_at, guest_id, credential_reissues, " +
           "vehicles(plate), services(name), areas(name), staff:released_by(full_name)",
       )
       .gte("service_date", from)
@@ -263,6 +264,7 @@ export async function listReportVisits(from: string, to: string): Promise<Report
         releasedAt: r.released_at,
         releasedByName: r.staff?.full_name ?? null,
         isGuest: r.guest_id !== null,
+        credentialReissues: r.credential_reissues ?? 0,
       });
     }
     if (rows.length < PAGE) break;

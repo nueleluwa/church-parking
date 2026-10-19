@@ -78,7 +78,7 @@ describe("the catalogue", () => {
       ["members", 3],
       ["services", 3],
       ["areas", 3],
-      ["alerts", 4],
+      ["alerts", 5],
     ]);
     expect(findReport("parking-summary")?.name).toBe("Parking summary");
     expect(findReport("nonsense")).toBeNull();
@@ -235,8 +235,22 @@ describe("files", () => {
     expect(reportFilename({ id: "parking-summary" }, { from: "2026-10-01", to: "2026-10-07" }, null)).toBe("parking-summary_2026-10-01_to_2026-10-07.csv");
     expect(reportFilename({ id: "missed-checkouts" }, { from: "2026-10-11", to: "2026-10-11" }, { name: "Service 2 / <Late>../" })).toBe("missed-checkouts_2026-10-11_service-2-late.csv");
   });
+  test("the replaced-check-out-code report lists only visits replaced twice or more, most first, with plates and no people", () => {
+    const withCodes = {
+      ...rich,
+      visits: [
+        visit({ reference: "PK-9001", plate: "AAA111AA", credentialReissues: 1 }),
+        visit({ reference: "PK-9002", plate: "BBB222BB", credentialReissues: 2 }),
+        visit({ reference: "PK-9003", plate: "CCC333CC", credentialReissues: 5 }),
+        visit({ reference: "PK-9004", plate: "DDD444DD" }),
+      ],
+    };
+    const t = buildReportTable("credential-replacements", withCodes);
+    expect(t.rows.map((r) => [r[1], r[5]])).toEqual([["CCC333CC", 5], ["BBB222BB", 2]]);
+    expect(t.headers.join(" ")).not.toMatch(/name|phone|member/i);
+  });
   test("the id type matches the catalogue", () => {
     const ids: ReportId[] = REPORTS.map((r) => r.id);
-    expect(ids).toHaveLength(21);
+    expect(ids).toHaveLength(22);
   });
 });

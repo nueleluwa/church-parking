@@ -58,11 +58,15 @@ export type ReportId =
   | "missed-checkouts"
   | "conflicts"
   | "released-without-scan"
-  | "held-cars";
+  | "held-cars"
+  | "credential-replacements";
 
 export type ReportDef = { id: ReportId; category: ReportCategoryId; name: string; description: string; formats: readonly ["csv"] };
 
 const csv = ["csv"] as const;
+
+/** A visit whose check-out code was replaced this many times or more appears in the replacement report. */
+export const REPEAT_REPLACEMENTS = 2;
 
 /** How a released visit was released, in words, for the visit report. */
 const RELEASE_LABEL: Record<string, string> = {
@@ -92,6 +96,7 @@ export const REPORTS: ReportDef[] = [
   { id: "missed-checkouts", category: "alerts", name: "Missed check-outs", description: "Visits closed as missed: the car was never released at the exit.", formats: csv },
   { id: "conflicts", category: "alerts", name: "Vehicle and member conflicts", description: "Second check-ins of a car already checked in, and guests using a member's plate. Resolved and open.", formats: csv },
   { id: "released-without-scan", category: "alerts", name: "Releases without a scanned pass", description: "Cars released after a lookup by plate, phone or reference, with no pass scanned.", formats: csv },
+  { id: "credential-replacements", category: "alerts", name: "Check-out code replaced more than once", description: "Visits whose phone check-out code was replaced two or more times by a repeat check-in. Worth a look: it can mean someone else is checking in with a member's number.", formats: csv },
   { id: "held-cars", category: "alerts", name: "Cars held: does not match", description: "Times an attendant held a car because the driver or car did not match. Resolved and open.", formats: csv },
 ];
 
@@ -344,6 +349,14 @@ export function buildReportTable(id: ReportId, input: ReportInput): Table {
       return {
         headers: ["Date", "Plate", "Service", "Parking area", "Checked in (Lagos)", "Released (Lagos)", "Released by", "Reference"],
         rows: visits.filter((v) => v.status === "released" && v.releaseMethod === "search").sort((a, b) => a.checkedInAt.localeCompare(b.checkedInAt)).map((v) => [v.serviceDate, v.plate, v.serviceName, v.areaName, lagosStamp(v.checkedInAt), lagosStamp(v.releasedAt), v.releasedByName ?? "", v.reference]),
+      };
+    case "credential-replacements":
+      return {
+        headers: ["Date", "Plate", "Service", "Parking area", "Checked in (Lagos)", "Times the code was replaced", "Status", "Reference"],
+        rows: visits
+          .filter((v) => (v.credentialReissues ?? 0) >= REPEAT_REPLACEMENTS)
+          .sort((a, b) => (b.credentialReissues ?? 0) - (a.credentialReissues ?? 0) || a.checkedInAt.localeCompare(b.checkedInAt))
+          .map((v) => [v.serviceDate, v.plate, v.serviceName, v.areaName, lagosStamp(v.checkedInAt), v.credentialReissues ?? 0, status(v), v.reference]),
       };
     case "held-cars":
       return alertTable(alerts.filter((a) => a.kind === "no_match"));
