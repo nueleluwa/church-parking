@@ -297,7 +297,10 @@ test("a member added without a PIN has none, gets a local phone number, and cann
       await expect(mem).toHaveURL(/signin/);
     }
   } finally {
-    if (memberId) await removeMembers([memberId]);
+    // Look the member up by phone, so a failure before memberId was read still cleans up
+    const found = (await db.from("members").select("id").eq("phone", e164(local))).data ?? [];
+    await removeMembers(found.map((f) => f.id as string));
+    if (memberId && !found.some((f) => f.id === memberId)) await removeMembers([memberId]);
     await db.from("vehicles").delete().eq("plate", plate);
   }
 });
