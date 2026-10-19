@@ -1,5 +1,5 @@
 export { normalisePlate, formatPlate } from "./plates";
-export { normalisePhone, maskPhone } from "./phone";
+export { normalisePhone, maskPhone, toLocalPhone, localPhone, formatLocalPhone } from "./phone";
 export { makeReference, makePassToken } from "./tokens";
 export {
   pickService,

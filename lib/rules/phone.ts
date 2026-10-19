@@ -21,6 +21,28 @@ export function normalisePhone(input: string): string | null {
   return /^[1-9]\d{7,14}$/.test(digits) ? `+${digits}` : null;
 }
 
+/**
+ * The 11-digit local form (08031234567) of a stored Nigerian number, or null if it has none (an international number).
+ * The database computes the same value in `members.phone_local`, so the two must stay identical.
+ */
+export function toLocalPhone(e164: string): string | null {
+  return /^\+234\d{10}$/.test(e164) ? `0${e164.slice(4)}` : null;
+}
+
+/**
+ * What a member types at check-in, as the local form. Accepts 0803…, +234…, 234… and spaces or dashes; anything that is
+ * not a Nigerian number gives null (the check-in page then sends them to parking staff).
+ */
+export function localPhone(input: string): string | null {
+  const e164 = normalisePhone(input);
+  return e164 ? toLocalPhone(e164) : null;
+}
+
+/** 08031234567 shown as 0803 123 4567. */
+export function formatLocalPhone(local: string): string {
+  return /^\d{11}$/.test(local) ? `${local.slice(0, 4)} ${local.slice(4, 7)} ${local.slice(7)}` : local;
+}
+
 /** Last 4 digits only, for staff screens (R-9). */
 export function maskPhone(phone: string): string {
   return `•••• ${phone.slice(-4)}`;
