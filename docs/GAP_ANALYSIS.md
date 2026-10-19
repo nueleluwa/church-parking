@@ -159,7 +159,7 @@ Small commits, one concern each, tests with the code, `pnpm lint && pnpm typeche
 
 These are not covered by the docs. Each has a default; I will proceed on the default unless you say otherwise.
 
-1. **Keep the attendant scan and release as the staff path, behind a flag (C1, C2).** Default: yes.
+1. **Keep the attendant scan and release, behind a flag (C1, C2).** **Confirmed 2026-10-19:** both ways of checking out are normal. A member can check out by scanning the exit sign, and an attendant can release the car (pass scan or search) at any time, including to step in when a member has a problem. Consequence: sessions made by the new flow still get a pass and reference, so the attendant tools work on them unchanged; whichever way closes the visit first wins (same conditional update), and the other gets "already checked out".
 2. **Staff means attendant and coordinator; attendants may register new members and close sessions with a reason (C10).** Default: yes.
 3. **Keep phone storage as `+234…` and add a generated local column; non-Nigerian numbers go to staff (C4).** Default: yes.
 4. **Keep the midnight close as the approved expiry policy (C5).** Default: yes.
