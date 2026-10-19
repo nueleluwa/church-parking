@@ -37,7 +37,8 @@ export async function createMemberAction(fd: FormData): Promise<MemberFormState>
       status: fd.get("status"),
       vehicles: plates.map((p, i) => ({ plate: p, make: makes[i], colour: colours[i] })),
     },
-    true,
+    false, // the PIN is optional: a member added for the QR check-in has none
+    true, // but at least one plate, which the check-in asks the member to confirm
   );
   if (!checked.ok) return { error: firstMemberError(checked.errors), fieldErrors: checked.errors };
   const v = checked.values;
@@ -49,7 +50,7 @@ export async function createMemberAction(fd: FormData): Promise<MemberFormState>
       const rows = v.vehicles.map((x) => (problems.has(x.plate) ? `${formatPlate(x.plate)} ${WHY[problems.get(x.plate)!]}` : ""));
       return { error: rows.find(Boolean), fieldErrors: { vehicles: rows } };
     }
-    const id = await createMemberAccount({ name: v.name, phone: v.phone, pinHash: await hash(v.pin), active: v.active });
+    const id = await createMemberAccount({ name: v.name, phone: v.phone, pinHash: v.pin ? await hash(v.pin) : null, active: v.active });
     if (id === "phone_taken") {
       return { error: "Someone already has an account with that phone number.", fieldErrors: { phone: "Someone already has an account with that phone number." } };
     }
@@ -65,7 +66,7 @@ export async function createMemberAction(fd: FormData): Promise<MemberFormState>
     return {
       ok: true,
       id,
-      message: `${v.name} was added${withCars}.${missed ? ` ${missed} could not be saved: add it from their page.` : ""} Tell them their PIN in person.`,
+      message: `${v.name} was added${withCars}.${missed ? ` ${missed} could not be saved: add it from their page.` : ""}${v.pin ? " Tell them their PIN in person." : " They check in with their phone number."}`,
     };
   } catch {
     return { error: "The member could not be saved. Please try again." };

@@ -337,7 +337,7 @@ export async function memberSummary(monthStartIso: string): Promise<MemberSummar
 }
 
 /** Make a member (by an administrator). Returns the id, or "phone_taken" if that number already has an account. */
-export async function createMemberAccount(v: { name: string; phone: string; pinHash: string; active: boolean }): Promise<string | "phone_taken"> {
+export async function createMemberAccount(v: { name: string; phone: string; pinHash: string | null; active: boolean }): Promise<string | "phone_taken"> {
   const { data, error } = await db()
     .from("members")
     .insert({ full_name: v.name, phone: v.phone, pin_hash: v.pinHash, active: v.active })

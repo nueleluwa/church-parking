@@ -69,6 +69,19 @@ describe("checkMemberForm", () => {
     expect(checkMemberForm({ name: good.name, phone: good.phone, pin: "12" }, false).ok).toBe(false);
   });
 
+  it("can leave the PIN out: a member added for the QR check-in has none", () => {
+    const r = checkMemberForm({ name: good.name, phone: good.phone, vehicles: [{ plate: "PHC234AB" }] }, false, true);
+    expect(r).toMatchObject({ ok: true, values: { pin: "" } });
+  });
+
+  it("can require a vehicle when adding, because the check-in confirms the registered plate", () => {
+    const r = checkMemberForm({ name: good.name, phone: good.phone, vehicles: [{ plate: "", make: "", colour: "" }] }, false, true);
+    expect(r).toMatchObject({ ok: false, errors: { general: "Add the member's vehicle plate number." } });
+    expect(checkMemberForm({ name: good.name, phone: good.phone }, false, true)).toMatchObject({ ok: false });
+    // Editing a member does not ask for one
+    expect(checkMemberForm({ name: good.name, phone: good.phone }, false).ok).toBe(true);
+  });
+
   it("checks each vehicle row and rejects a plate typed twice", () => {
     const r = checkMemberForm({ ...good, vehicles: [{ plate: "AB" }, { plate: "PHC234AB" }, { plate: "phc 234 ab" }, { plate: "XYZ999QQ", colour: "x".repeat(25) }] }, true);
     expect(r.ok).toBe(false);

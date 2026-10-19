@@ -205,12 +205,17 @@ test("adding a member: each problem shows on its own field, a good one is saved,
     await panel.getByRole("button", { name: "Save member" }).click();
     await expect(panel.getByText("Enter the member's full name.").first()).toBeVisible({ timeout: 30_000 });
     await expect(panel.getByText("Enter the phone number.")).toBeVisible();
-    await expect(panel.getByText("The PIN must be 4 numbers.").first()).toBeVisible();
+    // The PIN is optional, but a plate is needed (one vehicle row is already open)
+    await expect(panel.getByText("Add the member's vehicle plate number.")).toBeVisible();
 
     await panel.getByLabel("Full name").fill(name);
     await panel.getByLabel("Phone number").fill(local);
-    await panel.getByLabel("PIN (4 numbers) *").fill("4821");
-    await panel.getByRole("button", { name: "Add vehicle" }).click();
+    // A PIN that is typed must still be 4 numbers
+    await panel.getByLabel("PIN (4 numbers, optional)").fill("12");
+    await panel.getByLabel("Plate number of vehicle 1").fill(plate.toLowerCase());
+    await panel.getByRole("button", { name: "Save member" }).click();
+    await expect(panel.getByText("The PIN must be 4 numbers.").first()).toBeVisible({ timeout: 30_000 });
+    await panel.getByLabel("PIN (4 numbers, optional)").fill("4821");
     await panel.getByLabel("Plate number of vehicle 1").fill(plate.toLowerCase());
     await panel.getByLabel("Make and model of vehicle 1").fill("Toyota Camry");
     await panel.getByRole("button", { name: "Save member" }).click();
@@ -239,7 +244,8 @@ test("adding a member: each problem shows on its own field, a good one is saved,
     const again = page.getByRole("dialog", { name: "Add member" });
     await again.getByLabel("Full name").fill("Someone Else");
     await again.getByLabel("Phone number").fill(local);
-    await again.getByLabel("PIN (4 numbers) *").fill("1234");
+    await again.getByLabel("PIN (4 numbers, optional)").fill("1234");
+    await again.getByLabel("Plate number of vehicle 1").fill(randomPlate("MD"));
     await again.getByRole("button", { name: "Save member" }).click();
     await expect(again.getByText("Someone already has an account with that phone number.").first()).toBeVisible({ timeout: 30_000 });
     expect((await db.from("members").select("id").eq("phone", e164(local))).data).toHaveLength(1);
@@ -247,7 +253,6 @@ test("adding a member: each problem shows on its own field, a good one is saved,
     // A car already saved to a member is refused, nothing is created, and what was typed stays
     const other = randomPhone();
     await again.getByLabel("Phone number").fill(other);
-    await again.getByRole("button", { name: "Add vehicle" }).click();
     await again.getByLabel("Plate number of vehicle 1").fill(plate);
     await again.getByRole("button", { name: "Save member" }).click();
     await expect(again.getByText(`${spaced(plate)} is already saved to a member.`).first()).toBeVisible({ timeout: 30_000 });
@@ -258,6 +263,39 @@ test("adding a member: each problem shows on its own field, a good one is saved,
     // Cancel closes the panel without saving
     await again.getByRole("button", { name: "Cancel" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0, { timeout: 60_000 });
+  } finally {
+    if (memberId) await removeMembers([memberId]);
+    await db.from("vehicles").delete().eq("plate", plate);
+  }
+});
+
+test("a member added without a PIN has none, gets a local phone number, and cannot sign in with any PIN, including 0000", async ({ page, browser }) => {
+  const db = adminClient();
+  const local = randomPhone();
+  const plate = randomPlate("MP");
+  let memberId = "";
+  try {
+    await openUsers(page, "?add=1");
+    const panel = page.getByRole("dialog", { name: "Add member" });
+    await panel.getByLabel("Full name").fill("Zqn No Pin Member");
+    await panel.getByLabel("Phone number").fill(local);
+    await panel.getByLabel("Plate number of vehicle 1").fill(plate);
+    await panel.getByRole("button", { name: "Save member" }).click();
+    await expect(page).toHaveURL(/notice=added/, { timeout: 60_000 });
+    await expect(main(page).getByRole("status")).toContainText("The member was added.");
+
+    const { data: m } = await db.from("members").select("id, pin_hash, phone_local").eq("phone", e164(local)).single();
+    memberId = m!.id as string;
+    expect(m!.pin_hash).toBeNull();
+    expect(m!.phone_local).toBe(local);
+
+    // "0000" is what an unknown phone number is compared against; it must not open this account
+    for (const pin of ["0000", "1234"]) {
+      const mem = await (await browser.newContext()).newPage();
+      await memberSignIn(mem, local, pin);
+      await expect(mem.getByText("Phone number or PIN is wrong.")).toBeVisible({ timeout: 60_000 });
+      await expect(mem).toHaveURL(/signin/);
+    }
   } finally {
     if (memberId) await removeMembers([memberId]);
     await db.from("vehicles").delete().eq("plate", plate);
@@ -277,8 +315,7 @@ test("a member added as inactive cannot sign in, and a guest's car or a deactiva
     const panel = page.getByRole("dialog", { name: "Add member" });
     await panel.getByLabel("Full name").fill("Zqi Inactive Member");
     await panel.getByLabel("Phone number").fill(local);
-    await panel.getByLabel("PIN (4 numbers) *").fill("4821");
-    await panel.getByRole("button", { name: "Add vehicle" }).click();
+    await panel.getByLabel("PIN (4 numbers, optional)").fill("4821");
     await panel.getByLabel("Plate number of vehicle 1").fill(offPlate);
     await panel.getByRole("button", { name: "Save member" }).click();
     await expect(panel.getByText(`${spaced(offPlate)} is deactivated. Activate it in Vehicles first.`).first()).toBeVisible({ timeout: 30_000 });

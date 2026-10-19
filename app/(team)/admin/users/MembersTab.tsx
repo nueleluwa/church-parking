@@ -61,7 +61,7 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
   const keepPage = page > 1 ? String(page) : "";
   const filtersOn = Boolean(q || status || cars || since);
   const now = new Date();
-  const notice = sp.notice === "added" ? "The member was added. Tell them their PIN in person." : null;
+  const notice = sp.notice === "added" ? "The member was added." : null;
 
   return (
     <>

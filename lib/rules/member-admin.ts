@@ -74,13 +74,15 @@ const clean = (x: unknown) =>
     .trim();
 
 /**
- * Check the add member form. A PIN is required when adding (the admin tells the member in person, as with a PIN reset).
- * Vehicle rows that are completely empty are ignored; the others need a good plate, details within the limits, and no plate
+ * Check the add member form. A PIN is optional: a member added for the QR check-in has none and is found by phone number
+ * (a PIN, if typed, must still be 4 numbers; `needPin` makes it required). `needVehicle` asks for at least one plate, because
+ * the check-in shows the registered plate for the member to confirm. Vehicle rows that are completely empty are ignored; the others need a good plate, details within the limits, and no plate
  * twice in the same form.
  */
 export function checkMemberForm(
   raw: { name?: unknown; phone?: unknown; pin?: unknown; status?: unknown; vehicles?: { plate?: unknown; make?: unknown; colour?: unknown }[] },
   needPin: boolean,
+  needVehicle = false,
 ): { ok: true; values: MemberInput } | { ok: false; errors: MemberErrors } {
   const errors: MemberErrors = {};
 
@@ -102,6 +104,7 @@ export function checkMemberForm(
   const seen = new Set<string>();
   const vehicles: MemberVehicleInput[] = [];
   if (rows.length > MAX_MEMBER_VEHICLES) errors.general = `A member can have at most ${MAX_MEMBER_VEHICLES} vehicles.`;
+  else if (needVehicle && rows.length === 0) errors.general = "Add the member's vehicle plate number.";
   for (const row of rows) {
     const plate = normalisePlate(String(row.plate ?? "").slice(0, 40));
     const details = checkVehicleDetails({ make: String(row.make ?? ""), colour: String(row.colour ?? "") });

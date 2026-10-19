@@ -20,7 +20,8 @@ export function MemberForm({ doneHref }: { doneHref: string }) {
   const router = useRouter();
   const [state, setState] = useState<MemberFormState>({});
   const [pending, start] = useTransition();
-  const [cars, setCars] = useState<number[]>([]);
+  // One vehicle row is open to start with: a member needs a plate for the check-in to confirm
+  const [cars, setCars] = useState<number[]>([0]);
   const [nextKey, setNextKey] = useState(1);
   const [active, setActive] = useState(true);
   const errors = state.fieldErrors ?? {};
@@ -63,8 +64,8 @@ export function MemberForm({ doneHref }: { doneHref: string }) {
         </label>
 
         <div className="text-sm">
-          <PasswordField compact label="PIN (4 numbers) *" name="pin" inputMode="numeric" maxLength={4} autoComplete="new-password" />
-          <span className="mt-1 block text-xs text-ink-soft">The member signs in with their phone number and this PIN. Tell it to them in person, after checking who they are.</span>
+          <PasswordField compact label="PIN (4 numbers, optional)" name="pin" inputMode="numeric" maxLength={4} autoComplete="new-password" />
+          <span className="mt-1 block text-xs text-ink-soft">Leave it empty for a member who checks in with their phone number. A PIN is only for signing in to an account; if you set one, tell it to them in person, after checking who they are.</span>
           {errors.pin && (
             <span role="alert" className={`block ${note}`}>
               {errors.pin}
@@ -73,8 +74,10 @@ export function MemberForm({ doneHref }: { doneHref: string }) {
         </div>
 
         <fieldset className="text-sm">
-          <legend className="font-medium">Vehicle registration (optional)</legend>
-          <p className="text-xs text-ink-soft">Add at least one vehicle to enable quick check-in for this member. Up to {MAX_CARS}.</p>
+          <legend className="font-medium">
+            Vehicle registration <span className="text-accent">*</span>
+          </legend>
+          <p className="text-xs text-ink-soft">The member confirms this plate when they check in. Up to {MAX_CARS} vehicles.</p>
           <div className="mt-2 space-y-3">
             {cars.map((key, i) => (
               <div key={key} className="rounded-xl border border-edge/20 p-3">
@@ -119,6 +122,11 @@ export function MemberForm({ doneHref }: { doneHref: string }) {
               Add vehicle
             </button>
           )}
+          {errors.general && (
+            <span role="alert" className={`block ${note}`}>
+              {errors.general}
+            </span>
+          )}
         </fieldset>
 
         <div className="text-sm">
@@ -140,7 +148,7 @@ export function MemberForm({ doneHref }: { doneHref: string }) {
           <p className="mt-1 text-xs text-ink-soft">An inactive member cannot sign in or be checked in. Their history is kept.</p>
         </div>
 
-        {state.error && (
+        {state.error && state.error !== errors.general && (
           <p role="alert" className={errorBox}>
             {state.error}
           </p>
