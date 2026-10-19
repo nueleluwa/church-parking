@@ -43,6 +43,7 @@ const MESSAGES = {
   member_plate: "We can't check in this car here. Please see an attendant.",
   vehicle_inactive: "This vehicle is not active. Please see an attendant.",
   rate_limited: "Too many tries. Please wait a few minutes, or see an attendant.",
+  member_has_open_visit: "You already have a car checked in. Check it out first, or see an attendant.",
   finished: "The services have finished for today. Please see an attendant.",
   bad_service: "Please choose a service that has not finished.",
 } as const;
@@ -171,7 +172,9 @@ export async function checkInMember(_prev: CheckInState, formData: FormData): Pr
           ? MESSAGES.plate_conflict
           : result.reason === "vehicle_inactive"
             ? MESSAGES.vehicle_inactive
-            : "We cannot check in this car. Please see an attendant.",
+            : result.reason === "member_has_open_visit"
+              ? MESSAGES.member_has_open_visit
+              : "We cannot check in this car. Please see an attendant.",
       blocked: true,
     };
   }

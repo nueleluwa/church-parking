@@ -14,6 +14,7 @@ import {
   raiseNoMatch,
   releaseStore,
   searchTodaysVisits,
+  staffCloseVisit,
 } from "@/lib/db";
 import {
   buildScanCard,
@@ -71,6 +72,28 @@ export async function releaseCar(visitId: string, method: "scan" | "search"): Pr
   if (!uuid.safeParse(visitId).success) return { ok: false, message: "We can't find this pass." };
   const result = await releaseVisit(releaseStore, staff, { visitId, method, today: today() });
   return result.ok ? { ok: true } : { ok: false, message: RELEASE_MESSAGES[result.reason] };
+}
+
+const CLOSE_MESSAGES = {
+  not_found: "We can't find this pass.",
+  bad_state: "This visit is already closed.",
+  held: "This car is on hold. Ask the coordinator.",
+  bad_input: "Please write why you are closing it (at least 5 letters).",
+} as const;
+
+/**
+ * Close a visit for a member who could not check out (no signal, a different browser, a lost credential, a visit left open from an
+ * earlier day). Any signed-in staff member may; the reason is required and is audited with their name. It is not a release: the
+ * attendant's plate check is not part of it, so for a car at the exit use Release car.
+ */
+export async function closeVisitForMember(visitId: string, reason: string): Promise<ActionResult> {
+  const staff = await currentStaff();
+  if (!staff) return { ok: false, message: "Please sign in again." };
+  const id = uuid.safeParse(visitId);
+  const why = z.string().trim().max(200).safeParse(reason);
+  if (!id.success || !why.success) return { ok: false, message: CLOSE_MESSAGES.bad_input };
+  const result = await staffCloseVisit(id.data, staff.id, why.data);
+  return result === "ok" ? { ok: true } : { ok: false, message: CLOSE_MESSAGES[result] };
 }
 
 export type MoveResult = { ok: true; areaName: string; areaSlug: string } | { ok: false; message: string };
@@ -180,6 +203,8 @@ export async function registerCar(_prev: RegisterState, formData: FormData): Pro
           ? "This vehicle is deactivated, so it cannot be checked in. Tell an administrator."
           : result.reason === "member_inactive"
             ? "This member account is switched off, so the car cannot be checked in. Tell an administrator."
+          : result.reason === "member_has_open_visit"
+            ? "This member already has another car checked in. Close that visit first."
           : "This car is already checked in for someone else. Tell the coordinator.",
       );
     }

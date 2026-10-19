@@ -15,7 +15,7 @@ import { describeVehicle } from "@/lib/rules/vehicle";
 import { atOtherCarPark, type ScanCard } from "@/lib/rules/scan";
 import type { CarParkOption } from "@/lib/rules/station";
 import { CorrectionPanel } from "./CorrectionPanel";
-import { doesNotMatch, moveToCarPark, releaseCar, revealPhone } from "./actions";
+import { closeVisitForMember, doesNotMatch, moveToCarPark, releaseCar, revealPhone } from "./actions";
 import { clearHoldAction } from "./ops-actions";
 
 const time = (iso: string | null) => (iso ? formatLagosTime(iso) : "");
@@ -41,7 +41,8 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections, areas
   const [pending, start] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const toast = useToast();
-  const [finished, setFinished] = useState<"released" | "held" | null>(null);
+  const [finished, setFinished] = useState<"released" | "held" | "closed" | null>(null);
+  const [closeReason, setCloseReason] = useState("");
   const [phone, setPhone] = useState<string | null>(null);
   // The car park can be corrected here, so what is shown follows the correction
   const [movedTo, setMovedTo] = useState<{ name: string; slug: string } | null>(null);
@@ -90,6 +91,17 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections, areas
       }
     });
   }
+  function closeForMember() {
+    start(async () => {
+      const r = await closeVisitForMember(card.visitId, closeReason);
+      if (r.ok) {
+        buzz(80);
+        setFinished("closed");
+        setMessage(null);
+        toast.success("The visit was closed.");
+      } else setMessage(r.message);
+    });
+  }
   function hold() {
     start(async () => {
       const r = await doesNotMatch(card.visitId, card.plate);
@@ -135,16 +147,18 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections, areas
   }
 
   // The status card: its colour and words follow what has happened
-  const tone = finished === "released" ? "success" : finished === "held" || problem ? "danger" : "success";
+  const tone = finished === "released" || finished === "closed" ? "success" : finished === "held" || problem ? "danger" : "success";
   const cardClass = tone === "success" ? "border-success bg-success-soft" : "border-danger bg-blush";
   const circle = tone === "success" ? "bg-success text-white" : "bg-danger text-white";
   const Icon = tone === "success" ? IconCheck : IconAlert;
   const title =
-    finished === "released" ? "Car released" : finished === "held" ? "Car held" : (problem?.title ?? "Ready for exit");
+    finished === "released" ? "Car released" : finished === "closed" ? "Visit closed" : finished === "held" ? "Car held" : (problem?.title ?? "Ready for exit");
   const sub =
     finished === "released"
       ? "Vehicle has been released."
-      : finished === "held"
+      : finished === "closed"
+        ? "Closed for the member. Your name and the reason are recorded."
+        : finished === "held"
         ? "Do not release this vehicle. Stay with it and call the coordinator."
         : (problem?.reason ?? "Confirm the details, then release the car.");
 
@@ -153,7 +167,7 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections, areas
   const stationArea = areas.find((a) => a.slug === station) ?? null;
   const mismatch = parked && stationArea !== null && atOtherCarPark(areaSlug, station);
   const status =
-    finished === "released"
+    finished === "released" || finished === "closed"
       ? "Released"
       : card.state === "ready"
         ? "Valid"
@@ -250,7 +264,7 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections, areas
             </FactRow>
           )}
           <FactRow icon={<IconCheck className="h-5 w-5" />} label="Pass status">
-            <StatusBadge tone={finished === "released" ? "neutral" : problem ? "danger" : "success"}>{status}</StatusBadge>
+            <StatusBadge tone={finished === "released" || finished === "closed" ? "neutral" : problem ? "danger" : "success"}>{status}</StatusBadge>
           </FactRow>
           <FactRow icon={<IconClock className="h-5 w-5" />} label="Reference">
             <span className="block whitespace-nowrap">{card.reference}</span>
@@ -354,6 +368,32 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections, areas
         <button onClick={onDone} className={outlineButton}>
           {doneLabel}
         </button>
+      )}
+
+      {!finished && (card.state === "ready" || card.state === "expired") && (
+        <details className="rounded-card border-2 border-edge/20 bg-card p-4">
+          <summary className="cursor-pointer font-semibold">The member cannot check out? Close their visit</summary>
+          <div className="mt-3 space-y-3">
+            <p className="text-sm text-ink-soft">
+              For a visit that is still open but the car has gone, or the member could not use the exit sign. This does not check the plate:
+              for a car at the exit, use Release car. Your name and the reason are recorded.
+            </p>
+            <label className="block font-medium">
+              Why are you closing it? (required)
+              <input
+                value={closeReason}
+                onChange={(e) => setCloseReason(e.target.value)}
+                maxLength={200}
+                placeholder="For example: the member had no signal at the exit"
+                className={field}
+              />
+            </label>
+            <button onClick={closeForMember} disabled={pending} className={outlineButton}>
+              {pending && <Spinner />}
+              Close visit
+            </button>
+          </div>
+        </details>
       )}
 
       {corrections && <CorrectionPanel visitId={card.visitId} context={corrections} />}

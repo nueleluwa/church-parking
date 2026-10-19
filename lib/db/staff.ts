@@ -177,6 +177,16 @@ export async function logAudit(
   if (error) fail(error.message);
 }
 
+/**
+ * Staff close a visit for a member who could not (QR check-in). A reason is required and is written to the audit log in the
+ * same transaction. A visit on hold, or already closed, is refused.
+ */
+export async function staffCloseVisit(visitId: string, staffId: string, reason: string): Promise<"ok" | "not_found" | "bad_state" | "held" | "bad_input"> {
+  const { data, error } = await db().rpc("staff_close_visit", { p_visit: visitId, p_staff: staffId, p_reason: reason });
+  if (error) fail(error.message);
+  return data as "ok" | "not_found" | "bad_state" | "held" | "bad_input";
+}
+
 /** "Does not match": hold the car and alert the coordinator (EX-5). */
 export async function raiseNoMatch(staffId: string, visitId: string, plate: string): Promise<"ok" | "not_found" | "bad_state"> {
   const { data, error } = await db().rpc("hold_visit", { p_visit: visitId, p_staff: staffId });

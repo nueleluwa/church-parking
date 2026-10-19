@@ -22,7 +22,7 @@ export type GuestClaimAnswer =
 
 export type MemberClaimAnswer =
   | { status: "ok"; token: string; reference: string; existing: boolean }
-  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" | "vehicle_inactive" | "member_inactive" }
+  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" | "vehicle_inactive" | "member_inactive" | "member_has_open_visit" }
   | { status: "error" };
 
 export type GuestClaimArgs = {
@@ -144,7 +144,7 @@ export type MemberClaimInput = {
 
 export type MemberClaimResult =
   | { status: "ok"; token: string; reference: string; existing: boolean }
-  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" | "vehicle_inactive" | "member_inactive" };
+  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" | "vehicle_inactive" | "member_inactive" | "member_has_open_visit" };
 
 /**
  * A member's car checks in (CI-4), in one database call. If the member is already checked in
@@ -179,7 +179,7 @@ export type StaffMemberClaimInput = {
 export type StaffMemberClaimResult =
   | { status: "ok"; token: string; reference: string; existing: boolean }
   | { status: "not_member" }
-  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" | "vehicle_inactive" | "member_inactive" };
+  | { status: "blocked"; reason: "plate_conflict" | "not_your_vehicle" | "vehicle_inactive" | "member_inactive" | "member_has_open_visit" };
 
 /**
  * An attendant registers a car that belongs to a member, for example when the
