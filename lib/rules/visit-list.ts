@@ -28,7 +28,7 @@ export type VisitListRow = {
   status: VisitStatus;
   checkedInAt: string;
   releasedAt: string | null;
-  releaseMethod: "scan" | "search" | "sweep" | "midnight" | null;
+  releaseMethod: "scan" | "search" | "sweep" | "midnight" | "self" | "staff_close" | null;
   releasedBy: string | null;
   reference: string;
   held: boolean;
@@ -123,6 +123,8 @@ const METHODS: Record<string, string> = {
   search: "Looked up, no pass scanned",
   sweep: "Closed in the sweep",
   midnight: "Closed at midnight",
+  self: "Member checked out (exit sign)",
+  staff_close: "Closed by staff",
 };
 
 const lagosStamp = (iso: string | null) => (iso ? new Date(Date.parse(iso) + 3_600_000).toISOString().slice(0, 16).replace("T", " ") : "");

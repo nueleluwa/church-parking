@@ -63,6 +63,14 @@ export type ReportId =
 export type ReportDef = { id: ReportId; category: ReportCategoryId; name: string; description: string; formats: readonly ["csv"] };
 
 const csv = ["csv"] as const;
+
+/** How a released visit was released, in words, for the visit report. */
+const RELEASE_LABEL: Record<string, string> = {
+  scan: "Pass scanned",
+  search: "Looked up, no pass scanned",
+  self: "Member checked out (exit sign)",
+  staff_close: "Closed by staff",
+};
 export const REPORTS: ReportDef[] = [
   { id: "parking-summary", category: "activity", name: "Parking summary", description: "Check-ins, check-outs, cars with no check-out, unique vehicles and average stay, plus the cars parked right now.", formats: csv },
   { id: "activity-by-day", category: "activity", name: "Vehicle activity by day", description: "Daily check-ins, check-outs and cars with no recorded check-out.", formats: csv },
@@ -273,7 +281,7 @@ export function buildReportTable(id: ReportId, input: ReportInput): Table {
         headers: ["Reference", "Plate", "Checked in (Lagos)", "Checked out (Lagos)", "How released", "Released by", "Status"],
         rows: [...visits]
           .sort((a, b) => a.checkedInAt.localeCompare(b.checkedInAt))
-          .map((v) => [v.reference, v.plate, lagosStamp(v.checkedInAt), lagosStamp(v.releasedAt), v.status === "released" ? (v.releaseMethod === "search" ? "Looked up, no pass scanned" : "Pass scanned") : "", v.releasedByName ?? "", status(v)]),
+          .map((v) => [v.reference, v.plate, lagosStamp(v.checkedInAt), lagosStamp(v.releasedAt), v.status === "released" ? RELEASE_LABEL[v.releaseMethod ?? "scan"] ?? "Pass scanned" : "", v.releasedByName ?? "", status(v)]),
       };
     case "vehicle-activity":
       return perVehicle(visits);

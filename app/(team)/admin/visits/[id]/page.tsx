@@ -28,6 +28,8 @@ const METHOD: Record<string, string> = {
   search: "Looked up by hand (no pass)",
   sweep: "End-of-service sweep",
   midnight: "Closed at midnight",
+  self: "Member checked out (exit sign)",
+  staff_close: "Closed by staff",
 };
 
 const TABS = [

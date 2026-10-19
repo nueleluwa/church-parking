@@ -41,6 +41,12 @@ describe("buildScanCard", () => {
     expect(card).toMatchObject({ state: "already_released", releasedByName: "Chidi" });
   });
 
+  test("a visit the member closed with the exit sign says so, so the attendant does not release it again", () => {
+    const self = buildScanCard({ ...base, status: "released", releasedAt: "2026-10-11T08:30:00Z", releaseMethod: "self" }, today);
+    expect(self).toMatchObject({ state: "already_released", releasedBySelf: true, releasedByName: null });
+    expect(buildScanCard({ ...base, status: "released", releasedAt: "2026-10-11T08:30:00Z", releaseMethod: "scan", releasedByName: "Chidi" }, today).releasedBySelf).toBe(false);
+  });
+
   test("a closed visit is flagged", () => {
     expect(buildScanCard({ ...base, status: "missed" }, today).state).toBe("closed");
   });

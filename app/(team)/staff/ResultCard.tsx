@@ -57,7 +57,9 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections, areas
       ? {
           chip: "ALREADY RELEASED",
           title: "Already released",
-          reason: `Released${card.releasedByName ? ` by ${card.releasedByName}` : ""} at ${time(card.releasedAt)}. Do not release again.`,
+          reason: card.releasedBySelf
+            ? `The member checked out with the exit sign at ${time(card.releasedAt)}. Do not release again.`
+            : `Released${card.releasedByName ? ` by ${card.releasedByName}` : ""} at ${time(card.releasedAt)}. Do not release again.`,
         }
       : card.state === "expired"
         ? { chip: "OLD PASS", title: "Old pass", reason: "OLD PASS. This pass is from an earlier day. Do not release." }

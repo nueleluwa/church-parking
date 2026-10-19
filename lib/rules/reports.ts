@@ -7,7 +7,7 @@ export type ReportVisit = {
   areaId: number;
   areaName: string;
   status: "parked" | "released" | "missed";
-  releaseMethod: "scan" | "search" | "sweep" | "midnight" | null;
+  releaseMethod: "scan" | "search" | "sweep" | "midnight" | "self" | "staff_close" | null;
   plate: string;
   reference: string;
   checkedInAt: string;

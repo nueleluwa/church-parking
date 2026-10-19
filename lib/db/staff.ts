@@ -21,7 +21,7 @@ export async function getStaffById(id: string): Promise<Staff | null> {
 }
 
 const DETAIL_SELECT =
-  "id, status, reference, service_date, released_at, checked_in_at, held_at, vehicle_id, member_id, " +
+  "id, status, reference, service_date, released_at, release_method, checked_in_at, held_at, vehicle_id, member_id, " +
   "vehicles(plate, make, colour), areas(id, name, slug), services(name), " +
   "members(full_name, phone), guests(full_name, phone), " +
   "releaser:staff!visits_released_by_fkey(full_name)";
@@ -34,6 +34,7 @@ type DetailRow = {
   reference: string;
   service_date: string;
   released_at: string | null;
+  release_method: string | null;
   held_at: string | null;
   checked_in_at: string;
   vehicles: { plate: string; make: string | null; colour: string | null };
@@ -66,6 +67,7 @@ function toDetail(row: DetailRow): ScanDetail {
     releasedAt: row.released_at,
     held: row.held_at !== null,
     releasedByName: row.releaser?.full_name ?? null,
+    releaseMethod: row.release_method,
   };
 }
 

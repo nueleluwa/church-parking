@@ -162,6 +162,12 @@ describe("vehicle and member reports", () => {
     const rows = buildReportTable("checkin-checkout-records", rich).rows;
     expect(rows.find((r) => r[0] === "PK-2345")?.[4]).toBe("Pass scanned");
     expect(rows.find((r) => r[0] === "PK-3456")?.[4]).toBe("Looked up, no pass scanned");
+  });
+  test("a visit the member closed with the exit sign, or staff closed, is labelled as such and not as a pass scan", () => {
+    const withMethods = { ...rich, visits: [...rich.visits, visit({ reference: "PK-8001", releaseMethod: "self", releasedByName: null }), visit({ reference: "PK-8002", releaseMethod: "staff_close" })] };
+    const rows = buildReportTable("checkin-checkout-records", withMethods).rows;
+    expect(rows.find((r) => r[0] === "PK-8001")?.[4]).toBe("Member checked out (exit sign)");
+    expect(rows.find((r) => r[0] === "PK-8002")?.[4]).toBe("Closed by staff");
     expect(rows.find((r) => r[0] === "PK-4567")?.[4]).toBe("");
   });
   test("vehicle activity is one row per vehicle", () => {

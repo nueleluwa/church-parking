@@ -1,6 +1,6 @@
 export type StaffRole = "attendant" | "coordinator" | "admin";
 export type VisitStatus = "parked" | "released" | "missed";
-export type ReleaseMethod = "scan" | "search" | "sweep" | "midnight";
+export type ReleaseMethod = "scan" | "search" | "sweep" | "midnight" | "self" | "staff_close";
 
 export type Area = {
   id: number;

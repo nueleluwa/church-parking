@@ -18,6 +18,8 @@ export type ScanDetail = {
   phone: string; // full number: stays on the server
   releasedAt: string | null;
   releasedByName: string | null;
+  /** The release method, so the card can say when the member closed the visit with the exit sign. */
+  releaseMethod?: string | null;
   /** A coordinator has not yet cleared a Does not match hold. */
   held?: boolean;
 };
@@ -46,6 +48,8 @@ export type ScanCard = {
   phoneLast4: string;
   releasedAt: string | null;
   releasedByName: string | null;
+  /** The member closed this visit themselves with the exit sign. */
+  releasedBySelf: boolean;
 };
 
 /**
@@ -81,6 +85,7 @@ export function buildScanCard(d: ScanDetail, today: string, now: Date = new Date
     phoneLast4: d.phone.slice(-4),
     releasedAt: d.releasedAt,
     releasedByName: d.releasedByName,
+    releasedBySelf: d.releaseMethod === "self",
   };
 }
 
