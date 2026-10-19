@@ -83,6 +83,21 @@ export type CheckInArgs = {
   limits?: { phoneKey?: string; phoneMax?: number; ipKey?: string; ipMax?: number; reissueKey?: string; reissueMax?: number };
 };
 
+export type CheckOutAnswer = {
+  status: string;
+  plate?: string;
+  reference?: string;
+  checked_in_at?: string;
+  released_at?: string;
+};
+
+/** Call checkout_with_credential the way the app does. */
+export async function checkOut(db: SupabaseClient, a: { hash: string; areaId: number; today?: string }) {
+  const { data, error } = await db.rpc("checkout_with_credential", { p_hash: a.hash, p_area: a.areaId, p_today: a.today ?? lagosToday() });
+  if (error) throw new Error(error.message);
+  return data as CheckOutAnswer;
+}
+
 /** Call check_in_with_credential the way the app does. */
 export async function checkIn(db: SupabaseClient, a: CheckInArgs) {
   const l = a.limits ?? {};
