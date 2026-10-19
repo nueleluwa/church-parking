@@ -35,6 +35,20 @@ export type CheckInAnswer =
   | { status: "blocked"; reason: "plate_conflict" }
   | { status: "error" };
 
+export type CheckOutAnswer =
+  | { status: "ok"; plate: string; reference: string; checked_in_at: string; released_at: string }
+  | { status: "already_closed" | "closed_missed" | "no_credential" | "expired" | "wrong_area" | "held" };
+
+/**
+ * Close the visit whose credential has this hash, at this car park, if it is still open (see
+ * supabase/migrations/20261019050000_checkout_with_credential.sql). The credential itself never reaches the database.
+ */
+export async function checkoutWithCredential(credentialHash: string, areaId: number, today: string): Promise<CheckOutAnswer> {
+  const { data, error } = await db().rpc("checkout_with_credential", { p_hash: credentialHash, p_area: areaId, p_today: today });
+  if (error) fail(error.message);
+  return data as CheckOutAnswer;
+}
+
 export type CheckInArgs = {
   local: string;
   vehicleId: string;
