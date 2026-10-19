@@ -13,10 +13,11 @@ The app replaces a physical security check: the paper tally that stops a car lea
 | T-5 | Someone misuses a staff account. | Each person has their own account. Sessions last 12 hours. Every action is audited. Admins can deactivate accounts. | Volunteers might share logins. Cover this in training. |
 | T-6 | Personal data leaks. | Phone numbers are masked (R-9). No personal data in URLs, QR codes or logs. Exports are admin only and logged. | Normal care needed. |
 | T-7 | Spam registrations. | Rate limits per IP address and per phone number on check-in. | Low. |
+| T-8 | Someone who knows a member's phone number checks in as them, or replaces that member's checkout credential by checking in again at the same car park (QR check-in, D-43). | Rate limits per address and per phone number, a separate limit on replacements, an audit row for every check-in and every replacement, and the attendant's check at the exit where the church keeps it. | Accepted (SRS section 11): impact is low, since the member's car still has to leave through the car park. Watch the audit log for repeated replacements. |
 
 ## Rules
 
-1. No code path releases a visit except `releaseVisit()` in `lib/rules`. It requires a staff session and updates the visit only `WHERE status = 'parked'`.
+1. No code path releases a visit except `releaseVisit()` in `lib/rules` (a staff session, updates only `WHERE status = 'parked'`), **and, for visits made with the QR check-in (D-43), `checkout_with_credential` in the database**: it needs the visit's own checkout credential (a cookie only that member's browser holds; only its hash is stored), a matching `Origin` header, and the exit sign of the same car park, and it updates only an open visit that is not on hold.
 2. The browser never receives the Supabase service key, or any key that can read personal data.
 3. The pass page (`/p/[token]`) shows name or phone details only to a signed-in staff session.
 4. A claim on a plate that already has an open visit never returns or reveals the existing pass.

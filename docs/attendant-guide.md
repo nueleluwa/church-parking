@@ -43,6 +43,14 @@ Tap **Add car**. Enter the plate and phone number (name is optional) and choose 
 
 Under **More**, tap **Add Member**. First type the driver's phone number or plate and tap **Check**, so you do not add someone twice. If nobody is found, enter their full name, Nigerian phone number and plate, then tap **Add member**. The driver can then check in with their phone number. This works only for a Nigerian number; for any other number, use **Add car** instead. The app refuses a number or plate that already belongs to a member, and your name is recorded.
 
+## Members who check in by phone
+
+At some car parks a member checks in with just their phone number and checks out by scanning an **exit sign** on their own phone. Nothing changes for you: they still have a pass, and you can scan it and **Release car** at any time, especially if the member is having any trouble.
+
+- If the member already checked out with the exit sign, the scan card says **The member checked out with the exit sign. Do not release again.**
+- If a member says the exit sign did not work, release the car as usual after checking the plate. If the car is on **Does not match**, the exit sign will not let them out: the coordinator clears that, as before.
+- A member who lost their check-in on their phone can scan the check-in sign again and confirm their car; that gives their phone a new check-out code. Or you can release the car.
+
 ## If the app stops working (paper fallback)
 
 1. Tell the coordinator at once.
