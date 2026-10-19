@@ -46,7 +46,8 @@ export type Fixture = Awaited<ReturnType<typeof makeFixture>>;
 
 /** Remove a fixture and the visits, audit rows and alerts it caused. */
 export async function removeFixture(db: SupabaseClient, f: Fixture, extra: { guestIds?: string[]; rateKeys?: string[] } = {}) {
-  const visits = (await db.from("visits").select("id").eq("vehicle_id", f.vehicleId)).data ?? [];
+  const owned = ((await db.from("member_vehicles").select("vehicle_id").eq("member_id", f.memberId)).data ?? []).map((r) => r.vehicle_id as string);
+  const visits = (await db.from("visits").select("id").or(`vehicle_id.eq.${f.vehicleId},member_id.eq.${f.memberId}`)).data ?? [];
   const ids = visits.map((v) => v.id as string);
   if (ids.length) {
     await db.from("audit_events").delete().in("visit_id", ids);
@@ -55,9 +56,36 @@ export async function removeFixture(db: SupabaseClient, f: Fixture, extra: { gue
   }
   await db.from("alerts").delete().eq("plate", f.plate);
   await db.from("members").delete().eq("id", f.memberId);
-  await db.from("vehicles").delete().eq("id", f.vehicleId);
+  await db.from("vehicles").delete().in("id", [f.vehicleId, ...owned]);
   if (extra.guestIds?.length) await db.from("guests").delete().in("id", extra.guestIds);
   if (extra.rateKeys?.length) await db.from("rate_events").delete().in("key", extra.rateKeys);
+}
+
+/** A second vehicle for the same member. Removed with the fixture. */
+export async function addVehicle(db: SupabaseClient, f: Fixture): Promise<{ id: string; plate: string }> {
+  const plate = randomPlate("IX");
+  const car = await db.from("vehicles").insert({ plate }).select("id").single();
+  if (car.error) throw new Error(car.error.message);
+  const link = await db.from("member_vehicles").insert({ member_id: f.memberId, vehicle_id: car.data.id });
+  if (link.error) throw new Error(link.error.message);
+  return { id: car.data.id as string, plate };
+}
+
+/** The original member check-in (claim_member_visit), unchanged in its inputs. */
+export async function legacyMemberClaim(db: SupabaseClient, a: { memberId: string; vehicleId: string; plate: string; serviceId: number; areaId: number; date?: string }) {
+  const { data, error } = await db.rpc("claim_member_visit", {
+    p_member: a.memberId,
+    p_vehicle: a.vehicleId,
+    p_plate: a.plate,
+    p_service: a.serviceId,
+    p_area: a.areaId,
+    p_date: a.date ?? lagosToday(),
+    p_staff: null,
+    p_candidates: candidates(),
+    p_key: null,
+  });
+  if (error) throw new Error(error.message);
+  return data as { status: string; reason?: string; token?: string; reference?: string; existing?: boolean };
 }
 
 export async function anyService(db: SupabaseClient): Promise<number> {
