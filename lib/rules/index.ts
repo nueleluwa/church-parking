@@ -1,5 +1,5 @@
 export { normalisePlate, formatPlate } from "./plates";
-export { normalisePhone, maskPhone, toLocalPhone, localPhone, formatLocalPhone } from "./phone";
+export { normalisePhone, maskPhone, toLocalPhone, localPhone, formatLocalPhone, displayPhone } from "./phone";
 export { isLongSession, longSessionLabel, longSessionCutoff } from "./long-session";
 export { makeCredential, hashCredential, looksLikeCredential } from "./credential";
 export { qrFlowEnabled, publicSignUpOpen, parseQrAreas, readQrFlow, type QrFlowConfig, type QrFlowMode } from "./qr-flow";

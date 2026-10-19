@@ -20,6 +20,7 @@ import {
   buildScanCard,
   claimGuestVisit,
   claimVisitForMemberByStaff,
+  displayPhone,
   lagosDate,
   normalisePhone,
   normalisePlate,
@@ -143,7 +144,7 @@ export async function revealPhone(visitId: string): Promise<{ phone: string } | 
   const phone = await getVisitPhone(visitId);
   if (!phone) return { error: "No number on file." };
   await logAudit(staff.id, visitId, "reveal_phone");
-  return { phone };
+  return { phone: displayPhone(phone) };
 }
 
 const registerSchema = z.object({

@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { VehicleImage } from "@/components/VehicleImage";
 import { getMemberById, listMemberVehicles, memberHistory } from "@/lib/db";
 import { formatLagosDate, formatVisitTime } from "@/lib/format";
-import { formatPlate, memberState } from "@/lib/rules";
+import { displayPhone, formatPlate, memberState } from "@/lib/rules";
 import { describeVehicle } from "@/lib/rules/vehicle";
 import { requireStaff } from "@/lib/staff-auth";
 import { AdminForm } from "../../AdminForm";
@@ -43,7 +43,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
         <div>
           <h1 className="t-page">{member.full_name}</h1>
           <p className="text-ink-soft">
-            {member.phone} · joined {formatLagosDate(member.created_at)}
+            {displayPhone(member.phone)} · joined {formatLagosDate(member.created_at)}
             {member.last_seen_at && ` · last seen ${formatVisitTime(member.last_seen_at)}`}
           </p>
         </div>
@@ -103,7 +103,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
               </label>
               <label className="block font-medium">
                 Phone number
-                <input name="phone" type="tel" inputMode="tel" required defaultValue={member.phone} autoComplete="off" className="input" />
+                <input name="phone" type="tel" inputMode="tel" required defaultValue={displayPhone(member.phone)} autoComplete="off" className="input" />
               </label>
             </AdminForm>
             <div id="pin" className="scroll-mt-24">

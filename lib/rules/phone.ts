@@ -38,6 +38,14 @@ export function localPhone(input: string): string | null {
   return e164 ? toLocalPhone(e164) : null;
 }
 
+/**
+ * How a stored phone number is shown to staff: the local form (08031234567) for a Nigerian number, and the stored form for any
+ * other. Members are told and shown local numbers everywhere; the database keeps the international form.
+ */
+export function displayPhone(stored: string): string {
+  return toLocalPhone(stored) ?? stored;
+}
+
 /** 08031234567 shown as 0803 123 4567. */
 export function formatLocalPhone(local: string): string {
   return /^\d{11}$/.test(local) ? `${local.slice(0, 4)} ${local.slice(4, 7)} ${local.slice(7)}` : local;

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatLocalPhone, localPhone, maskPhone, normalisePhone, toLocalPhone } from "./phone";
+import { displayPhone, formatLocalPhone, localPhone, maskPhone, normalisePhone, toLocalPhone } from "./phone";
 
 describe("normalisePhone", () => {
   test.each([
@@ -56,6 +56,13 @@ describe("localPhone (what a member types at check-in)", () => {
     for (const typed of ["08031234567", "+2348031234567", "2348031234567"]) {
       expect(toLocalPhone(normalisePhone(typed)!)).toBe(localPhone(typed));
     }
+  });
+});
+
+describe("displayPhone", () => {
+  test("shows a Nigerian number locally and anything else as stored", () => {
+    expect(displayPhone("+2348031234567")).toBe("08031234567");
+    expect(displayPhone("+447700900123")).toBe("+447700900123");
   });
 });
 

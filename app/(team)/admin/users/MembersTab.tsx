@@ -5,6 +5,7 @@ import { VehicleImage } from "@/components/VehicleImage";
 import { memberSummary, searchMemberList } from "@/lib/db";
 import {
   MEMBER_PAGE_SIZES,
+  displayPhone,
   initials,
   lagosMonthStart,
   lagosParts,
@@ -147,7 +148,7 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
                   </span>
                   <Link href={`/admin/members/${m.id}`} aria-label={`Member ${m.fullName}`} className="min-w-0 flex-1 hover:opacity-80">
                     <span className="block truncate text-lg font-bold">{m.fullName}</span>
-                    <span className="block text-sm text-ink-soft">{m.phone}</span>
+                    <span className="block text-sm text-ink-soft">{displayPhone(m.phone)}</span>
                     <span className="block text-sm text-ink-soft">
                       {m.vehicleCount} {m.vehicleCount === 1 ? "vehicle" : "vehicles"} · joined {lagosParts(m.createdAt).date}
                     </span>
@@ -185,7 +186,7 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
                           </Link>
                         </span>
                       </td>
-                      <td className="dt-td whitespace-nowrap">{m.phone}</td>
+                      <td className="dt-td whitespace-nowrap">{displayPhone(m.phone)}</td>
                       <td className="dt-td">
                         <span className="flex items-center gap-2">
                           {m.vehicleCount > 0 && <VehicleImage size="sm" className="!w-10" />}
