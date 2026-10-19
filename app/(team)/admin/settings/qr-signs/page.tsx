@@ -63,6 +63,9 @@ export default async function QrSignsPage() {
                   <a href={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(s.svg)}`} download={`qr-${s.slug}.svg`} className={outlineButton}>
                     Download the QR code
                   </a>
+                  <Link href={`/admin/settings/qr-signs/${s.slug}?kind=exit`} className={outlineButton}>
+                    Exit sign (phone check-out)
+                  </Link>
                 </div>
               </li>
             ))}

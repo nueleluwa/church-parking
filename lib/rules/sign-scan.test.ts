@@ -11,6 +11,14 @@ describe("parseSignScan", () => {
     expect(parseSignScan("https://www.churchparking.online/c/dominos", HOST)).toEqual({ kind: "sign", slug: "dominos" });
   });
 
+  test("an exit sign opens check-out for that car park, and only on our own addresses", () => {
+    expect(parseSignScan("https://churchparking.online/c/cp1/out", HOST)).toEqual({ kind: "exit", slug: "cp1" });
+    expect(parseSignScan("https://churchparking.online/c/cp1/out/", HOST)).toEqual({ kind: "exit", slug: "cp1" });
+    expect(parseSignScan("https://evil.example/c/cp1/out", HOST)).toEqual({ kind: "other" });
+    expect(parseSignScan("https://churchparking.online/c/cp1/outside", HOST)).toEqual({ kind: "other" });
+    expect(parseSignScan("https://churchparking.online/c/cp1/out/extra", HOST)).toEqual({ kind: "other" });
+  });
+
   test("a parking pass is recognised as a pass, not a sign", () => {
     expect(parseSignScan(`https://churchparking.online/p/${TOKEN}`, HOST)).toEqual({ kind: "pass", token: TOKEN });
   });

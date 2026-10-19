@@ -12,6 +12,8 @@ const REGION = "sign-scan-region";
 
 type Notice = { message: string; passToken?: string };
 
+type Found = { name: string; exit: boolean };
+
 /**
  * The dedicated page for scanning a car park sign. It does one job: read the QR code on the sign, find that car
  * park among the church's own records, and open check-in for it. There is no list of car parks here: the sign
@@ -27,7 +29,7 @@ export function SignScanPage({ areas }: { areas: { slug: string; name: string }[
   const [phase, setPhase] = useState<"starting" | "scanning" | "found" | "blocked">("starting");
   const [problem, setProblem] = useState<CameraProblem | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [foundName, setFoundName] = useState<string | null>(null);
+  const [found, setFound] = useState<Found | null>(null);
   const handled = useRef(false);
 
   useEffect(() => {
@@ -48,7 +50,7 @@ export function SignScanPage({ areas }: { areas: { slug: string; name: string }[
           (text) => {
             if (handled.current) return;
             const scan = parseSignScan(text, window.location.host);
-            if (scan.kind === "sign") {
+            if (scan.kind === "sign" || scan.kind === "exit") {
               const area = areas.find((a) => a.slug === scan.slug);
               if (!area) {
                 refuse({ message: "That car park sign is not in use. Check you are at the right car park, then scan again." });
@@ -58,9 +60,9 @@ export function SignScanPage({ areas }: { areas: { slug: string; name: string }[
               handled.current = true;
               navigator.vibrate?.(60);
               setNotice(null);
-              setFoundName(area.name);
+              setFound({ name: area.name, exit: scan.kind === "exit" });
               setPhase("found");
-              setTimeout(() => router.push(`/c/${area.slug}`), 500);
+              setTimeout(() => router.push(scan.kind === "exit" ? `/c/${area.slug}/out` : `/c/${area.slug}`), 500);
             } else if (scan.kind === "pass") {
               refuse({ message: "That is a parking pass, not a car park sign. Scan the sign at your car park.", passToken: scan.token });
             } else {
@@ -93,7 +95,7 @@ export function SignScanPage({ areas }: { areas: { slug: string; name: string }[
     handled.current = false;
     setProblem(null);
     setNotice(null);
-    setFoundName(null);
+    setFound(null);
     setPhase("starting");
     setAttempt((n) => n + 1);
   }
@@ -117,13 +119,13 @@ export function SignScanPage({ areas }: { areas: { slug: string; name: string }[
             </button>
           )}
         </section>
-      ) : phase === "found" && foundName ? (
+      ) : phase === "found" && found ? (
         <section role="status" className="rounded-card border-2 border-success bg-success-soft p-5 text-center">
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success text-white">
             <IconCheck className="h-7 w-7" />
           </span>
-          <h2 className="mt-2 text-2xl font-extrabold">{foundName}</h2>
-          <p className="mt-1 text-ink-soft">Car park found. Opening check-in…</p>
+          <h2 className="mt-2 text-2xl font-extrabold">{found.name}</h2>
+          <p className="mt-1 text-ink-soft">{found.exit ? "Exit sign found. Opening check-out…" : "Car park found. Opening check-in…"}</p>
         </section>
       ) : (
         <div className="relative flex min-h-72 items-center justify-center overflow-hidden rounded-card bg-night p-3">
