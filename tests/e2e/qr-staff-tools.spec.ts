@@ -60,7 +60,7 @@ test.describe("staff close a visit for a member", () => {
 
       // Scanning the pass again shows who closed it
       await page.goto(passUrl);
-      await expect(page.getByText("Already released")).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByRole("heading", { name: "Already released" })).toBeVisible({ timeout: 30_000 });
       await expect(page.getByText(/Released by Test attendant/)).toBeVisible();
     } finally {
       await attendant.remove();
@@ -130,7 +130,7 @@ test.describe("visits open for a long time are flagged, not closed", () => {
       await page.goto(`/admin/visits?q=${m.plates[0]}`);
       const row = page.getByRole("main").getByRole("link", { name: /Visit of/ }).first();
       await expect(row).toBeVisible({ timeout: 60_000 });
-      await expect(page.getByRole("main").getByText("Open 12h+")).toHaveCount(flagged ? 1 : 0);
+      await expect(page.getByRole("main").getByText("Open 12h+").filter({ visible: true })).toHaveCount(flagged ? 1 : 0);
     }
 
     // The visit page says so too
@@ -174,7 +174,7 @@ test.describe("search the history by a member's phone number (administrators)", 
     await expect(page.getByTestId("v-count")).toHaveText("1", { timeout: 60_000 });
     await expect(page.getByRole("main").getByRole("link", { name: new RegExp(`Visit of ${a.plates[0].slice(0, 3)}`) })).toBeVisible();
     // The number is not printed back in the results
-    await expect(page.getByRole("main").locator("li, tr")).not.toContainText(a.local);
+    await expect(page.getByRole("main")).not.toContainText(a.local);
 
     const csv = await (await page.request.get(`/admin/reports/export?report=visit-list&from=${today()}&to=${today()}&phone=${encodeURIComponent(a.local)}`)).text();
     expect(csv).toContain(a.plates[0]);

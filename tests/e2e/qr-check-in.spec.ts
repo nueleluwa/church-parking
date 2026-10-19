@@ -51,12 +51,17 @@ test("the original guest check-in is refused for a phone check-in car park, even
   await page.getByLabel("Your name").fill("Zqq Direct Guest");
   await page.getByLabel("Phone number").fill(phone);
   await page.getByLabel("Plate number").fill(plate);
-  // Point the form at the phone check-in car park, as a hand-made request would
-  await page.evaluate((slug) => {
-    (document.querySelector('input[name="area"]') as HTMLInputElement).value = slug;
-  }, QR_AREA);
   await page.getByRole("button", { name: "Get my pass" }).click();
-  await page.getByRole("button", { name: "Yes, get my pass" }).click();
+  const confirm = page.getByRole("button", { name: "Yes, get my pass" });
+  await expect(confirm).toBeVisible();
+  // Point the form at the phone check-in car park, as a hand-made request would. This has to be the last step before sending:
+  // the form draws itself again between its two steps and puts its own car park back.
+  const areaInput = page.locator("form", { has: page.locator('input[name="plate"]') }).locator('input[name="area"]');
+  await expect(areaInput).toHaveValue("cp1");
+  await areaInput.evaluate((el, slug) => {
+    (el as HTMLInputElement).value = slug;
+  }, QR_AREA);
+  await confirm.click();
   await expect(page.getByText("This car park uses phone check-in.")).toBeVisible({ timeout: 30_000 });
   expect(page.url()).not.toContain("/p/");
   expect((await db.from("vehicles").select("id").eq("plate", plate)).data).toHaveLength(0);
