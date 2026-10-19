@@ -7,7 +7,8 @@ import { Plate } from "@/components/Plate";
 import { StatusBadge } from "@/components/StatusBadge";
 import { VehicleImage } from "@/components/VehicleImage";
 import { outlineButton } from "@/components/ui";
-import { getVisitDetail } from "@/lib/db";
+import { getSettings, getVisitDetail } from "@/lib/db";
+import { isLongSession, longSessionLabel } from "@/lib/rules/long-session";
 import { formatDuration, formatLagosDate, formatLagosTime } from "@/lib/format";
 import { describeVehicle } from "@/lib/rules/vehicle";
 import { requireStaff } from "@/lib/staff-auth";
@@ -58,6 +59,8 @@ export default async function VisitDetailsPage({
   const minutes = Math.max(0, Math.round((end.getTime() - new Date(v.checkedInAt).getTime()) / 60_000));
   const details = describeVehicle({ make: v.make, colour: v.colour });
   const status = STATUS[v.status];
+  const longHours = (await getSettings()).longSessionHours;
+  const long = isLongSession(v, new Date(), longHours);
 
   return (
     <>
@@ -71,6 +74,7 @@ export default async function VisitDetailsPage({
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+          {long && <StatusBadge tone="danger">{longSessionLabel(longHours).toUpperCase()}</StatusBadge>}
           {v.held && <StatusBadge tone="danger">ON HOLD</StatusBadge>}
         </div>
       </section>

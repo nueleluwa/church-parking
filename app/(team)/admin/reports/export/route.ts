@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { listActiveAreas, listMatchingVisits, listReportVisits, logAudit } from "@/lib/db";
+import { getSettings, listActiveAreas, listMatchingVisits, listReportVisits, logAudit, resolveVisitExtras } from "@/lib/db";
 import { loadReportInput } from "@/lib/report-data";
 import {
   MAX_REPORT_DAYS,
@@ -45,11 +45,17 @@ export async function GET(request: Request) {
     const areaSlug = url.searchParams.get("area");
     const area = areaSlug ? (await listActiveAreas()).find((a) => a.slug === areaSlug) : undefined;
     if (areaSlug && !area) return fail("That parking area is not recognised.");
-    const status = parseVisitStatus(url.searchParams.get("status"));
+    // The phone and "open longer than N hours" filters of the screen, worked out the same way so the file matches what was shown
+    const extras = await resolveVisitExtras(
+      { phone: url.searchParams.get("phone"), long: url.searchParams.get("long") },
+      { isAdmin: true, longHours: (await getSettings()).longSessionHours, now: new Date() },
+    );
+    if (extras.phoneProblem) return fail(extras.phoneProblem);
+    const status = extras.openBefore ? ("parked" as const) : parseVisitStatus(url.searchParams.get("status"));
     const plate = searchPlate(url.searchParams.get("q"));
-    const rows = await listMatchingVisits({ from: range.from, to: range.to, serviceId, areaId: area?.id ?? null, status, plate });
+    const rows = await listMatchingVisits({ from: range.from, to: range.to, serviceId, areaId: area?.id ?? null, status, plate, memberId: extras.memberId, openBefore: extras.openBefore });
     await logAudit(staff.id, null, "export_report", {
-      after: { report: "visit-list", from: range.from, to: range.to, rows: rows.length, ...(serviceId !== null ? { service: serviceId } : {}), ...(area ? { area: area.slug } : {}), ...(status ? { status } : {}), ...(plate ? { search: true } : {}) },
+      after: { report: "visit-list", from: range.from, to: range.to, rows: rows.length, ...(serviceId !== null ? { service: serviceId } : {}), ...(area ? { area: area.slug } : {}), ...(status ? { status } : {}), ...(plate ? { search: true } : {}), ...(extras.phoneUsed ? { member_search: true } : {}), ...(extras.openBefore ? { open_longer: true } : {}) },
     });
     return new NextResponse(visitListToCsv(rows), {
       headers: {

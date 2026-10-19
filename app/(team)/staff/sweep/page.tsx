@@ -2,7 +2,8 @@ import Link from "next/link";
 import { IconAlert, IconCar, IconLogout, IconSearch } from "@/components/icons";
 import { MetricCard, MetricRow } from "@/components/ds/MetricCard";
 import { PageHeader } from "@/components/ds/PageHeader";
-import { countReleasedToday, listActiveAreas, listActiveServices, listOnSite } from "@/lib/db";
+import { countReleasedToday, getSettings, listActiveAreas, listActiveServices, listOnSite } from "@/lib/db";
+import { isLongSession } from "@/lib/rules/long-session";
 import {
   describeVehicle,
   elapsedMinutes,
@@ -61,6 +62,7 @@ export default async function SweepPage({ searchParams }: { searchParams: Promis
   const rows = sortOnSite(filterOnSite(base, filter, nowMs), sort);
   const anyFilter = Boolean(filter.areaSlug || filter.serviceId !== null || filter.timing || filter.status || filter.plate);
 
+  const longHours = (await getSettings()).longSessionHours;
   const board: BoardRow[] = rows.map((v) => {
     const entry = lagosParts(v.checkedInAt);
     return {
@@ -79,6 +81,8 @@ export default async function SweepPage({ searchParams }: { searchParams: Promis
       overstaying: isOverstaying(v, nowMs),
       stillHere: markedStillHere(v),
       held: v.held,
+      long: isLongSession({ status: "parked", checkedInAt: v.checkedInAt }, now, longHours),
+      longHours,
     };
   });
 

@@ -1,5 +1,8 @@
+import { longSessionCutoff } from "@/lib/rules/long-session";
+import { localPhone } from "@/lib/rules/phone";
 import { plateLikePattern, type VisitListRow, type VisitStatus } from "@/lib/rules/visit-list";
 import { db } from "./client";
+import { findMemberIdByLocalPhone } from "./members";
 
 function fail(message: string): never {
   throw new Error(`Database error: ${message}`);
@@ -366,7 +369,37 @@ export type VisitFilter = {
   status: VisitStatus | null;
   /** A normalised plate, or "" for no plate search. */
   plate: string;
+  /** Only this member's visits (an admin searched by phone number). */
+  memberId?: string | null;
+  /** Only open visits checked in before this moment (the "open longer than N hours" filter), as an ISO time. */
+  openBefore?: string | null;
 };
+
+const NO_MEMBER = "00000000-0000-0000-0000-000000000000";
+
+/**
+ * The phone-number and long-visit filters of the Visits list and its export, worked out in one place so the screen and the file
+ * always agree. The phone search is for administrators only and is never written to the audit log (only that one was used).
+ * `phone` is what was typed; a number nobody has matches no visits, and a number that is not a Nigerian one is a problem to show.
+ */
+export async function resolveVisitExtras(input: { phone?: string | null; long?: string | null }, o: { isAdmin: boolean; longHours: number; now: Date }): Promise<{
+  memberId: string | null;
+  openBefore: string | null;
+  phoneProblem: string | null;
+  phoneUsed: boolean;
+}> {
+  let memberId: string | null = null;
+  let phoneProblem: string | null = null;
+  const typed = (input.phone ?? "").trim();
+  const phoneUsed = o.isAdmin && typed !== "";
+  if (phoneUsed) {
+    const local = localPhone(typed);
+    if (!local) phoneProblem = "Type a Nigerian phone number, for example 0803 123 4567.";
+    else memberId = (await findMemberIdByLocalPhone(local)) ?? NO_MEMBER;
+  }
+  const openBefore = input.long === "1" ? longSessionCutoff(o.now, o.longHours) : null;
+  return { memberId, openBefore, phoneProblem, phoneUsed };
+}
 
 const VISIT_LIST_SELECT =
   "id, status, checked_in_at, released_at, release_method, reference, member_id, held_at, service_id, area_id, " +
@@ -398,6 +431,8 @@ function filtered<Q>(query: Q, f: VisitFilter, withStatus = true): Q {
   if (f.areaId !== null) q = q.eq("area_id", f.areaId);
   if (withStatus && f.status) q = q.eq("status", f.status);
   if (f.plate) q = q.like("vehicles.plate", plateLikePattern(f.plate));
+  if (f.memberId) q = q.eq("member_id", f.memberId);
+  if (f.openBefore) q = q.eq("status", "parked").lt("checked_in_at", f.openBefore);
   return q as Q;
 }
 

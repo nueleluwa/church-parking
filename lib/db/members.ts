@@ -250,6 +250,13 @@ export async function convertGuestToMember(token: string, pinHash: string): Prom
   return { status: result as Exclude<ConvertResult["status"], "ok"> };
 }
 
+/** The id of the member with this local phone number (08031234567), or null. For admin searches; the number is never returned. */
+export async function findMemberIdByLocalPhone(local: string): Promise<string | null> {
+  const { data, error } = await db().from("members").select("id").eq("phone_local", local).maybeSingle();
+  if (error) fail(error.message);
+  return (data?.id as string | undefined) ?? null;
+}
+
 /**
  * Members matching a phone number (by its local form) or a plate, with their plates, for staff who check whether
  * someone is already registered. At most 5; the caller shows only what staff may see.

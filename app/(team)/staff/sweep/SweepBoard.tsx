@@ -28,6 +28,9 @@ export type BoardRow = {
   overstaying: boolean;
   stillHere: boolean;
   held: boolean;
+  /** Open for the "long visit" number of hours or more (flag only; nothing is closed because of it). */
+  long: boolean;
+  longHours: number;
 };
 
 export type SweepServiceOption = { id: number; label: string; endsAt: string; ended: boolean };
@@ -51,6 +54,7 @@ function Chip({ row }: { row: BoardRow }) {
         {row.overstaying ? "Overstaying" : "On site"}
       </DsChip>
       {row.stillHere && <DsChip tone="off">Marked still here</DsChip>}
+      {row.long && <DsChip tone="alert">{`Open ${row.longHours}h+`}</DsChip>}
       {row.held && <DsChip tone="alert">On hold</DsChip>}
     </span>
   );

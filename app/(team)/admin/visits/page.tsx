@@ -6,15 +6,17 @@ import { MetricCard, MetricRow } from "@/components/ds/MetricCard";
 import { PageHeader } from "@/components/ds/PageHeader";
 import { VehicleIdentity } from "@/components/ds/VehicleIdentity";
 import { PageNumbers } from "@/components/Pager";
-import { countParkedNowIn, countVisitsByStatus, listActiveAreas, listAllServices, searchVisits } from "@/lib/db";
+import { countParkedNowIn, countVisitsByStatus, getSettings, listActiveAreas, listAllServices, resolveVisitExtras, searchVisits } from "@/lib/db";
 import {
   VISITS_PAGE_SIZE,
   VISIT_STATUSES,
   durationText,
   formatPlate,
   hasRole,
+  isLongSession,
   lagosDate,
   lagosParts,
+  longSessionLabel,
   pageNumbers,
   parseVisitStatus,
   searchPlate,
@@ -30,7 +32,7 @@ import { DownloadButton } from "../reports/DownloadButton";
 export const metadata = { title: "Visits" };
 export const dynamic = "force-dynamic";
 
-type Search = { from?: string; to?: string; date?: string; service?: string; area?: string; status?: string; q?: string; page?: string };
+type Search = { from?: string; to?: string; date?: string; service?: string; area?: string; status?: string; q?: string; phone?: string; long?: string; page?: string };
 
 const addDays = (date: string, n: number) => {
   const d = new Date(`${date}T00:00:00Z`);
@@ -39,7 +41,7 @@ const addDays = (date: string, n: number) => {
 };
 
 /** A visit's status in words and a small mark, in the church's black, grey and red only. */
-function VisitChip({ status, held }: { status: VisitStatus; held: boolean }) {
+function VisitChip({ status, held, longLabel }: { status: VisitStatus; held: boolean; longLabel?: string | null }) {
   const tone = status === "parked" ? "on" : status === "released" ? "off" : "alert";
   const icon = status === "parked" ? <IconCheck className="h-3.5 w-3.5" /> : status === "released" ? <IconLogout className="h-3.5 w-3.5" /> : <IconAlert className="h-3.5 w-3.5" />;
   return (
@@ -47,6 +49,7 @@ function VisitChip({ status, held }: { status: VisitStatus; held: boolean }) {
       <Chip tone={tone} icon={icon}>
         {statusLabel(status)}
       </Chip>
+      {longLabel && <Chip tone="alert">{longLabel}</Chip>}
       {held && <Chip tone="alert">On hold</Chip>}
     </span>
   );
@@ -68,9 +71,16 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
   const services = allServices.filter((s) => s.active || String(s.id) === sp.service);
   const area = areas.find((a) => a.slug === sp.area) ?? null;
   const service = services.find((s) => String(s.id) === sp.service) ?? null;
-  const status = parseVisitStatus(sp.status);
+  const isAdmin = hasRole(staff.role, "admin");
+  const longHours = (await getSettings()).longSessionHours;
+  const now = new Date();
+  // "Open longer than N hours" only ever means open visits, whatever status was asked for
+  const long = sp.long === "1";
+  const status = long ? ("parked" as VisitStatus) : parseVisitStatus(sp.status);
   const plate = searchPlate(sp.q);
-  const filter = { from: range.from, to: range.to, serviceId: service?.id ?? null, areaId: area?.id ?? null, status, plate };
+  // The phone search is for administrators; coordinators do not see the box and the setting is ignored for them
+  const extras = await resolveVisitExtras({ phone: sp.phone, long: sp.long }, { isAdmin, longHours, now });
+  const filter = { from: range.from, to: range.to, serviceId: service?.id ?? null, areaId: area?.id ?? null, status, plate, memberId: extras.memberId, openBefore: extras.openBefore };
 
   const [counts, parkedNow] = await Promise.all([countVisitsByStatus(filter), countParkedNowIn(filter.serviceId, filter.areaId)]);
   const periodTotal = counts.parked + counts.released + counts.missed;
@@ -89,19 +99,20 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
       ...(area ? { area: area.slug } : {}),
       ...(status ? { status } : {}),
       ...(plate ? { q: plate } : {}),
+      ...(extras.phoneUsed ? { phone: (sp.phone ?? "").trim() } : {}),
+      ...(long ? { long: "1" } : {}),
       ...over,
     } as Record<string, string>;
     return new URLSearchParams(Object.entries(merged).filter(([, v]) => v)).toString();
   };
   const href = (over: Partial<Search> = {}) => `/admin/visits?${scope(over)}`;
-  const isAdmin = hasRole(staff.role, "admin");
   const presets = [
     { label: "Today", from: today, to: today },
     { label: "Yesterday", from: addDays(today, -1), to: addDays(today, -1) },
     { label: "Last 7 days", from: addDays(today, -6), to: today },
   ];
   const periodNote = range.from === range.to ? "This day" : "This period";
-  const filtersOn = Boolean(service || area || status || plate || sp.from || sp.to || sp.date);
+  const filtersOn = Boolean(service || area || status || plate || long || extras.phoneUsed || sp.from || sp.to || sp.date);
 
   const view = (v: VisitListRow) => `/admin/visits/${v.id}`;
   const entry = (v: VisitListRow) => lagosParts(v.checkedInAt);
@@ -178,6 +189,12 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
           </label>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          {isAdmin && (
+            <label className="block text-sm font-medium sm:w-56">
+              Member&apos;s phone number
+              <input name="phone" type="tel" inputMode="tel" defaultValue={extras.phoneUsed ? (sp.phone ?? "") : ""} autoComplete="off" placeholder="0803 123 4567" aria-invalid={Boolean(extras.phoneProblem)} className={inputClass} />
+            </label>
+          )}
           <label className="block flex-1 text-sm font-medium">
             Search by vehicle number
             <span className="relative mt-1 block">
@@ -192,6 +209,15 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
             <button className="btn btn-primary flex-1 sm:flex-none">Apply filters</button>
           </div>
         </div>
+        <label className="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" name="long" value="1" defaultChecked={long} className="h-5 w-5 accent-accent" />
+          Only visits open longer than {longHours} hours
+        </label>
+        {extras.phoneProblem && (
+          <p role="alert" className="font-semibold text-accent">
+            {extras.phoneProblem}
+          </p>
+        )}
         <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
           {presets.map((p) => (
             <Link key={p.label} href={href({ from: p.from, to: p.to, page: "" })} className="font-semibold text-accent underline">
@@ -254,7 +280,7 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
                           {d !== null && ` · ${durationText(d)}`}
                         </span>
                         <span className="mt-1.5 block">
-                          <VisitChip status={v.status} held={v.held} />
+                          <VisitChip status={v.status} held={v.held} longLabel={isLongSession(v, now, longHours) ? longSessionLabel(longHours) : null} />
                         </span>
                       </VehicleIdentity>
                       <IconChevronRight aria-hidden="true" className="ml-auto h-5 w-5 shrink-0 text-ink-soft" />
@@ -305,7 +331,7 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
                         </td>
                         <td className="dt-td whitespace-nowrap">{d === null ? <span className="text-ink-soft">-</span> : durationText(d)}</td>
                         <td className="dt-td">
-                          <VisitChip status={v.status} held={v.held} />
+                          <VisitChip status={v.status} held={v.held} longLabel={isLongSession(v, now, longHours) ? longSessionLabel(longHours) : null} />
                         </td>
                         <td className="dt-td">
                           <Link href={view(v)} aria-label={`View visit of ${formatPlate(v.plate)}`} className="btn btn-quiet">
