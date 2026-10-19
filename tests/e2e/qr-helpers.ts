@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type BrowserContext, type Page } from "@playwright/test";
 import { createHash } from "node:crypto";
 import { adminClient, randomPhone, randomPlate } from "./helpers";
 
@@ -72,4 +72,23 @@ export async function enterPhone(page: Page, typed: string, area = QR_AREA) {
   await page.goto(`/c/${area}`);
   await page.getByLabel("Your phone number").fill(typed);
   await page.getByRole("button", { name: "Continue" }).click();
+}
+
+/** Check in through the screens, as the member would. Returns the pass address. */
+export async function checkInVia(page: Page, local: string, area = QR_AREA): Promise<string> {
+  await enterPhone(page, local, area);
+  await page.getByRole("button", { name: "Yes, check me in" }).click();
+  await expect(page).toHaveURL(/\/p\/[A-Za-z0-9_-]{22}$/, { timeout: 60_000 });
+  return page.url();
+}
+
+/** The credential cookie's value in a browser, or undefined. */
+export async function credentialOf(context: BrowserContext): Promise<string | undefined> {
+  return (await context.cookies()).find((c) => c.name === "cp_exit")?.value;
+}
+
+/** Put a credential cookie back in a browser, the way the server sets it. */
+export async function setCredential(context: BrowserContext, value: string, origin: string) {
+  const url = new URL(origin);
+  await context.addCookies([{ name: "cp_exit", value, domain: url.hostname, path: "/c", httpOnly: true, sameSite: "Lax", secure: false }]);
 }
