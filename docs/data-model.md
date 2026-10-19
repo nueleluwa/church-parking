@@ -144,4 +144,12 @@ create table audit_events (
 - Guest data older than 24 months is deleted daily by `delete_expired_guest_data`, run by pg_cron (D-20).
 - `release_visit(visit, staff, method, today)` is the single release function. It refuses a held visit, a visit from another day and a visit already released. `hold_visit`, `clear_hold` and `correct_visit` (change car park, undo a release and so on) keep the audit row in the same transaction.
 - Production data starts with only the car parks and the three Sunday services (`deploy/db/seed-production.sql` in the private repository). There is no sample data in production.
+- **QR check-in (decision D-43; migrations `20261019…` and `20261020…`):**
+  - `members.pin_hash` may be null: a member added for phone check-in has no PIN and can never sign in with one.
+  - `members.phone_local` (generated, unique where set): the 11-digit local form (`08031234567`) of a `+234…` number, null for any other number. The phone check-in finds a member by it.
+  - `visits.credential_hash`, `credential_issued_at`, `credential_expires_at`, `credential_reissues`: the checkout credential of a phone check-in. Only a SHA-256 hash is stored, never the credential, and it is never selected by any screen or export. The hash stays on a closed visit so a repeat is told apart from a missing credential.
+  - `release_method` also has `self` (the member used the exit sign) and `staff_close` (staff closed it, with a reason in the audit row).
+  - A member has at most one open visit (`one_open_visit_per_member`, partial unique index).
+  - Functions: `check_in_with_credential` (check in or replace the credential, one transaction), `checkout_with_credential` (the exit sign), `staff_close_visit`. `claim_member_visit` now also answers `member_has_open_visit`.
+  - Audit actions added: `member_check_in`, `credential_reissue`, `self_checkout`, `staff_close`, `staff_register_member`.
 - `app_settings` (key, value, updated_at, updated_by): the settings an admin can change (church name, campus, system name, default search tab, staff session length). Read with the server key only, with row-level security on and no public access (D-36).

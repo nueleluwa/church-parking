@@ -86,6 +86,12 @@ The milestone detail below is the original plan, kept for the acceptance checks.
 
 **Acceptance:** the staff run-through goes smoothly, and the parking lead signs off for the one-service pilot.
 
+## QR check-in and exit sign (October 2026, on the `refactor/qr-checkin-checkout` branch)
+
+Phone-number check-in, a check-out code held by the member's own phone, an exit sign, staff registration of members, staff closure with a reason, a 12-hour flag and the history filters are built and tested. It is **off** until `QR_SESSION_FLOW` is set and has not been merged or deployed. Decision D-43; the plan and what differs from it are in `docs/GAP_ANALYSIS.md`; how to turn it on, watch it and turn it off is in `docs/qr-rollout.md`.
+
+**Still to do before the pilot:** run the data checks on a copy of the live backup, test on real iPhones and Android phones with the printed signs, run the full browser suite again, and decide data retention.
+
 ## Next
 
 - Run the real-phone checklist (`docs/field-test.md`) and fix what it finds.

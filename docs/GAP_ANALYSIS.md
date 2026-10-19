@@ -4,6 +4,36 @@ Phase 0 of `docs/church-parking-refactor-docs/IMPLEMENTATION_PLAN.md`. Date: 202
 
 Verified facts about the stack, schema and flows are in `docs/church-parking-refactor-docs/ARCHITECTURE.md` §2, §3, §6, §9. This document does not repeat them.
 
+## 0. Status after implementation (2026-10-20)
+
+Phases 1 to 5 are built on this branch. Read this section first; the sections below are the Phase 0 plan as it was approved, kept for the record.
+
+**Built, with tests:** FR-01 to FR-21 (phone check-in and credential, exit sign, reissue, staff registration and closure, location checks, idempotency and races, history filters, exports, audit, error messages), the one-open-visit-per-member rule, the 12-hour flag, the replacement report, the cut-over switch (`QR_SESSION_FLOW`), and the runbook (`docs/qr-rollout.md`). Tests: 416 unit, 30 database (`pnpm test:integration`, dev project only), and browser tests for each screen. The last full browser run was before Phase 4 and the cut-over work; **it has to be run again** (it was deliberately held until all phases were finished).
+
+**Where the build differs from the documents:**
+
+| Document said | What was built | Why |
+|---|---|---|
+| Checkout is an API route (BLUEPRINT 7) | A Server Action sent as a POST from `/c/<car park>/out`, with an explicit `Origin` check | The app uses Server Actions everywhere. Next lets a request with no `Origin` through, so the check is stricter than Next's own. |
+| QR tokens are opaque (FR-06) | The existing car park address (`cp1`, `road`) is the identifier in both signs | Printed signs must keep working (D-12). It is not a database id and holds no personal data, but it is readable. |
+| Request and correlation ids in logs and audit (NFR-07, FR-19) | **Not built.** Audit rows have actor, action, reason and before/after, but no request id; there is no structured logging | The optional audit migration (M7) was not done. The app logs almost nothing, so nothing sensitive is logged, but it is hard to trace one request. |
+| Time to check in, failed check-in rate by reason (BLUEPRINT 10) | **Not measured by the app.** `scripts/qr-pilot-metrics.sql` gives the rest | Failed lookups are hashed rate-limit counters, not records. |
+| Lookup limit of 10 a minute per address (SRS 11) | Built as the setting. The address limit counts lookups only; the exit has 3 times that | Many members on one mobile network could reach it. It is a setting to watch in the pilot. |
+| Phones in local format (decision) | Members type and see `0803…`; the database keeps `+234…` and a generated local column | No rewriting of live data. A member with a non-Nigerian number cannot use phone check-in and goes to staff. |
+| "Staff" (SRS 3.2) | Attendants, coordinators and admins can add a member and close a visit; only admins deactivate members, edit car parks, search history by phone and export | Matches the existing roles. |
+| Do not silently expire sessions (rule 14) | The existing midnight close is kept as the approved policy; the exit page says so; 12-hour flag added | C5 above. |
+| Retention 12 months, to be confirmed (SRS 11) | **Unchanged.** Member visits and audit rows are kept; guest records are deleted at 24 months | Needs your decision. |
+| A pass for the attendant is separate from the credential | A phone check-in still creates a visit with a pass and reference, and shows the pass | So both ways out work (decision of 2026-10-19). |
+
+**Not verified, and why:**
+
+- **Real phones.** Cookie behaviour on iPhone Safari, Android Chrome and QR scanners inside other apps is untested. The checklist is in `docs/qr-rollout.md`. This needs a person with phones.
+- **The live data.** The data checks (`scripts/qr-refactor-data-checks.sql`) have only been run on the development database, which is test data. They must be run on a restored copy of the live backup (D1 must be 0).
+- **The live server.** Nothing has been merged to `main` or deployed. The migrations have only been applied to the development project. The guard in the per-member migration has not met real duplicate data.
+- **Speed.** The database part of check-in and checkout was measured from a development machine: median about 0.24 s and 0.22 s, slowest 0.38 s. The full page on the live server over mobile data was not measured.
+- **Accessibility.** Automated scans (axe) and width checks only. No screen reader or sunlight test.
+- **Cross-site safety.** A forged or missing `Origin` is refused (tested). The `SameSite=Lax` cookie is the other half; it was not tested in Safari.
+
 ## 1. Headline
 
 The repository is a live, working product with a **different security model** from the one the refactor docs describe. It is not a half-built version of the target.
