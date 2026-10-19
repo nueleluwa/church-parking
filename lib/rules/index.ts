@@ -1,5 +1,7 @@
 export { normalisePlate, formatPlate } from "./plates";
 export { normalisePhone, maskPhone, toLocalPhone, localPhone, formatLocalPhone } from "./phone";
+export { makeCredential, hashCredential, looksLikeCredential } from "./credential";
+export { qrFlowEnabled, parseQrAreas, type QrFlowConfig, type QrFlowMode } from "./qr-flow";
 export { parseMemberSearch, memberMatchCard, type MemberSearch, type MemberMatch, type MemberMatchCard } from "./staff-member";
 export { makeReference, makePassToken } from "./tokens";
 export {

@@ -30,6 +30,20 @@ export type AppSettings = {
   systemName: string;
   defaultSearch: SearchMode;
   staffSessionHours: number;
+  // QR check-in policy (SRS section 11). Read by the check-in and checkout; no screen changes them yet, so they are set
+  // in the app_settings table. Each falls back to its default if missing or out of range.
+  /** How long the checkout credential in a member's browser works. */
+  credentialHours: number;
+  /** A visit open longer than this is flagged in the admin and staff views. Nothing is closed because of it. */
+  longSessionHours: number;
+  /** Phone lookups allowed per minute from one address. */
+  lookupIpPerMinute: number;
+  /** Phone lookups or check-ins allowed per phone number in `lookupPhoneMinutes`. */
+  lookupPhoneMax: number;
+  lookupPhoneMinutes: number;
+  /** Times a phone number may get a replacement credential in `reissueMinutes`. */
+  reissueMax: number;
+  reissueMinutes: number;
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -38,6 +52,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
   systemName: "Church Parking",
   defaultSearch: "plate",
   staffSessionHours: 12,
+  credentialHours: 24,
+  longSessionHours: 12,
+  lookupIpPerMinute: 10,
+  lookupPhoneMax: 5,
+  lookupPhoneMinutes: 10,
+  reissueMax: 3,
+  reissueMinutes: 60,
 };
 
 /** The key each setting is stored under. */
@@ -47,7 +68,28 @@ export const SETTING_KEYS: Record<keyof AppSettings, string> = {
   systemName: "system_name",
   defaultSearch: "default_search",
   staffSessionHours: "staff_session_hours",
+  credentialHours: "credential_hours",
+  longSessionHours: "long_session_hours",
+  lookupIpPerMinute: "lookup_ip_per_minute",
+  lookupPhoneMax: "lookup_phone_max",
+  lookupPhoneMinutes: "lookup_phone_minutes",
+  reissueMax: "reissue_max",
+  reissueMinutes: "reissue_minutes",
 };
+
+/** The range each QR policy number may take. A stored value outside it is ignored, so a typo cannot lock everyone out or open the door. */
+export const POLICY_RANGES = {
+  credentialHours: { min: 1, max: 48 },
+  longSessionHours: { min: 1, max: 48 },
+  lookupIpPerMinute: { min: 1, max: 120 },
+  lookupPhoneMax: { min: 1, max: 60 },
+  lookupPhoneMinutes: { min: 1, max: 1440 },
+  reissueMax: { min: 1, max: 20 },
+  reissueMinutes: { min: 1, max: 1440 },
+} as const;
+
+const inRange = (name: keyof typeof POLICY_RANGES) => (v: unknown) =>
+  typeof v === "number" && Number.isInteger(v) && v >= POLICY_RANGES[name].min && v <= POLICY_RANGES[name].max;
 
 export const SETTING_LIMITS = { churchName: { min: 2, max: 80 }, campus: { max: 80 }, systemName: { min: 2, max: 40 } } as const;
 
@@ -69,6 +111,13 @@ export function resolveSettings(rows: { key: string; value: unknown }[]): AppSet
     systemName: pick("systemName", (v) => isText(v, SETTING_LIMITS.systemName.min, SETTING_LIMITS.systemName.max)),
     defaultSearch: pick("defaultSearch", isMode),
     staffSessionHours: pick("staffSessionHours", isHours),
+    credentialHours: pick("credentialHours", inRange("credentialHours")),
+    longSessionHours: pick("longSessionHours", inRange("longSessionHours")),
+    lookupIpPerMinute: pick("lookupIpPerMinute", inRange("lookupIpPerMinute")),
+    lookupPhoneMax: pick("lookupPhoneMax", inRange("lookupPhoneMax")),
+    lookupPhoneMinutes: pick("lookupPhoneMinutes", inRange("lookupPhoneMinutes")),
+    reissueMax: pick("reissueMax", inRange("reissueMax")),
+    reissueMinutes: pick("reissueMinutes", inRange("reissueMinutes")),
   };
 }
 

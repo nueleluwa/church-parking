@@ -13,7 +13,18 @@ describe("resolveSettings", () => {
       { key: SETTING_KEYS.defaultSearch, value: "phone" },
       { key: SETTING_KEYS.staffSessionHours, value: 4 },
     ]);
-    expect(s).toEqual({ churchName: "Grace Chapel", campus: "Port Harcourt", systemName: "Grace Parking", defaultSearch: "phone", staffSessionHours: 4 });
+    expect(s).toEqual({ ...DEFAULT_SETTINGS, churchName: "Grace Chapel", campus: "Port Harcourt", systemName: "Grace Parking", defaultSearch: "phone", staffSessionHours: 4 });
+  });
+  test("the QR policy values start at the decided ones and can be changed within their ranges", () => {
+    expect(DEFAULT_SETTINGS).toMatchObject({ credentialHours: 24, longSessionHours: 12, lookupIpPerMinute: 10 });
+    const s = resolveSettings([
+      { key: SETTING_KEYS.credentialHours, value: 6 },
+      { key: SETTING_KEYS.reissueMax, value: 2 },
+    ]);
+    expect(s).toMatchObject({ credentialHours: 6, reissueMax: 2, longSessionHours: 12 });
+  });
+  test.each([0, -1, 49, 2.5, "24", null])("a credential lifetime of %j is ignored", (value) => {
+    expect(resolveSettings([{ key: SETTING_KEYS.credentialHours, value }]).credentialHours).toBe(24);
   });
   test("an invalid or unknown stored value falls back to its default, and never lengthens a session", () => {
     const s = resolveSettings([
