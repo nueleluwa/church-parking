@@ -1,3 +1,5 @@
+import { BulkBar, BulkCheck, BulkSelectAll } from "@/components/ds/Bulk";
+import { deleteMembersAction } from "../admin-actions";
 import Link from "next/link";
 import { IconCar, IconClock, IconLock, IconPlus, IconSearch, IconUsers } from "@/components/icons";
 import { PageNumbers } from "@/components/Pager";
@@ -22,6 +24,9 @@ import { Panel } from "../Panel";
 import { RowMenu } from "./RowMenu";
 import { MetricRow } from "@/components/ds/MetricCard";
 import { Summary } from "./Summary";
+
+const DELETE_NOTE =
+  "This removes each member's account, PIN and saved cars. Their past visits stay in the records, shown as Deleted member. A member with a car parked right now is kept."
 
 export type MembersSearch = { q?: string; status?: string; cars?: string; joined?: string; size?: string; page?: string; add?: string; notice?: string };
 
@@ -140,9 +145,13 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
           </p>
         ) : (
           <>
+            <div className="mb-3 empty:hidden">
+              <BulkBar group="members" noun="member" nounPlural="members" consequence={DELETE_NOTE} action={deleteMembersAction} />
+            </div>
             <ul className="grid gap-3 wide:hidden">
               {rows.map((m) => (
                 <li key={m.id} className="flex min-w-0 items-start gap-3 rounded-xl border border-edge/10 p-3">
+                  <BulkCheck group="members" id={m.id} label={m.fullName} />
                   <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-panel text-sm font-extrabold">
                     {initials(m.fullName)}
                   </span>
@@ -166,6 +175,9 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
                 <caption className="sr-only">Members</caption>
                 <thead>
                   <tr>
+                    <th scope="col" className="dt-th w-10">
+                      <BulkSelectAll group="members" noun="members" />
+                    </th>
                     {["Member name", "Phone number", "Vehicles", "Status", "Date joined", "Actions"].map((c) => (
                       <th key={c} scope="col" className="dt-th">
                         {c}
@@ -176,6 +188,9 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
                 <tbody>
                   {rows.map((m) => (
                     <tr key={m.id}>
+                      <td className="dt-td">
+                        <BulkCheck group="members" id={m.id} label={m.fullName} />
+                      </td>
                       <td className="dt-td">
                         <span className="flex items-center gap-3">
                           <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-panel text-sm font-extrabold">

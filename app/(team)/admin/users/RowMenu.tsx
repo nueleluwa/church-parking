@@ -3,13 +3,18 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { DeleteButton } from "@/components/ds/Bulk";
 import { useToast } from "@/components/ds/Toast";
 import { IconMore } from "@/components/icons";
+import { deleteMembersAction } from "../admin-actions";
 import { setMemberActiveAction } from "../member-actions";
+
+const MEMBER_DELETE_NOTE =
+  "This removes the member's account, PIN and saved cars. Their past visits stay in the records, shown as Deleted member. A member with a car parked right now cannot be deleted.";
 
 /**
  * The "..." menu on a member row: the actions that really exist. View details, set a new PIN (on the member's page), and
- * switch the account off or on (asks first; nothing is deleted).
+ * switch the account off or on, or delete it. Each asks first.
  */
 export function RowMenu({ id, name, active }: { id: string; name: string; active: boolean }) {
   const router = useRouter();
@@ -59,6 +64,15 @@ export function RowMenu({ id, name, active }: { id: string; name: string; active
               <button role="menuitem" type="button" onClick={() => setAsking(true)} className={`${item} text-accent`}>
                 {active ? "Switch account off" : "Switch account on"}
               </button>
+              <DeleteButton
+                id={id}
+                label={name}
+                noun="member"
+                text="Delete member"
+                className={`${item} text-accent`}
+                consequence={MEMBER_DELETE_NOTE}
+                action={deleteMembersAction}
+              />
             </>
           ) : (
             <div role="alertdialog" aria-label={active ? `Switch off ${name}` : `Switch on ${name}`} className="p-3">

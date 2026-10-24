@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -49,15 +50,10 @@ export function SideNav({ admin, name, role, initials, systemName, churchName }:
       aria-label="Menu"
       className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-night text-white lg:flex print:hidden"
     >
-      <div className="flex items-center gap-3 px-5 pb-5 pt-6">
-        <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-2xl font-extrabold">
-          P
-        </span>
-        <p className="min-w-0 leading-tight">
-          <span className="block truncate text-lg font-extrabold">{systemName}</span>
-          {churchName && <span className="block truncate text-xs text-white/70">{churchName}</span>}
-        </p>
-      </div>
+      <Link href="/admin" aria-label={`${systemName} home`} className="block px-6 pb-5 pt-6">
+        <Image src="/cci-logo.svg" alt={churchName || "Church logo"} width={140} height={40} unoptimized priority className="h-10 w-auto" />
+        <span className="mt-2 block text-sm font-semibold text-white/80">{systemName}</span>
+      </Link>
       <nav aria-label="Parking team, desktop" className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">
         {GROUPS.map((group) => {
           const items = ITEMS.filter((i) => i.group === group && (admin || !i.admin));

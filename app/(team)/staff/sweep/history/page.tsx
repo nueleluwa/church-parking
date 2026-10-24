@@ -2,7 +2,6 @@ import Link from "next/link";
 import { IconAlert, IconCheck, IconChevronRight } from "@/components/icons";
 import { PageNumbers } from "@/components/Pager";
 import { VehicleIdentity } from "@/components/ds/VehicleIdentity";
-import { field } from "@/components/ui";
 import { listSweepHistory, type SweepHistoryRow } from "@/lib/db";
 import { formatPlate, lagosDate, lagosParts, pageNumbers, parseRange, rangeDays } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
@@ -22,7 +21,7 @@ const OUTCOMES = {
   gone: { label: "Gone", note: "Closed as a missed check-out (not a release)" },
 } as const;
 
-const inputClass = `${field} !mt-1 !py-2.5 !text-base`;
+const inputClass = "input";
 
 function Outcome({ row }: { row: SweepHistoryRow }) {
   const gone = row.outcome === "gone";
@@ -74,11 +73,11 @@ export default async function SweepHistoryPage({ searchParams }: { searchParams:
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_1.4fr_auto] sm:items-end">
           <label className="block text-sm font-medium">
             From
-            <input type="date" name="from" defaultValue={range.from} max={today} required className={`${inputClass} !px-3`} />
+            <input type="date" name="from" defaultValue={range.from} max={today} required className={`${inputClass}`} />
           </label>
           <label className="block text-sm font-medium">
             To
-            <input type="date" name="to" defaultValue={range.to} max={today} required className={`${inputClass} !px-3`} />
+            <input type="date" name="to" defaultValue={range.to} max={today} required className={`${inputClass}`} />
           </label>
           <label className="col-span-2 block text-sm font-medium sm:col-span-1">
             Outcome

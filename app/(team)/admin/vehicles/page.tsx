@@ -5,7 +5,6 @@ import { MetricCard, MetricRow } from "@/components/ds/MetricCard";
 import { PageHeader } from "@/components/ds/PageHeader";
 import { VehicleIdentity } from "@/components/ds/VehicleIdentity";
 import { PageNumbers } from "@/components/Pager";
-import { field } from "@/components/ui";
 import { getVehicleDetail, registerCounts, searchRegister, type RegisterRow } from "@/lib/db";
 import {
   REGISTER_PAGE_SIZES,
@@ -34,7 +33,7 @@ export const dynamic = "force-dynamic";
 
 type Search = { q?: string; type?: string; owner?: string; status?: string; size?: string; page?: string; add?: string; edit?: string; notice?: string; plate?: string };
 
-const inputClass = `${field} !mt-1 !py-2.5 !text-base`;
+const inputClass = "input";
 
 const registered = (v: RegisterRow) => (v.createdAt ? lagosParts(v.createdAt).date : "Not recorded");
 

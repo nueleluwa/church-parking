@@ -1,5 +1,6 @@
 "use client";
 
+import { Chip } from "@/components/ds/Chip";
 import { EmptyState } from "@/components/ds/EmptyState";
 import { MetricCard, MetricRow } from "@/components/ds/MetricCard";
 import { PageHeader } from "@/components/ds/PageHeader";
@@ -8,10 +9,59 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IconAlert, IconCar, IconChevronRight, IconClock, IconLogout, IconSearch } from "@/components/icons";
 import { Plate } from "@/components/Plate";
-import type { DashboardData } from "@/lib/dashboard-data";
+import type { DashboardData, OnSiteItem } from "@/lib/dashboard-data";
 import { resolveAlertAction } from "../ops-actions";
 
 const POLL_SECONDS = 3;
+
+const pct = (n: number, of: number) => `${of > 0 ? (n / of) * 100 : 0}%`;
+
+/** The cars recorded as parked right now, longest first. It is live, so it also shows cars left over from an earlier service. */
+function ParkedNow({ cars, total }: { cars: OnSiteItem[]; total: number }) {
+  return (
+    <section aria-label="Parked now" className="surface">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h2 className="t-section">Parked now</h2>
+          <p data-testid="parked-now-count" className="t-support mt-1">
+            {total === 0 ? "No cars are recorded as parked." : `${total} ${total === 1 ? "car" : "cars"} recorded as parked, longest first.`}
+          </p>
+        </div>
+        <Link href="/admin/visits?status=parked" className="text-sm font-semibold text-accent underline">
+          See every parked car
+        </Link>
+      </div>
+      {cars.length === 0 ? (
+        <EmptyState>All clear. Cars appear here as soon as they check in.</EmptyState>
+      ) : (
+        <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          {cars.map((c) => (
+            <li key={c.id} className="min-w-0">
+              <Link href={`/admin/visits/${c.id}`} aria-label={`Visit of ${c.plate}`} className="row-card justify-between">
+                <span className="min-w-0">
+                  <Plate plate={c.plate} size="md" align="start" variant="plain" />
+                  <span className="t-support block truncate">
+                    {c.areaName} · in at {c.since}
+                    {c.vehicle && ` · ${c.vehicle}`}
+                  </span>
+                </span>
+                {c.overstaying ? (
+                  <Chip tone="alert" icon={<IconAlert className="h-3.5 w-3.5" />}>
+                    Overstaying
+                  </Chip>
+                ) : (
+                  <Chip tone="on" icon={<IconClock className="h-3.5 w-3.5" />}>
+                    Parked
+                  </Chip>
+                )}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
 
 /** The same numbers, ignoring the timestamp, so an unchanged board is never redrawn. */
 const fingerprint = (d: DashboardData) => JSON.stringify({ ...d, updatedAt: "" });
@@ -141,7 +191,23 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
       </PageHeader>
 
       {data.noServiceToday || !data.summary ? (
-        <EmptyState>There is no service today, so there is nothing to count yet.</EmptyState>
+        <section aria-label="No service today" className="surface flex flex-wrap items-center gap-4 sm:gap-5">
+          <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blush text-accent">
+            <IconClock className="h-6 w-6" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="t-section">No service today</h2>
+            <p className="t-support mt-1">There is no service today, so there is nothing to count yet. Check-in opens on the next service day.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/admin/visits" className="btn btn-quiet">
+              See past visits
+            </Link>
+            <Link href="/staff/sweep" className="btn btn-quiet">
+              Open sweep
+            </Link>
+          </div>
+        </section>
       ) : (
         <>
           <MetricRow>
@@ -174,7 +240,10 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
 
           <section aria-label="Parking areas" className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="t-section">Parking Areas</h2>
+              <div>
+                <h2 className="t-section">Parking Areas</h2>
+                <p className="t-support mt-1">The bar shows cars still parked in red and cars that have left in grey.</p>
+              </div>
               <Link
                 href="/admin/visits?status=parked"
                 className="btn btn-quiet"
@@ -205,6 +274,10 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
                         <dt className="text-xs font-medium text-ink-soft">Still parked</dt>
                       </div>
                     </dl>
+                    <span aria-hidden="true" className="mt-3 flex h-2 overflow-hidden rounded-full bg-page">
+                      <span className="bg-accent" style={{ width: pct(a.parked + a.carriedOver, a.parked + a.carriedOver + a.released) }} />
+                      <span className="bg-ink/25" style={{ width: pct(a.released, a.parked + a.carriedOver + a.released) }} />
+                    </span>
                     {a.carriedOver > 0 && (
                       <span className="mt-2 block text-center text-xs text-ink-soft">Includes {a.carriedOver} from an earlier service</span>
                     )}
@@ -230,6 +303,8 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
           </section>
         </>
       )}
+
+      <ParkedNow cars={data.onSite} total={data.onSiteTotal} />
 
       <section id="alerts" aria-label="Alerts" className="space-y-3 scroll-mt-4">
         <h2 className="t-section flex items-center gap-2">

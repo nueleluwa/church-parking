@@ -4,7 +4,7 @@ import { useRef, useState, useTransition, type ReactNode } from "react";
 import { useToast } from "@/components/ds/Toast";
 import { firstProblem } from "@/components/validate";
 import { Spinner } from "@/components/Spinner";
-import { errorBox, okBox, primaryButton, redButton, secondaryButton } from "@/components/ui";
+import { errorBox, okBox } from "@/components/ui";
 import type { AdminState } from "./admin-actions";
 
 /**
@@ -76,7 +76,7 @@ export function AdminForm({
         </p>
       )}
       <div className="pt-1 sm:flex sm:justify-end">
-        <button disabled={pending} className={`${variant === "primary" ? primaryButton : variant === "red" ? redButton : secondaryButton} sm:!w-auto sm:min-w-44 sm:px-8`}>
+        <button disabled={pending} className={`btn w-full sm:w-auto sm:min-w-44 ${variant === "primary" ? "btn-dark" : variant === "red" ? "btn-primary" : "btn-outline"}`}>
           {pending && <Spinner />}
           {pending ? busyLabel : submitLabel}
         </button>

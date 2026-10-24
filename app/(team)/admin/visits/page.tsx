@@ -142,7 +142,7 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
         />
       </MetricRow>
 
-      <form noValidate aria-label="Filters" className="space-y-4 rounded-2xl border border-edge/15 bg-card p-4 lg:p-6">
+      <form noValidate aria-label="Filters" className="space-y-4 rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <p className="flex flex-wrap gap-2 text-sm">
             {presets.map((p) => (
@@ -160,11 +160,11 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
           <div className="col-span-2 grid grid-cols-2 gap-3 xl:col-span-1">
             <label className="block text-sm font-medium">
               From
-              <input type="date" name="from" defaultValue={range.from} max={today} required className={`${inputClass} !px-3`} />
+              <input type="date" name="from" defaultValue={range.from} max={today} required className={`${inputClass}`} />
             </label>
             <label className="block text-sm font-medium">
               To
-              <input type="date" name="to" defaultValue={range.to} max={today} required className={`${inputClass} !px-3`} />
+              <input type="date" name="to" defaultValue={range.to} max={today} required className={`${inputClass}`} />
             </label>
           </div>
           <label className="col-span-2 block text-sm font-medium xl:col-span-1">

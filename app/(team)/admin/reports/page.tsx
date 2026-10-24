@@ -83,11 +83,11 @@ export default async function ReportsPage({
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-[10rem_10rem_11rem_auto] lg:items-end">
             <label className="block text-sm font-medium">
               From
-              <input type="date" name="from" defaultValue={range.from} max={today} required className={`${input} !px-3`} />
+              <input type="date" name="from" defaultValue={range.from} max={today} required className={`${input}`} />
             </label>
             <label className="block text-sm font-medium">
               To
-              <input type="date" name="to" defaultValue={range.to} max={today} required className={`${input} !px-3`} />
+              <input type="date" name="to" defaultValue={range.to} max={today} required className={`${input}`} />
             </label>
             <label className="col-span-2 block text-sm font-medium lg:col-span-1">
               Service

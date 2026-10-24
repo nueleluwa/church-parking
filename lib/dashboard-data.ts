@@ -1,9 +1,10 @@
-import { listActiveAreas, listActiveServices, listOpenAlerts, listTodaysVisitRows } from "@/lib/db";
+import { listActiveAreas, listActiveServices, listOnSite, listOpenAlerts, listTodaysVisitRows } from "@/lib/db";
 import {
   defaultDashboardService,
   describeAlert,
   describeVehicle,
   formatPlate,
+  isOverstaying,
   lagosDate,
   servicesToday,
   summariseVisits,
@@ -25,7 +26,14 @@ export type AlertItem = {
   vehicle: string;
 };
 
+/** One car recorded as parked right now. */
+export type OnSiteItem = { id: string; plate: string; vehicle: string; areaName: string; since: string; overstaying: boolean };
+const ON_SITE_LIMIT = 10;
+
 export type DashboardData = {
+  /** Cars on site right now, longest first, and how many there are in all. Live, whatever service is chosen. */
+  onSite: OnSiteItem[];
+  onSiteTotal: number;
   noServiceToday: boolean;
   services: { id: number; name: string; time: string }[];
   serviceId: number | null;
@@ -67,8 +75,19 @@ export async function loadDashboard(requestedServiceId?: number): Promise<Dashbo
     };
   });
 
+  const parked = await listOnSite();
+  const nowMs = now.getTime();
+  const onSite = parked.slice(0, ON_SITE_LIMIT).map((c) => ({
+    id: c.id,
+    plate: formatPlate(c.plate),
+    vehicle: describeVehicle({ make: c.make, colour: c.colour }) ?? "",
+    areaName: c.areaName,
+    since: lagosTime(c.checkedInAt),
+    overstaying: isOverstaying(c, nowMs),
+  }));
+
   if (todays.length === 0) {
-    return { noServiceToday: true, services: [], serviceId: null, summary: null, alerts, areaSlugs: {}, updatedAt };
+    return { noServiceToday: true, services: [], serviceId: null, summary: null, alerts, areaSlugs: {}, onSite, onSiteTotal: parked.length, updatedAt };
   }
 
   const selected =
@@ -86,6 +105,8 @@ export async function loadDashboard(requestedServiceId?: number): Promise<Dashbo
     summary: summariseVisits(rows, areas, todays, selected.id),
     alerts,
     areaSlugs: Object.fromEntries(areas.map((a) => [a.id, a.slug])),
+    onSite,
+    onSiteTotal: parked.length,
     updatedAt,
   };
 }

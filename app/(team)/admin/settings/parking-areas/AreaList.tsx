@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { BulkBar, BulkCheck, BulkSelectAll, DeleteButton } from "@/components/ds/Bulk";
 import { Spinner } from "@/components/Spinner";
 import { errorBox, okBox, primaryButton, secondaryButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import type { AreaRecord } from "@/lib/db";
 import { AdminForm } from "../../AdminForm";
-import { setAreaActiveAction } from "../../admin-actions";
+import { deleteAreasAction, setAreaActiveAction } from "../../admin-actions";
 import { renameAreaAction, type RenameState } from "../../actions";
 import { Chip } from "../ui";
 
 export type AreaRow = AreaRecord & { parkedNow: number };
+
+const DELETE_NOTE = "A car park that already has visits cannot be deleted: it is kept, and you can switch it off instead. A car park nobody has used is removed, with its QR address.";
 
 /** One car park: its name, address, how many cars are in it now, a Rename form that opens in place, and Switch off / on. */
 function Row({ area }: { area: AreaRow }) {
@@ -30,7 +33,8 @@ function Row({ area }: { area: AreaRow }) {
   return (
     <li className="py-4 first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
+        <BulkCheck group="areas" id={String(area.id)} label={shownName} />
+        <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-2 t-card">
             <span className="truncate">{shownName}</span>
             <Chip tone={area.active ? "on" : "off"}>{area.active ? "Active" : "Off"}</Chip>
@@ -49,6 +53,7 @@ function Row({ area }: { area: AreaRow }) {
             <button onClick={() => setEditing(true)} aria-label={`Rename ${shownName}`} className="btn btn-quiet">
               Rename
             </button>
+            <DeleteButton id={String(area.id)} label={shownName} noun="car park" consequence={DELETE_NOTE} action={deleteAreasAction} />
           </div>
         )}
       </div>
@@ -105,10 +110,19 @@ function Row({ area }: { area: AreaRow }) {
 
 export function AreaList({ areas }: { areas: AreaRow[] }) {
   return (
-    <ul className="divide-y divide-edge/15">
-      {areas.map((a) => (
-        <Row key={a.id} area={a} />
-      ))}
-    </ul>
+    <>
+      <div className="mb-3 flex flex-wrap items-center gap-3 border-b border-edge/15 pb-3">
+        <BulkSelectAll group="areas" noun="car parks" />
+        <span className="text-sm font-semibold text-ink-soft">Select all</span>
+        <div className="ml-auto empty:hidden">
+          <BulkBar group="areas" noun="car park" nounPlural="car parks" consequence={DELETE_NOTE} action={deleteAreasAction} />
+        </div>
+      </div>
+      <ul className="divide-y divide-edge/15">
+        {areas.map((a) => (
+          <Row key={a.id} area={a} />
+        ))}
+      </ul>
+    </>
   );
 }
