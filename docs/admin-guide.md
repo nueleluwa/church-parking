@@ -73,6 +73,8 @@ Choose a date range and a service (or all services), pick one of six categories,
 
 **All reports in one file.** The card above the six categories, **Download everything (Excel)**, gives one Excel workbook for the dates and service you chose: a **Contents** sheet (the dates, the service, when it was made, and each report with its row count), then a sheet for every report, in the same order as the list below. The figures come from the same tables as the single CSV downloads, so they always agree. The headings are bold and frozen, and the columns are sized to fit. It is logged like any other download. Use a single CSV when you only need one report or want to open it in another program.
 
+**The PDF report.** **Download PDF report** (on Reports, and on Analytics when no single parking area is chosen) makes a designed, branded PDF for the dates and service you chose, usually two pages: the key figures (cars checked in, left, not checked out, different vehicles, average stay, parked right now), a chart of check-ins and check-outs by day (by week for a long period), a chart of busy times of the day, check-ins by service and by parking area with their comparison tables, a count of every alert and exception, and a short note on how the figures are counted. It is drawn from the same numbers as the CSV and Excel files, covers every parking area, and contains no names or phone numbers. It is logged like any other download.
+
 | Category | Reports |
 |---|---|
 | Parking activity | Parking summary; Vehicle activity by day; Hourly activity; Parking area activity; Service activity |

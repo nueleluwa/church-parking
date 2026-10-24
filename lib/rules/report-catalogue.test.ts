@@ -301,6 +301,10 @@ describe("every report in one workbook", () => {
     expect(workbookFilename({ from: "2026-10-11", to: "2026-10-11" }, null)).toBe("parking-reports_2026-10-11.xlsx");
     expect(workbookFilename({ from: "2026-10-05", to: "2026-10-11" }, { name: "Service 1 / 09:30!" })).toBe("parking-reports_2026-10-05_to_2026-10-11_service-1-09-30.xlsx");
   });
+  test("the PDF's file name follows the same rules", () => {
+    expect(workbookFilename({ from: "2026-10-11", to: "2026-10-11" }, null, "pdf")).toBe("parking-report_2026-10-11.pdf");
+    expect(workbookFilename({ from: "2026-10-05", to: "2026-10-11" }, { name: "Service 1" }, "pdf")).toBe("parking-report_2026-10-05_to_2026-10-11_service-1.pdf");
+  });
   test("the workbook has no name, phone or contact column anywhere", () => {
     for (const x of workbookSheets(rich)) expect(x.table.headers.join("|").toLowerCase(), x.sheet).not.toMatch(/\bphone\b|\bname\b|contact|email/);
   });

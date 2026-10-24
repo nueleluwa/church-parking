@@ -269,6 +269,44 @@ test("all reports in one Excel workbook: the button downloads a real workbook, i
   expect((await anon.request.get(`/admin/reports/export?report=all&from=${today()}&to=${today()}`)).status()).toBe(401);
 });
 
+test("the PDF report: the button downloads a real PDF, it is audited, Analytics offers it too, and only an admin can have it", async ({ page, browser }) => {
+  await openReports(page, `?from=${day(-6)}&to=${today()}`);
+  const card = page.getByRole("region", { name: "All reports in one file" });
+
+  const download = page.waitForEvent("download");
+  await card.getByRole("button", { name: "Download the report with charts as PDF" }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe(`parking-report_${day(-6)}_to_${today()}.pdf`);
+  const bytes = fs.readFileSync((await file.path())!);
+  expect(bytes.subarray(0, 5).toString(), "a PDF starts with %PDF-").toBe("%PDF-");
+  expect(bytes.length).toBeGreaterThan(5000);
+
+  const res = await page.request.get(`/admin/reports/export?report=pdf&from=${day(-6)}&to=${today()}`);
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-type"]).toContain("application/pdf");
+  const { data } = await adminClient().from("audit_events").select("after").eq("action", "export_report").order("id", { ascending: false }).limit(1).single();
+  expect(data!.after).toMatchObject({ report: "pdf", from: day(-6), to: today() });
+  expect((await page.request.get(`/admin/reports/export?report=pdf&from=${today()}&to=${day(-3)}`)).status()).toBe(400);
+
+  // Analytics has it too, but not when one parking area is chosen (the PDF covers them all)
+  await page.goto(`/admin/analytics?from=${day(-6)}&to=${day(-1)}`);
+  await expect(page.getByRole("button", { name: "Download the analytics report as PDF" })).toBeVisible({ timeout: 60_000 });
+  await page.goto(`/admin/analytics?from=${day(-6)}&to=${day(-1)}&area=cp1`);
+  await expect(page.getByRole("heading", { name: "Analytics", exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("button", { name: "Download the analytics report as PDF" })).toHaveCount(0);
+
+  const lead = await createStaff("coordinator");
+  try {
+    const c = await (await browser.newContext()).newPage();
+    await staffSignIn(c, lead.phone, lead.password);
+    expect((await c.request.get(`/admin/reports/export?report=pdf&from=${today()}&to=${today()}`)).status()).toBe(401);
+  } finally {
+    await lead.remove();
+  }
+  const anon = await browser.newContext();
+  expect((await anon.request.get(`/admin/reports/export?report=pdf&from=${today()}&to=${today()}`)).status()).toBe(401);
+});
+
 test("only an admin can open reports or download them", async ({ page, browser }) => {
   await page.goto("/admin/reports");
   await expect(page).toHaveURL(/signin/, { timeout: 60_000 });

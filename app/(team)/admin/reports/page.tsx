@@ -133,17 +133,27 @@ export default async function ReportsPage({
         <div className="min-w-0 flex-1">
           <h2 className="t-section">All reports in one file</h2>
           <p className="t-support mt-1">
-            One Excel workbook: a Contents sheet, then a sheet for each of the {REPORTS.length} reports, for the dates and service chosen above.
-            Contains no drivers&apos; names or phone numbers.
+            An Excel workbook with a sheet for each of the {REPORTS.length} reports, or a designed PDF with charts and the key figures, for the
+            dates and service chosen above. Neither contains drivers&apos; names or phone numbers.
           </p>
         </div>
-        <DownloadButton
-          href={`/admin/reports/export?report=all&${scope}`}
-          report="all reports"
-          label="Download everything (Excel)"
-          format="Excel"
-          disabled={rangeError !== null}
-        />
+        <div className="flex flex-wrap items-start gap-3">
+          <DownloadButton
+            href={`/admin/reports/export?report=pdf&${scope}`}
+            report="the report with charts"
+            label="Download PDF report"
+            format="PDF"
+            disabled={rangeError !== null}
+          />
+          <DownloadButton
+            href={`/admin/reports/export?report=all&${scope}`}
+            report="all reports"
+            label="Download everything (Excel)"
+            format="Excel"
+            outline
+            disabled={rangeError !== null}
+          />
+        </div>
       </section>
 
       <nav aria-label="Report categories">

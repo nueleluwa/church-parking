@@ -414,9 +414,9 @@ export function workbookSheets(input: ReportInput): WorkbookSheet[] {
   return REPORTS.map((report) => ({ sheet: sheetName(report.name, taken), report, table: buildReportTable(report.id, input) }));
 }
 
-/** The workbook's file name: the dates and (if chosen) the service, in plain letters, digits and dashes. */
-export function workbookFilename(range: { from: string; to: string }, service: { name: string } | null): string {
+/** The workbook's or the PDF's file name: the dates and (if chosen) the service, in plain letters, digits and dashes. */
+export function workbookFilename(range: { from: string; to: string }, service: { name: string } | null, kind: "xlsx" | "pdf" = "xlsx"): string {
   const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
   const dates = range.from === range.to ? range.from : `${range.from}_to_${range.to}`;
-  return `parking-reports_${dates}${service ? `_${slug(service.name)}` : ""}.xlsx`;
+  return `${kind === "pdf" ? "parking-report" : "parking-reports"}_${dates}${service ? `_${slug(service.name)}` : ""}.${kind}`;
 }

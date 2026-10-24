@@ -20,6 +20,7 @@ import {
   rankBy,
 } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
+import { DownloadButton } from "../reports/DownloadButton";
 
 export const metadata = { title: "Analytics" };
 export const dynamic = "force-dynamic";
@@ -179,10 +180,22 @@ export default async function AnalyticsPage({
       <PageHeader
         title="Analytics"
         actions={
-          <a href={exportHref} className="btn btn-primary">
-            <IconDownload className="h-5 w-5" />
-            Export CSV
-          </a>
+          <div className="flex flex-wrap items-start gap-3">
+            <a href={exportHref} className="btn btn-primary">
+              <IconDownload className="h-5 w-5" />
+              Export CSV
+            </a>
+            {/* The PDF covers every parking area, so it is offered only when no single area is chosen */}
+            {!area && (
+              <DownloadButton
+                href={`/admin/reports/export?report=pdf&from=${range.from}&to=${range.to}${service ? `&service=${service.id}` : ""}`}
+                report="the analytics report"
+                label="Download PDF report"
+                format="PDF"
+                outline
+              />
+            )}
+          </div>
         }
       >
         Insights from your parking operations
