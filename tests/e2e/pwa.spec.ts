@@ -20,6 +20,9 @@ test("the app can be installed: manifests, icons, service worker and the offline
   expect(sw.headers()["cache-control"]).toContain("no-store");
   const code = await sw.text();
   expect(code).not.toMatch(/\/p\/|\/account|\/staff|\/admin/);
+  // Build files are kept for speed; pages and data never are
+  expect(code).toContain("/_next/static/");
+  expect(code).toContain("preloadResponse");
 
   await page.goto("/offline");
   await expect(page.getByRole("heading", { name: "No internet connection" })).toBeVisible();
