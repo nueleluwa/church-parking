@@ -385,3 +385,38 @@ export function reportFilename(report: Pick<ReportDef, "id">, range: { from: str
   const dates = range.from === range.to ? range.from : `${range.from}_to_${range.to}`;
   return `${report.id}_${dates}${service ? `_${slug(service.name)}` : ""}.csv`;
 }
+
+// ---------- One workbook with every report ----------
+
+/** The sheet that comes first in the workbook and lists the others. */
+export const CONTENTS_SHEET = "Contents";
+
+/**
+ * A name Excel accepts for a sheet: no \ / ? * [ ] :, at most 31 characters, and different (ignoring capitals) from every name
+ * already taken. `taken` is added to.
+ */
+export function sheetName(name: string, taken: Set<string>): string {
+  const base = name.replace(/[\\/?*[\]:]/g, " ").replace(/\s+/g, " ").trim().slice(0, 31) || "Report";
+  let candidate = base;
+  for (let n = 2; taken.has(candidate.toLowerCase()); n++) {
+    const suffix = ` (${n})`;
+    candidate = `${base.slice(0, 31 - suffix.length)}${suffix}`;
+  }
+  taken.add(candidate.toLowerCase());
+  return candidate;
+}
+
+export type WorkbookSheet = { sheet: string; report: ReportDef; table: Table };
+
+/** Every report as a table, in the order of the catalogue, each with a sheet name that is safe and unique. */
+export function workbookSheets(input: ReportInput): WorkbookSheet[] {
+  const taken = new Set([CONTENTS_SHEET.toLowerCase()]);
+  return REPORTS.map((report) => ({ sheet: sheetName(report.name, taken), report, table: buildReportTable(report.id, input) }));
+}
+
+/** The workbook's file name: the dates and (if chosen) the service, in plain letters, digits and dashes. */
+export function workbookFilename(range: { from: string; to: string }, service: { name: string } | null): string {
+  const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+  const dates = range.from === range.to ? range.from : `${range.from}_to_${range.to}`;
+  return `parking-reports_${dates}${service ? `_${slug(service.name)}` : ""}.xlsx`;
+}

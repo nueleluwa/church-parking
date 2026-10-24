@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSettings, listActiveAreas, listMatchingVisits, listReportVisits, logAudit, resolveVisitExtras } from "@/lib/db";
 import { loadReportInput } from "@/lib/report-data";
+import { buildWorkbook } from "@/lib/report-workbook";
 import {
   MAX_REPORT_DAYS,
   buildReportTable,
@@ -14,6 +15,7 @@ import {
   tableToCsv,
   visitListToCsv,
   visitsToCsv,
+  workbookFilename,
 } from "@/lib/rules";
 import { currentStaff } from "@/lib/staff-auth";
 
@@ -22,7 +24,8 @@ export const dynamic = "force-dynamic";
 const fail = (error: string, status = 400) => NextResponse.json({ error }, { status });
 
 /**
- * One report as a CSV (?report=...), for a date range and an optional service. Without ?report it is the older
+ * One report as a CSV (?report=...), or every report in one Excel workbook (?report=all), for a date range and an optional service.
+ * Without ?report it is the older
  * visit-by-visit file the Visits screen links to. Admins only, and every export is written to the audit log.
  */
 export async function GET(request: Request) {
@@ -62,6 +65,24 @@ export async function GET(request: Request) {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="visits_${range.from === range.to ? range.from : `${range.from}_to_${range.to}`}${area ? `_${area.slug}` : ""}${status ? `_${status}` : ""}.csv"`,
         "X-Report-Rows": String(rows.length),
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
+  // Every report in one Excel file: a Contents sheet, then a sheet for each report
+  if (reportId === "all") {
+    const input = await loadReportInput(range, serviceId);
+    if (!input) return fail("That service is not recognised.");
+    const book = await buildWorkbook(input);
+    await logAudit(staff.id, null, "export_report", {
+      after: { report: "all", from: range.from, to: range.to, sheets: book.sheets, rows: book.rows, ...(serviceId !== null ? { service: serviceId } : {}) },
+    });
+    return new NextResponse(new Uint8Array(book.buffer), {
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename="${workbookFilename(range, input.service)}"`,
+        "X-Report-Rows": String(book.rows),
         "Cache-Control": "no-store",
       },
     });

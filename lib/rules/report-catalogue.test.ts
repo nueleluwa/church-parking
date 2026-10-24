@@ -1,5 +1,20 @@
 import { describe, expect, test } from "vitest";
-import { CATEGORIES, REPORTS, buildReportTable, findReport, reportFilename, reportsIn, tableToCsv, type ReportAlert, type ReportId, type ReportInput } from "./report-catalogue";
+import {
+  CATEGORIES,
+  CONTENTS_SHEET,
+  REPORTS,
+  buildReportTable,
+  findReport,
+  reportFilename,
+  reportsIn,
+  sheetName,
+  tableToCsv,
+  workbookFilename,
+  workbookSheets,
+  type ReportAlert,
+  type ReportId,
+  type ReportInput,
+} from "./report-catalogue";
 import type { ReportVisit } from "./reports";
 
 // Times are UTC; Lagos is one hour ahead. 2026-10-11 is a Sunday.
@@ -252,5 +267,41 @@ describe("files", () => {
   test("the id type matches the catalogue", () => {
     const ids: ReportId[] = REPORTS.map((r) => r.id);
     expect(ids).toHaveLength(22);
+  });
+});
+
+describe("every report in one workbook", () => {
+  test("there is a sheet for every report, in the order of the catalogue, each the same table as its CSV", () => {
+    const sheets = workbookSheets(rich);
+    expect(sheets.map((x) => x.report.id)).toEqual(REPORTS.map((r) => r.id));
+    for (const x of sheets) expect(x.table).toEqual(buildReportTable(x.report.id, rich));
+  });
+  test("every sheet name is one Excel accepts and no two are alike", () => {
+    const names = workbookSheets(rich).map((x) => x.sheet);
+    for (const n of names) {
+      expect(n.length, n).toBeGreaterThan(0);
+      expect(n.length, n).toBeLessThanOrEqual(31);
+      expect(n, n).not.toMatch(/[\\/?*[\]:]/);
+      expect(n.toLowerCase(), n).not.toBe(CONTENTS_SHEET.toLowerCase());
+    }
+    expect(new Set(names.map((n) => n.toLowerCase())).size).toBe(names.length);
+  });
+  test("sheetName strips what Excel refuses, shortens, and numbers a repeat", () => {
+    const taken = new Set<string>();
+    expect(sheetName("Cars: in/out [today]?", taken)).toBe("Cars in out today");
+    expect(sheetName("cars in out today", taken)).toBe("cars in out today (2)");
+    expect(sheetName("A".repeat(60), taken)).toHaveLength(31);
+    const long = "B".repeat(31);
+    expect(sheetName(long, taken)).toBe(long);
+    expect(sheetName(long, taken)).toHaveLength(31);
+    expect(sheetName(long, taken)).not.toBe(long);
+    expect(sheetName("???", taken)).toBe("Report");
+  });
+  test("the file name has the dates and the service, in plain characters", () => {
+    expect(workbookFilename({ from: "2026-10-11", to: "2026-10-11" }, null)).toBe("parking-reports_2026-10-11.xlsx");
+    expect(workbookFilename({ from: "2026-10-05", to: "2026-10-11" }, { name: "Service 1 / 09:30!" })).toBe("parking-reports_2026-10-05_to_2026-10-11_service-1-09-30.xlsx");
+  });
+  test("the workbook has no name, phone or contact column anywhere", () => {
+    for (const x of workbookSheets(rich)) expect(x.table.headers.join("|").toLowerCase(), x.sheet).not.toMatch(/\bphone\b|\bname\b|contact|email/);
   });
 });

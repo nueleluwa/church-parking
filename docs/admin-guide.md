@@ -71,6 +71,8 @@ Administrators only. **Users** replaces the separate Members and Staff Accounts 
 ## Reports
 Choose a date range and a service (or all services), pick one of six categories, then **Download** the report you want. Each report is a CSV file, worked out from the visit and alert records when you press the button, for the dates and service you chose. The file name says which report, which dates and which service. A message beside the button says it is preparing, then how many rows it holds (or that there were no records), or why it failed. Reports contain plates but never drivers' names or phone numbers. Only admins can open or download them, and every download is logged.
 
+**All reports in one file.** The card above the six categories, **Download everything (Excel)**, gives one Excel workbook for the dates and service you chose: a **Contents** sheet (the dates, the service, when it was made, and each report with its row count), then a sheet for every report, in the same order as the list below. The figures come from the same tables as the single CSV downloads, so they always agree. The headings are bold and frozen, and the columns are sized to fit. It is logged like any other download. Use a single CSV when you only need one report or want to open it in another program.
+
 | Category | Reports |
 |---|---|
 | Parking activity | Parking summary; Vehicle activity by day; Hourly activity; Parking area activity; Service activity |

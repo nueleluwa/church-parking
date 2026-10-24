@@ -16,6 +16,7 @@ export function DownloadButton({
   disabled,
   label = "Download",
   outline = false,
+  format = "CSV",
 }: {
   href: string;
   report: string;
@@ -23,6 +24,8 @@ export function DownloadButton({
   label?: string;
   /** A white button with an outline, for a screen where Download is not the main action. */
   outline?: boolean;
+  /** What the file is, for screen readers: CSV for one report, Excel for the workbook of all of them. */
+  format?: "CSV" | "Excel";
 }) {
   const toast = useToast();
   const [state, setState] = useState<State>({ kind: "idle" });
@@ -38,7 +41,7 @@ export function DownloadButton({
         return;
       }
       const blob = await res.blob();
-      const name = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? "report.csv";
+      const name = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? (format === "Excel" ? "parking-reports.xlsx" : "report.csv");
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -62,7 +65,7 @@ export function DownloadButton({
         type="button"
         onClick={() => void download()}
         disabled={disabled || state.kind === "loading"}
-        aria-label={`Download ${report} as CSV`}
+        aria-label={`Download ${report} as ${format}`}
         className={`btn ${outline ? "btn-outline" : "btn-primary"}`}
       >
         <IconDownload className="h-5 w-5" />

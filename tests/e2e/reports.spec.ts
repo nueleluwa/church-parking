@@ -229,6 +229,46 @@ test("each export is written to the audit log with the report, dates and rows", 
   expect(data!.after).toMatchObject({ report: "activity-by-day", from: day(-2), to: today(), rows: 3 });
 });
 
+test("all reports in one Excel workbook: the button downloads a real workbook, it is audited, and only an admin can have it", async ({ page, browser }) => {
+  await openReports(page, `?from=${day(-27)}&to=${today()}`);
+  const card = page.getByRole("region", { name: "All reports in one file" });
+  await expect(card).toContainText(`${REPORTS.length} reports`);
+
+  const download = page.waitForEvent("download");
+  await card.getByRole("button", { name: "Download all reports as Excel" }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe(`parking-reports_${day(-27)}_to_${today()}.xlsx`);
+  const bytes = fs.readFileSync((await file.path())!);
+  expect(bytes.subarray(0, 2).toString(), "an .xlsx is a zip file").toBe("PK");
+  expect(bytes.length).toBeGreaterThan(5000);
+  await expect(card.getByRole("status")).toContainText("Downloaded", { timeout: 60_000 });
+  await expect(page).toHaveURL(/\/admin\/reports/);
+
+  // The same file by address: the right type, and every report is a sheet (plus Contents)
+  const res = await page.request.get(`/admin/reports/export?report=all&from=${day(-27)}&to=${today()}`);
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-type"]).toContain("spreadsheetml.sheet");
+  expect(Number(res.headers()["x-report-rows"])).toBeGreaterThanOrEqual(0);
+  const { data } = await adminClient().from("audit_events").select("after").eq("action", "export_report").order("id", { ascending: false }).limit(1).single();
+  expect(data!.after).toMatchObject({ report: "all", from: day(-27), to: today(), sheets: REPORTS.length + 1 });
+
+  // A bad range or service is explained, never a broken file
+  const bad = await page.request.get(`/admin/reports/export?report=all&from=${today()}&to=${day(-3)}`);
+  expect(bad.status()).toBe(400);
+
+  // A coordinator cannot have it, and nor can someone signed out
+  const lead = await createStaff("coordinator");
+  try {
+    const c = await (await browser.newContext()).newPage();
+    await staffSignIn(c, lead.phone, lead.password);
+    expect((await c.request.get(`/admin/reports/export?report=all&from=${today()}&to=${today()}`)).status()).toBe(401);
+  } finally {
+    await lead.remove();
+  }
+  const anon = await browser.newContext();
+  expect((await anon.request.get(`/admin/reports/export?report=all&from=${today()}&to=${today()}`)).status()).toBe(401);
+});
+
 test("only an admin can open reports or download them", async ({ page, browser }) => {
   await page.goto("/admin/reports");
   await expect(page).toHaveURL(/signin/, { timeout: 60_000 });
