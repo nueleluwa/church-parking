@@ -1,0 +1,32 @@
+name: A change or improvement
+description: Something that would make the parking team's or the drivers' day easier
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The plan and the decisions already made are in docs/roadmap.md and docs/decisions.md. A change that goes against a decision there needs a good reason, so say why.
+  - type: dropdown
+    id: who
+    attributes:
+      label: Who is it for?
+      options:
+        - Drivers
+        - Members
+        - Attendants
+        - Coordinators
+        - Admins
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is hard or slow today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like instead?
+    validations:
+      required: true

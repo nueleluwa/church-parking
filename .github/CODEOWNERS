@@ -1,0 +1,6 @@
+# Who is asked to review a change. A review request is not a block: this repository cannot enforce branch protection on its current plan.
+*                   @nueleluwa
+/supabase/          @nueleluwa
+/deploy/            @nueleluwa
+/.github/           @nueleluwa
+/docs/security.md   @nueleluwa
