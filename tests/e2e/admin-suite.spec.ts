@@ -182,7 +182,9 @@ test("an admin adds a car park: it gets its own QR address and sign, drivers can
     await adminSignIn(page);
     await page.goto("/admin/settings/parking-areas?add=1");
     const add = page.getByRole("dialog", { name: "Add car park" });
-    await add.getByLabel("Name of the car park").fill("Car Park 1");
+    // A name that is already taken: the first car park's own, whatever it has been renamed to
+    const taken = (await db.from("areas").select("name").eq("slug", "cp1").single()).data!.name as string;
+    await add.getByLabel("Name of the car park").fill(taken);
     await add.getByRole("button", { name: "Add car park" }).click();
     await expect(page.locator('[data-toast="error"]')).toContainText("Another car park already has that name.", { timeout: 60_000 });
 

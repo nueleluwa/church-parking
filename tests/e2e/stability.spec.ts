@@ -263,7 +263,7 @@ test.describe("moving between pages never makes the header or tab bar disappear"
     await watchForGaps(page);
 
     for (const [tab, url] of [
-      ["Recent scans", /\/staff\/history$/],
+      ["History, recent scans", /\/staff\/history$/],
       ["Live board", /\/staff\/dashboard$/],
       ["Sweep", /\/staff\/sweep$/],
       ["Admin", /\/admin$/],
