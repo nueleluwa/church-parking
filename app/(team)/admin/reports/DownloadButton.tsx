@@ -24,8 +24,8 @@ export function DownloadButton({
   label?: string;
   /** A white button with an outline, for a screen where Download is not the main action. */
   outline?: boolean;
-  /** What the file is, for screen readers: CSV for one report, Excel for the workbook of all of them. */
-  format?: "CSV" | "Excel";
+  /** What the file is, for screen readers: CSV for one report, Excel for the workbook of all of them, PDF for the designed report. */
+  format?: "CSV" | "Excel" | "PDF";
 }) {
   const toast = useToast();
   const [state, setState] = useState<State>({ kind: "idle" });
@@ -41,7 +41,7 @@ export function DownloadButton({
         return;
       }
       const blob = await res.blob();
-      const name = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? (format === "Excel" ? "parking-reports.xlsx" : "report.csv");
+      const name = /filename="([^"]+)"/.exec(res.headers.get("Content-Disposition") ?? "")?.[1] ?? (format === "Excel" ? "parking-reports.xlsx" : format === "PDF" ? "parking-report.pdf" : "report.csv");
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
