@@ -90,7 +90,7 @@ The milestone detail below is the original plan, kept for the acceptance checks.
 
 Phone-number check-in, a check-out code held by the member's own phone, an exit sign, staff registration of members, staff closure with a reason, a 12-hour flag and the history filters are built and tested. It is **off** until `QR_SESSION_FLOW` is set and has not been merged or deployed. Decision D-43; the plan and what differs from it are in `docs/GAP_ANALYSIS.md`; how to turn it on, watch it and turn it off is in `docs/qr-rollout.md`.
 
-**Still to do before the pilot:** run the data checks on a copy of the live backup, test on real iPhones and Android phones with the printed signs, run the full browser suite again, and decide data retention.
+**Still to do before the pilot:** run the data checks on a copy of the live backup, test on real iPhones and Android phones with the printed signs, run the full browser suite again, and data retention is decided: keep everything forever (24 Oct 2026).
 
 ## Next
 
@@ -98,5 +98,5 @@ Phone-number check-in, a check-out code held by the member's own phone, an exit 
 - Print the QR signs and check they scan from 1.5 m in daylight.
 - Run the staff through the 09:30 changeover with two attendants at one exit.
 - Copy backups off the server (an `offsite.sh` script), and re-run the restore practice.
-- Open decisions: whether the Members list should mask phone numbers as the design reference does; whether a driver who scans a sign should skip the welcome step. (The code is licensed MIT.)
+- Decided 24 Oct 2026: attendants only ever see masked phone numbers (last 4, with a logged "Show number"). Welcome screen: leave as is (24 Oct 2026); it only shows on car parks still on the old check-in, and phone check-in already goes straight to the phone number. Admin Members list: stays unmasked, admins see full numbers. (The code is licensed MIT.)
 - Ideas, not planned: SMS or WhatsApp messages, number-plate cameras, an offline mode (see the spec's "Not in v1").

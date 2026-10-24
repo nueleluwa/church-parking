@@ -104,6 +104,6 @@ Write down anything that does not work as described, with the phone and browser,
 ## Things to know
 
 - **Accepted risk.** Check-in needs only a phone number. Anyone who knows a member's number can check in as them, or take over that member's check-out code by checking in again at the same car park. The member can then check in again to take it back, or see staff. The limits, the audit rows and the replacement report are the mitigation (D-43, security T-8).
-- **Retention.** The documents suggest keeping visits and the audit log for 12 months. The app does not delete them: member visits and the audit log are kept until someone decides, and guest records are deleted after 24 months as before. Decide before production.
+- **Retention.** The documents suggest keeping visits and the audit log for 12 months. The app does not delete them: member visits and the audit log are kept until someone decides, and guest records are deleted after 24 months as before. **Decided (24 Oct 2026): keep member visits and the audit log forever,** so past records are never lost or redone. Revisit retention later if needed.
 - **Time.** Stored in UTC, shown in Lagos time. The midnight close still closes any visit left open at the end of the day; the exit page says so if a member scans after that.
 - **Cookies.** A different browser, a QR scanner inside another app, private mode, or cleared site data will not have the code. Scanning the check-in sign again is the fix.
