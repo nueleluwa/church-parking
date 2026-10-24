@@ -150,7 +150,7 @@ test("adding a guest vehicle: each problem shows on its own field, a good one is
     await panel.getByLabel("Make and model").fill("Honda CR-V");
     await panel.getByLabel("Colour").fill("Grey");
     await panel.getByRole("button", { name: "Save vehicle" }).click();
-    await expect(page).toHaveURL(/notice=added/, { timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]')).toBeVisible({ timeout: 60_000 });
     await expect(page.locator('[data-toast="success"]')).toContainText(`${spaced(plate)} was added.`);
 
     const { data: saved } = await db.from("vehicles").select("id, plate, vehicle_type, make, colour, active, created_at").eq("plate", plate).single();
@@ -197,7 +197,7 @@ test("a member vehicle needs a member found by search; it can be edited back to 
     await panel.getByRole("button", { name: /Vehicle Owner QA/ }).first().click();
     await expect(panel.getByTestId("linked-member")).toHaveText("Vehicle Owner QA");
     await panel.getByRole("button", { name: "Save vehicle" }).click();
-    await expect(page).toHaveURL(/notice=added/, { timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]')).toBeVisible({ timeout: 60_000 });
 
     const { data: v } = await db.from("vehicles").select("id").eq("plate", plate).single();
     const links = (await db.from("member_vehicles").select("member_id").eq("vehicle_id", v!.id)).data!;
@@ -210,7 +210,7 @@ test("a member vehicle needs a member found by search; it can be edited back to 
     await expect(edit.getByLabel("Plate number")).toHaveAttribute("readonly", "");
     await edit.getByRole("radio", { name: "Guest" }).check();
     await edit.getByRole("button", { name: "Save vehicle" }).click();
-    await expect(page).toHaveURL(/notice=saved/, { timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]')).toBeVisible({ timeout: 60_000 });
     expect((await db.from("member_vehicles").select("member_id").eq("vehicle_id", v!.id)).data).toHaveLength(0);
     const { data: events } = await db.from("audit_events").select("action, staff_id, after").like("action", "vehicle_%").eq("after->>vehicle_id", v!.id);
     expect(events!.map((e) => e.action).sort()).toEqual(["vehicle_added", "vehicle_owner_changed"]);
@@ -231,7 +231,7 @@ test("editing a vehicle changes its details and status, and the vehicle page sho
     await edit.getByLabel("Colour").fill("Blue");
     await edit.getByLabel("Status").selectOption("inactive");
     await edit.getByRole("button", { name: "Save vehicle" }).click();
-    await expect(page).toHaveURL(/notice=saved/, { timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]')).toBeVisible({ timeout: 60_000 });
     expect((await db.from("vehicles").select("colour, active, make").eq("id", car.id).single()).data).toEqual({ colour: "Blue", active: false, make: "Toyota Corolla" });
 
     await page.goto(`/admin/vehicles/${car.id}`);
@@ -338,7 +338,7 @@ test("changing the owner of a parked car is refused; after release it works, and
 
     await db.rpc("release_visit", { p_visit: visit!.id, p_staff: await adminId(), p_method: "scan", p_today: today() });
     await edit.getByRole("button", { name: "Save vehicle" }).click();
-    await expect(page).toHaveURL(/notice=saved/, { timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]')).toBeVisible({ timeout: 60_000 });
     expect((await db.from("member_vehicles").select("member_id").eq("vehicle_id", v!.id)).data).toEqual([{ member_id: owner }]);
     // History is not rewritten: the visit is still the guest's
     expect((await db.from("visits").select("guest_id, member_id").eq("id", visit!.id).single()).data).toEqual({ guest_id: visit!.guest_id, member_id: null });

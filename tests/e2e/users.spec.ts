@@ -219,7 +219,7 @@ test("adding a member: each problem shows on its own field, a good one is saved,
     await panel.getByLabel("Plate number of vehicle 1").fill(plate.toLowerCase());
     await panel.getByLabel("Make and model of vehicle 1").fill("Toyota Camry");
     await panel.getByRole("button", { name: "Save member" }).click();
-    await expect(page).toHaveURL(/notice=added/, { timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]')).toBeVisible({ timeout: 60_000 });
     await expect(page.locator('[data-toast="success"]')).toContainText("The member was added.");
 
     const { data: m } = await db.from("members").select("id, full_name, phone, active, pin_hash").eq("phone", e164(local)).single();
@@ -281,7 +281,7 @@ test("a member added without a PIN has none, gets a local phone number, and cann
     await panel.getByLabel("Phone number").fill(local);
     await panel.getByLabel("Plate number of vehicle 1").fill(plate);
     await panel.getByRole("button", { name: "Save member" }).click();
-    await expect(page).toHaveURL(/notice=added/, { timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]')).toBeVisible({ timeout: 60_000 });
     await expect(page.locator('[data-toast="success"]')).toContainText("The member was added.");
 
     const { data: m } = await db.from("members").select("id, pin_hash, phone_local").eq("phone", e164(local)).single();
@@ -325,7 +325,7 @@ test("a member added as inactive cannot sign in, and a guest's car or a deactiva
     await panel.getByLabel("Plate number of vehicle 1").fill(guestPlate);
     await panel.getByRole("switch", { name: "Account is active" }).click();
     await panel.getByRole("button", { name: "Save member" }).click();
-    await expect(page).toHaveURL(/notice=added/, { timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]')).toBeVisible({ timeout: 60_000 });
     const { data: m } = await db.from("members").select("id, active").eq("phone", e164(local)).single();
     memberId = m!.id as string;
     expect(m!.active).toBe(false);
