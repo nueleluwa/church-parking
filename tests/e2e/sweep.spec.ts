@@ -339,7 +339,7 @@ test("the history lists what was recorded, who recorded it and what it means, wi
   await page.goto("/staff/sweep/history?from=2020-01-01&to=2020-01-07");
   await expect(page.getByText("No sweep outcomes were recorded in these dates.")).toBeVisible();
   await page.goto(`/staff/sweep/history?from=${today()}&to=2020-01-01`);
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("not valid");
+  await expect(page.locator('[data-toast="warning"]')).toContainText("not valid");
 });
 
 test("the notes link to Live Parking and the lookup, and only coordinators and admins can open Sweep", async ({ page, browser }) => {

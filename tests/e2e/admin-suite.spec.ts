@@ -48,11 +48,11 @@ test("an admin adds, changes and checks services in Settings; bad times are refu
     await add.getByLabel("Starts").fill("14:00");
     await add.getByLabel("Ends").fill("13:00");
     await add.getByRole("button", { name: "Add service" }).click();
-    await expect(add.getByText("The service must end after it starts.")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="error"]')).toContainText("The service must end after it starts.", { timeout: 30_000 });
 
     await add.getByLabel("Ends").fill("15:30");
     await add.getByRole("button", { name: "Add service" }).click();
-    await expect(add.getByText("Service saved.")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="success"]')).toContainText("Service added to the schedule.", { timeout: 30_000 });
 
     const { data: row } = await db.from("services").select("id, starts_at, ends_at").eq("name", name).single();
     expect(row!.starts_at).toMatch(/^14:00/);
@@ -66,7 +66,7 @@ test("an admin adds, changes and checks services in Settings; bad times are refu
     const edit = page.getByRole("dialog", { name: `Edit ${name}` });
     await edit.getByLabel("Ends").fill("16:00");
     await edit.getByRole("button", { name: "Save service" }).click();
-    await expect(edit.getByText("Service saved.")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="success"]')).toContainText("Service schedule updated.", { timeout: 30_000 });
     const { data: changed } = await db.from("services").select("ends_at").eq("id", row!.id).single();
     expect(changed!.ends_at).toMatch(/^16:00/);
 
@@ -184,11 +184,11 @@ test("an admin adds a car park: it gets its own QR address and sign, drivers can
     const add = page.getByRole("dialog", { name: "Add car park" });
     await add.getByLabel("Name of the car park").fill("Car Park 1");
     await add.getByRole("button", { name: "Add car park" }).click();
-    await expect(add.getByText("Another car park already has that name.")).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-toast="error"]')).toContainText("Another car park already has that name.", { timeout: 60_000 });
 
     await add.getByLabel("Name of the car park").fill(name);
     await add.getByRole("button", { name: "Add car park" }).click();
-    await expect(add.getByText(`Its QR address is /c/${slug}`)).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]')).toContainText(`Its QR address is /c/${slug}`, { timeout: 60_000 });
     const { data: area } = await db.from("areas").select("id, active, slug").eq("name", name).single();
     expect(area).toMatchObject({ active: true, slug });
 
@@ -205,12 +205,12 @@ test("an admin adds a car park: it gets its own QR address and sign, drivers can
     const card = page.locator("li").filter({ hasText: name });
     await card.getByText("Switch off", { exact: true }).click();
     await card.getByRole("button", { name: "Switch off this car park" }).click();
-    await expect(card.getByText(/1 car is still parked here/)).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-toast="error"]')).toContainText(/1 car is still parked here/, { timeout: 60_000 });
 
     // Once the car has gone it can be switched off, and then the sign stops working
     await db.from("visits").update({ status: "released", released_at: new Date().toISOString(), release_method: "scan" }).eq("area_id", area!.id);
     await card.getByRole("button", { name: "Switch off this car park" }).click();
-    await expect(card.getByText(/Car park switched off/)).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]')).toContainText(/Car park switched off/, { timeout: 60_000 });
     expect((await db.from("areas").select("active").eq("id", area!.id).single()).data!.active).toBe(false);
     const guest = await (await browser.newContext()).newPage();
     await guest.goto(`/c/${slug}`);
