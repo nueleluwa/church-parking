@@ -28,8 +28,8 @@ export const CATEGORIES: { id: ReportCategoryId; name: string; description: stri
   { id: "alerts", name: "Alerts and exceptions", description: "Security alerts, conflicts and operational exceptions." },
 ];
 
-export const CATEGORY_INTRO: Record<ReportCategoryId, string> = {
-  activity: "Check-ins, check-outs and parking activity for the selected period.",
+/** The line under a group's heading. Parking activity has none: its card above already says it. */
+export const CATEGORY_INTRO: Partial<Record<ReportCategoryId, string>> = {
   vehicles: "Visit records for vehicles in the selected period. Plates only: no names or phone numbers.",
   members: "Activity of members' cars in the selected period, and cars a guest tried to check in under a member's plate.",
   services: "Activity for each service in the selected period, and how the services compare.",
