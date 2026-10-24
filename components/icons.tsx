@@ -53,6 +53,13 @@ export const IconCheck = (p: IconProps) => (
   </Icon>
 );
 
+/** The check that draws itself. Put it inside a `.check-pop` circle; it shows fully drawn for people who ask for less motion. */
+export const IconCheckAnimated = (p: IconProps) => (
+  <Icon {...p}>
+    <path className="check-path" pathLength={1} d="m5 12 5 5L20 7" />
+  </Icon>
+);
+
 export const IconAlert = (p: IconProps) => (
   <Icon {...p}>
     <path d="M12 3 2 20h20z" />

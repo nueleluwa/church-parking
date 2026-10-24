@@ -1,3 +1,4 @@
+import { GetForm } from "@/components/ds/GetForm";
 import Link from "next/link";
 import { IconAlert, IconCalendar, IconCar, IconPin, IconReport, IconTrend, IconUsers } from "@/components/icons";
 import { listAllServices } from "@/lib/db";
@@ -78,7 +79,7 @@ export default async function ReportsPage({
           <p className="mt-1.5 text-[0.9375rem] leading-snug text-ink-soft">Generate and download reports from your parking data.</p>
         </div>
 
-        <form noValidate aria-label="Report filters" className="w-full space-y-2 lg:w-auto">
+        <GetForm noValidate aria-label="Report filters" className="w-full space-y-2 lg:w-auto">
           <input type="hidden" name="category" value={category.id} />
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-[10rem_10rem_11rem_auto] lg:items-end">
             <label className="block text-sm font-medium">
@@ -118,7 +119,7 @@ export default async function ReportsPage({
               </Link>
             )}
           </p>
-        </form>
+        </GetForm>
       </header>
 
       {rangeError && (

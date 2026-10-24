@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { IconCheck } from "@/components/icons";
+import { IconCheckAnimated } from "@/components/icons";
 import { card, errorBox, field, outlineButton, redButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import type { MemberMatchCard } from "@/lib/rules";
@@ -38,8 +38,8 @@ export function AddMember() {
     return (
       <div className="space-y-4">
         <section role="status" className="rounded-card border-2 border-success bg-success-soft p-5 text-center">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success text-white">
-            <IconCheck className="h-8 w-8" />
+          <span className="check-pop mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success text-white">
+            <IconCheckAnimated className="h-8 w-8" />
           </span>
           <h2 className="mt-2 text-2xl font-extrabold">Member added</h2>
           <p className="mt-1 text-ink-soft">

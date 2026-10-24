@@ -1,3 +1,5 @@
+import { GetForm } from "@/components/ds/GetForm";
+import { ToastNotice } from "@/components/ds/Toast";
 import { BulkBar, BulkCheck, BulkSelectAll } from "@/components/ds/Bulk";
 import { deleteMembersAction } from "../admin-actions";
 import Link from "next/link";
@@ -71,11 +73,7 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
 
   return (
     <>
-      {notice && (
-        <p role="status" className="rounded-xl border-2 border-success bg-success-soft p-3 font-medium">
-          {notice}
-        </p>
-      )}
+      {notice && <ToastNotice tone="success" clear={["notice"]}>{notice}</ToastNotice>}
 
       <MetricRow>
         <Summary id="u-total" label="Total members" value={summary.total} note="Registered accounts" href="/admin/users" icon={<IconUsers className="h-5 w-5" />} />
@@ -98,7 +96,7 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
           </Link>
         </div>
 
-        <form noValidate aria-label="Filters" className="mb-4 space-y-3">
+        <GetForm noValidate aria-label="Filters" className="mb-4 space-y-3">
           {size !== 20 && <input type="hidden" name="size" value={size} />}
           {since && <input type="hidden" name="joined" value="month" />}
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-[minmax(0,2fr)_1fr_1fr]">
@@ -132,7 +130,7 @@ export async function MembersTab({ sp }: { sp: MembersSearch }) {
             </Link>
             <button className="btn btn-primary flex-1 sm:flex-none">Apply filters</button>
           </div>
-        </form>
+        </GetForm>
 
         {rows.length === 0 ? (
           <p className="rounded-xl bg-page p-4 font-medium">

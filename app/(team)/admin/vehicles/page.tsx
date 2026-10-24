@@ -1,3 +1,5 @@
+import { GetForm } from "@/components/ds/GetForm";
+import { ToastNotice } from "@/components/ds/Toast";
 import Link from "next/link";
 import { IconCar, IconLock, IconPlus, IconSearch, IconUser, IconUsers } from "@/components/icons";
 import { EmptyState } from "@/components/ds/EmptyState";
@@ -94,11 +96,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
         Manage all vehicles registered in the church parking system.
       </PageHeader>
 
-      {notice && (
-        <p role="status" className="rounded-xl border-2 border-success bg-success-soft p-3 font-medium">
-          {notice}
-        </p>
-      )}
+      {notice && <ToastNotice tone="success" clear={["notice", "plate"]}>{notice}</ToastNotice>}
 
       <MetricRow>
         <MetricCard id="vh-total" label="Total vehicles" value={counts.total} note="Every vehicle in the register" href="/admin/vehicles" icon={<IconCar className="h-5 w-5" />} />
@@ -107,7 +105,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
         <MetricCard id="vh-inactive" label="Inactive vehicles" value={counts.inactive} note="Cannot be checked in" href="/admin/vehicles?status=inactive" icon={<IconLock className="h-5 w-5" />} />
       </MetricRow>
 
-      <form noValidate aria-label="Filters" className="surface space-y-4">
+      <GetForm noValidate aria-label="Filters" className="surface space-y-4">
         {size !== 20 && <input type="hidden" name="size" value={size} />}
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-[1fr_1fr_1fr_minmax(0,1.6fr)]">
           <label className="block text-sm font-medium">
@@ -151,7 +149,7 @@ export default async function VehiclesPage({ searchParams }: { searchParams: Pro
           </Link>
           <button className="btn btn-primary flex-1 sm:flex-none">Apply filters</button>
         </div>
-      </form>
+      </GetForm>
 
       <section aria-label="Vehicles" className="surface">
         <h2 className="mb-3 text-xl font-extrabold">

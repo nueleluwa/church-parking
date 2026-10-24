@@ -1,3 +1,5 @@
+import { GetForm } from "@/components/ds/GetForm";
+import { ToastNotice } from "@/components/ds/Toast";
 import Link from "next/link";
 import { IconAlert, IconCar, IconCheck, IconChevronRight, IconClock, IconLogout, IconSearch } from "@/components/icons";
 import { Chip } from "@/components/ds/Chip";
@@ -142,7 +144,7 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
         />
       </MetricRow>
 
-      <form noValidate aria-label="Filters" className="space-y-4 rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
+      <GetForm noValidate aria-label="Filters" className="space-y-4 rounded-2xl border border-edge/15 bg-card p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <p className="flex flex-wrap gap-2 text-sm">
             {presets.map((p) => (
@@ -222,20 +224,12 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
             <button className="btn btn-primary flex-1 sm:flex-none">Apply filters</button>
           </div>
         </div>
-        {extras.phoneProblem && (
-          <p role="alert" className="font-semibold text-accent">
-            {extras.phoneProblem}
-          </p>
-        )}
-        {range.error && (
-          <p role="alert" className="font-semibold text-accent">
-            {range.error}
-          </p>
-        )}
+        {extras.phoneProblem && <ToastNotice tone="error">{extras.phoneProblem}</ToastNotice>}
+        {range.error && <ToastNotice tone="warning">{range.error}</ToastNotice>}
         <p className="text-xs text-ink-soft">
           Total, Checked in and Released count visits in the dates chosen. Currently parked is live: it counts every car on site now and ignores the dates.
         </p>
-      </form>
+      </GetForm>
 
       <section aria-label="Visits" className="surface">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">

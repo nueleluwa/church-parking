@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { IconAlert, IconCheck } from "@/components/icons";
+import { IconAlert, IconCheckAnimated } from "@/components/icons";
 import { Plate } from "@/components/Plate";
 import { Spinner } from "@/components/Spinner";
-import { TitleHeader } from "@/components/TitleHeader";
+import { VehicleImage } from "@/components/VehicleImage";
+import { AppHeader } from "@/components/AppHeader";
 import { outlineButton, redButton } from "@/components/ui";
 import { formatLagosTime } from "@/lib/format";
 import { checkOut, type ExitResult } from "./actions";
@@ -41,7 +42,7 @@ export function ExitCheckOut({ areaSlug, areaName }: { areaSlug: string; areaNam
 
   return (
     <>
-      <TitleHeader title="Check Out" backHref="/" />
+      <AppHeader />
       <main className="mx-auto max-w-md space-y-5 px-4 pb-10 pt-6" aria-live="polite">
         {areaName && <p className="text-center text-lg font-semibold text-ink-soft">{areaName}</p>}
 
@@ -62,12 +63,16 @@ export function ExitCheckOut({ areaSlug, areaName }: { areaSlug: string; areaNam
 
         {result?.status === "ok" && (
           <section role="status" className="space-y-3 rounded-card border-2 border-success bg-success-soft p-6 text-center">
-            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success text-white">
-              <IconCheck className="h-8 w-8" />
+            <span className="check-pop mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success text-white">
+              <IconCheckAnimated className="h-8 w-8" />
             </span>
             <h1 className="text-2xl font-extrabold">You are checked out</h1>
+            <div className="flex justify-center">
+              <VehicleImage size="lg" />
+            </div>
             <Plate plate={result.plate} size="lg" variant="plain" />
-            <p className="text-ink-soft">Left at {formatLagosTime(result.releasedAt)}. Safe journey.</p>
+            <p className="text-ink-soft">Left at {formatLagosTime(result.releasedAt)}</p>
+            <p className="text-lg font-semibold">Thank you for worshipping with us. Go well, and have a blessed week.</p>
           </section>
         )}
 

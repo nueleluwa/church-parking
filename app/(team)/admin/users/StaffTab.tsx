@@ -1,3 +1,4 @@
+import { GetForm } from "@/components/ds/GetForm";
 import Link from "next/link";
 import { IconCheck, IconLock, IconPlus, IconSearch, IconUser, IconUsers } from "@/components/icons";
 import { BulkBar, BulkCheck, BulkSelectAll, DeleteButton } from "@/components/ds/Bulk";
@@ -102,7 +103,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
           </Link>
         </div>
 
-        <form noValidate aria-label="Filters" className="mb-4 space-y-3">
+        <GetForm noValidate aria-label="Filters" className="mb-4 space-y-3">
           <input type="hidden" name="tab" value="staff" />
           {size !== 20 && <input type="hidden" name="size" value={size} />}
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-[minmax(0,2fr)_1fr_1fr]">
@@ -139,7 +140,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
             </Link>
             <button className="btn btn-primary flex-1 sm:flex-none">Apply filters</button>
           </div>
-        </form>
+        </GetForm>
 
         {rows.length === 0 ? (
           <p className="rounded-xl bg-page p-4 font-medium">

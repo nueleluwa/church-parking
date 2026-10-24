@@ -60,5 +60,5 @@ export function StaffHeader({ initials, wide = false }: { initials: string; wide
   );
 
   if (!screen) return <AppHeader title="Team" right={avatar} wide={wide} />;
-  return <TitleHeader title={screen.title} backHref={screen.back} wide={wide} />;
+  return <TitleHeader title={screen.title} backHref={screen.back} wide={wide} logo />;
 }

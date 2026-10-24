@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { useToast } from "@/components/ds/Toast";
 import { PasswordField } from "@/components/PasswordField";
 import { Spinner } from "@/components/Spinner";
-import { errorBox } from "@/components/ui";
 import { IconPlus } from "@/components/icons";
 import { createMemberAction, type MemberFormState } from "../member-actions";
 
@@ -18,6 +18,7 @@ const MAX_CARS = 4;
  */
 export function MemberForm({ doneHref }: { doneHref: string }) {
   const router = useRouter();
+  const toast = useToast();
   const [state, setState] = useState<MemberFormState>({});
   const [pending, start] = useTransition();
   // One vehicle row is open to start with: a member needs a plate for the check-in to confirm
@@ -32,6 +33,7 @@ export function MemberForm({ doneHref }: { doneHref: string }) {
     start(async () => {
       const result = await createMemberAction(data);
       setState(result);
+      if (result.error && result.error !== result.fieldErrors?.general) toast.error(result.error);
       if (result.ok) {
         const join = doneHref.includes("?") ? "&" : "?";
         router.push(`${doneHref}${join}notice=added`);
@@ -148,11 +150,6 @@ export function MemberForm({ doneHref }: { doneHref: string }) {
           <p className="mt-1 text-xs text-ink-soft">An inactive member cannot sign in or be checked in. Their history is kept.</p>
         </div>
 
-        {state.error && state.error !== errors.general && (
-          <p role="alert" className={errorBox}>
-            {state.error}
-          </p>
-        )}
       </div>
 
       <div className="flex gap-3 border-t border-edge/15 bg-white px-5 py-4">

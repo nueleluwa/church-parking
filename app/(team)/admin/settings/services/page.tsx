@@ -1,3 +1,4 @@
+import { GetForm } from "@/components/ds/GetForm";
 import Link from "next/link";
 import { BulkBar, BulkCheck, BulkSelectAll, DeleteButton } from "@/components/ds/Bulk";
 import { IconPlus, IconSearch } from "@/components/icons";
@@ -107,7 +108,7 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
           Change a service&apos;s name or times. Drivers are put into the right service from these times. Delete a service that was never used, or switch it off so old records keep their service.
         </SectionHead>
 
-        <form noValidate aria-label="Filters" className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,2fr)_1fr_1fr_auto] sm:items-end">
+        <GetForm noValidate aria-label="Filters" className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,2fr)_1fr_1fr_auto] sm:items-end">
           <label className="col-span-2 block text-sm font-medium sm:col-span-1">
             Search by name
             <span className="relative mt-1 block">
@@ -140,7 +141,7 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
             </Link>
             <button className="btn btn-primary flex-1">Apply</button>
           </div>
-        </form>
+        </GetForm>
 
         {services.length === 0 ? (
           <p className="rounded-xl bg-page p-4 font-medium">

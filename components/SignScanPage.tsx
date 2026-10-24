@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { describeCameraProblem, type CameraProblem } from "@/lib/rules/camera-problem";
 import { parseSignScan } from "@/lib/rules/sign-scan";
-import { IconAlert, IconCheck } from "./icons";
+import { IconAlert, IconCheckAnimated } from "./icons";
 import { outlineButton, redButton } from "./ui";
 
 const REGION = "sign-scan-region";
@@ -121,8 +121,8 @@ export function SignScanPage({ areas }: { areas: { slug: string; name: string }[
         </section>
       ) : phase === "found" && found ? (
         <section role="status" className="rounded-card border-2 border-success bg-success-soft p-5 text-center">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success text-white">
-            <IconCheck className="h-7 w-7" />
+          <span className="check-pop mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-success text-white">
+            <IconCheckAnimated className="h-7 w-7" />
           </span>
           <h2 className="mt-2 text-2xl font-extrabold">{found.name}</h2>
           <p className="mt-1 text-ink-soft">{found.exit ? "Exit sign found. Opening check-out…" : "Car park found. Opening check-in…"}</p>

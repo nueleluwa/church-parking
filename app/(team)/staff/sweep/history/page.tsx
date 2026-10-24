@@ -1,3 +1,5 @@
+import { GetForm } from "@/components/ds/GetForm";
+import { ToastNotice } from "@/components/ds/Toast";
 import Link from "next/link";
 import { IconAlert, IconCheck, IconChevronRight } from "@/components/icons";
 import { PageNumbers } from "@/components/Pager";
@@ -69,7 +71,7 @@ export default async function SweepHistoryPage({ searchParams }: { searchParams:
         </Link>
       </header>
 
-      <form noValidate aria-label="Filters" className="rounded-2xl border border-edge/15 bg-card p-4 lg:p-6">
+      <GetForm noValidate aria-label="Filters" className="rounded-2xl border border-edge/15 bg-card p-4 lg:p-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-[1fr_1fr_1.4fr_auto] sm:items-end">
           <label className="block text-sm font-medium">
             From
@@ -94,12 +96,8 @@ export default async function SweepHistoryPage({ searchParams }: { searchParams:
             <button className="btn btn-primary flex-1">Apply</button>
           </div>
         </div>
-        {error && (
-          <p role="alert" className="mt-3 font-semibold text-accent">
-            {error}
-          </p>
-        )}
-      </form>
+        {error && <ToastNotice tone="warning">{error}</ToastNotice>}
+      </GetForm>
 
       <section aria-label="Sweep outcomes" className="surface">
         <h2 className="mb-3 text-xl font-extrabold">

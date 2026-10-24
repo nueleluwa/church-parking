@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useToast } from "@/components/ds/Toast";
 import { BulkBar, BulkCheck, BulkSelectAll, DeleteButton } from "@/components/ds/Bulk";
 import { Spinner } from "@/components/Spinner";
-import { errorBox, okBox, primaryButton, secondaryButton } from "@/components/ui";
+import { primaryButton, secondaryButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import type { AreaRecord } from "@/lib/db";
 import { AdminForm } from "../../AdminForm";
@@ -21,6 +22,13 @@ function Row({ area }: { area: AreaRow }) {
   const [state, action, pending] = useActionState<RenameState, FormData>(renameAreaAction, {});
   const [editing, setEditing] = useState(false);
   const { bind } = useFields({ name: area.name });
+  const toast = useToast();
+
+  // The answer to a rename is a toast: "Name saved." or what went wrong
+  useEffect(() => {
+    if (state.ok) toast.success("Name saved.");
+    else if (state.error) toast.error(state.error);
+  }, [state, toast]);
 
   // After a successful save, close the form. The name shown comes from the saved result.
   const [handled, setHandled] = useState(state);
@@ -65,11 +73,6 @@ function Row({ area }: { area: AreaRow }) {
             New name
             <input {...bind("name")} required maxLength={60} autoFocus autoComplete="off" className="input" />
           </label>
-          {state.error && (
-            <p role="alert" className={errorBox}>
-              {state.error}
-            </p>
-          )}
           <div className="grid grid-cols-2 gap-3">
             <button disabled={pending} className={primaryButton}>
               {pending && <Spinner />}
@@ -99,11 +102,6 @@ function Row({ area }: { area: AreaRow }) {
         </details>
       )}
 
-      {!editing && state.ok && (
-        <p role="status" className={`${okBox} mt-3`}>
-          Name saved.
-        </p>
-      )}
     </li>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { AppHeader } from "@/components/AppHeader";
 import { AreaCard } from "@/components/AreaCard";
 import { IconCheck } from "@/components/icons";
 import { Plate } from "@/components/Plate";
@@ -27,8 +28,10 @@ export function QrCheckIn({ areaSlug, areaName, closedMessage }: { areaSlug: str
 
   return (
     <>
-      <TitleHeader title={onConfirm ? "Confirm Check In" : "Check In"} backHref={onConfirm ? undefined : "/"} onBack={onConfirm ? () => setLeftAt(found) : undefined} />
+      {/* The first screen after a scan carries the church logo; the confirmation step has its own title and a way back */}
+      {onConfirm ? <TitleHeader title="Confirm Check In" onBack={() => setLeftAt(found)} /> : <AppHeader />}
       <main className="mx-auto max-w-md space-y-5 px-4 pb-10 pt-6">
+        {!onConfirm && <h1 className="sr-only">Check In</h1>}
         <AreaCard name={areaName} />
 
         {closedMessage && <p className="rounded-card bg-card p-5 font-medium shadow-sm">{closedMessage}</p>}

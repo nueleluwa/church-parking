@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { IconCheck } from "@/components/icons";
+import { IconCheckAnimated } from "@/components/icons";
 import { errorBox, field, outlineButton, redButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import { Plate } from "@/components/Plate";
@@ -46,8 +46,8 @@ export function RegisterForm({ areas, initialPlate = "" }: { areas: { slug: stri
     return (
       <div className="space-y-4">
         <section role="status" className="rounded-card border-2 border-success bg-success-soft p-5 text-center">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success text-white">
-            <IconCheck className="h-8 w-8" />
+          <span className="check-pop mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success text-white">
+            <IconCheckAnimated className="h-8 w-8" />
           </span>
           <h2 className="mt-2 text-2xl font-extrabold">Car added</h2>
           <p className="mt-1 text-ink-soft">Tell the driver to remember this reference.</p>

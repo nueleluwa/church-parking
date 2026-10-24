@@ -149,10 +149,10 @@ test("a date range, the Yesterday and Today links, and bad dates", async ({ page
 
   // Reversed and invalid dates are explained and fall back to today
   await page.goto(`/admin/visits?from=${today()}&to=2020-01-01`);
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("start date must not be after the end date");
+  await expect(page.locator('[data-toast="warning"]')).toContainText("start date must not be after the end date");
   await expect(page.getByTestId("v-total")).toHaveText(String(await countVisits({ from: today(), to: today() })));
   await page.goto("/admin/visits?from=nonsense&to=nonsense");
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("not valid");
+  await expect(page.locator('[data-toast="warning"]')).toContainText("not valid");
 });
 
 test("pagination follows the filtered count, never shows an invalid page, and resets when the filters change", async ({ page }) => {

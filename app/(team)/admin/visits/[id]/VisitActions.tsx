@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { useToast } from "@/components/ds/Toast";
 import { doesNotMatch, releaseCar } from "../../../staff/actions";
 import { outlineButton, redButton } from "@/components/ui";
 
@@ -12,7 +13,7 @@ import { outlineButton, redButton } from "@/components/ui";
 export function VisitActions({ visitId, plate }: { visitId: string; plate: string }) {
   const router = useRouter();
   const [ask, setAsk] = useState<"release" | "mismatch" | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const toast = useToast();
   const [pending, start] = useTransition();
 
   function confirm() {
@@ -21,10 +22,9 @@ export function VisitActions({ visitId, plate }: { visitId: string; plate: strin
       const result = action === "release" ? await releaseCar(visitId, "search") : await doesNotMatch(visitId, plate);
       if (result.ok) {
         setAsk(null);
-        setMessage(null);
         router.refresh();
       } else {
-        setMessage(result.message);
+        toast.error(result.message);
       }
     });
   }
@@ -35,7 +35,6 @@ export function VisitActions({ visitId, plate }: { visitId: string; plate: strin
         <p className="font-semibold">
           {ask === "release" ? "Release this car now? It will be recorded as a release by hand." : "Hold this car and alert the coordinator?"}
         </p>
-        {message && <p role="alert" className="font-medium text-danger">{message}</p>}
         <div className="grid grid-cols-2 gap-3">
           <button type="button" onClick={confirm} disabled={pending} className={redButton}>
             {pending ? "Please wait…" : "Yes, continue"}

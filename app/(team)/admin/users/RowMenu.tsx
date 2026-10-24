@@ -21,14 +21,13 @@ export function RowMenu({ id, name, active }: { id: string; name: string; active
   const toast = useToast();
   const [open, setOpen] = useState(false);
   const [asking, setAsking] = useState(false);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, start] = useTransition();
 
   function run() {
     start(async () => {
       const r = await setMemberActiveAction(id, !active);
-      setMessage({ ok: Boolean(r.ok), text: r.message ?? r.error ?? "" });
       if (r.ok) toast.success("Member account updated.");
+      else toast.error(r.error ?? r.message ?? "The account was not changed.");
       setAsking(false);
       setOpen(false);
       router.refresh();
@@ -90,11 +89,6 @@ export function RowMenu({ id, name, active }: { id: string; name: string; active
             </div>
           )}
         </div>
-      )}
-      {message && !message.ok && (
-        <p role="alert" className="absolute right-0 z-20 mt-1 w-56 rounded-xl border-2 border-danger bg-white p-2 text-sm font-medium text-danger">
-          {message.text}
-        </p>
       )}
     </div>
   );

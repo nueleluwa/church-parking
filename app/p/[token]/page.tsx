@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { FactList, FactRow } from "@/components/FactRow";
-import { IconAlert, IconCalendar, IconCheck, IconClock, IconPin } from "@/components/icons";
+import { IconAlert, IconCalendar, IconCheckAnimated, IconClock, IconPin } from "@/components/icons";
 import { MemberNav } from "@/components/MemberNav";
 import { Plate } from "@/components/Plate";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -109,7 +109,7 @@ export default async function PassPage({
       ? await qrSvg(`${serverEnv().APP_URL}/p/${token}`)
       : null;
   const details = view.kind === "owner" ? describeVehicle({ make: view.make, colour: view.colour }) : null;
-  const StateIcon = view.state === "valid" ? IconCheck : view.state === "expired" ? IconAlert : IconClock;
+  const StateIcon = view.state === "valid" ? IconCheckAnimated : view.state === "expired" ? IconAlert : IconClock;
 
   return (
     <>
@@ -123,7 +123,7 @@ export default async function PassPage({
         )}
 
         <section className={`rounded-card border-2 p-5 text-center ${CARD[view.state]}`}>
-          <span className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${CIRCLE[view.state]}`}>
+          <span className={`mx-auto flex h-14 w-14 items-center justify-center rounded-full ${CIRCLE[view.state]} ${view.state === "valid" ? "check-pop" : ""}`}>
             <StateIcon className="h-8 w-8" />
           </span>
           <h1 className="mt-2 text-2xl font-extrabold">{view.kind === "owner" ? state.title : "Parking pass"}</h1>

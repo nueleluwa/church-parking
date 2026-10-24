@@ -3,7 +3,7 @@
 import { useToast } from "@/components/ds/Toast";
 import { useState, useTransition } from "react";
 import { FactList, FactRow } from "@/components/FactRow";
-import { IconAlert, IconCalendar, IconCheck, IconClock, IconFlag, IconPin, IconTimer, IconUser } from "@/components/icons";
+import { IconAlert, IconCalendar, IconCheck, IconCheckAnimated, IconClock, IconFlag, IconPin, IconTimer, IconUser } from "@/components/icons";
 import { Plate } from "@/components/Plate";
 import { Spinner } from "@/components/Spinner";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -149,8 +149,8 @@ export function ResultCard({ card, method, onDone, doneLabel, corrections, areas
   // The status card: its colour and words follow what has happened
   const tone = finished === "released" || finished === "closed" ? "success" : finished === "held" || problem ? "danger" : "success";
   const cardClass = tone === "success" ? "border-success bg-success-soft" : "border-danger bg-blush";
-  const circle = tone === "success" ? "bg-success text-white" : "bg-danger text-white";
-  const Icon = tone === "success" ? IconCheck : IconAlert;
+  const circle = tone === "success" ? "check-pop bg-success text-white" : "bg-danger text-white";
+  const Icon = tone === "success" ? IconCheckAnimated : IconAlert;
   const title =
     finished === "released" ? "Car released" : finished === "closed" ? "Visit closed" : finished === "held" ? "Car held" : (problem?.title ?? "Ready for exit");
   const sub =
