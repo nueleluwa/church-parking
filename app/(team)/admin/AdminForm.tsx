@@ -17,7 +17,7 @@ export function AdminForm({
   busyLabel = "Saving...",
   clearOnSuccess = false,
   variant = "primary",
-  savedMessage = "Changes saved successfully.",
+  savedMessage,
 }: {
   action: (formData: FormData) => Promise<AdminState>;
   children: ReactNode;
@@ -26,7 +26,7 @@ export function AdminForm({
   /** Empty the fields after a good save (for "add" forms). */
   clearOnSuccess?: boolean;
   variant?: "primary" | "secondary" | "red";
-  /** What the toast says after the server confirms, unless the server sent a more specific message. */
+  /** What the toast says after the server confirms. Without it, the server's own message is used. */
   savedMessage?: string;
 }) {
   const toast = useToast();
@@ -53,8 +53,8 @@ export function AdminForm({
       }
       if (result.error) toast.error(result.error);
       if (result.ok) {
-        // The server's own words when they say more than "saved" ("Car park added. Its QR address is..."), else the form's
-        toast.success(result.message && result.message.length > 30 ? result.message : savedMessage);
+        // The form's own saved message if it has one; else the server's words (a plain "Saved." does not count); else a standard line
+        toast.success(savedMessage ?? (result.message && result.message !== "Saved." ? result.message : "Changes saved successfully."));
         if (clearOnSuccess) formRef.current?.reset();
       }
     });

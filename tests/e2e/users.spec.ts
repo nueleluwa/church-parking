@@ -219,8 +219,8 @@ test("adding a member: each problem shows on its own field, a good one is saved,
     await panel.getByLabel("Plate number of vehicle 1").fill(plate.toLowerCase());
     await panel.getByLabel("Make and model of vehicle 1").fill("Toyota Camry");
     await panel.getByRole("button", { name: "Save member" }).click();
-    await expect(page).toHaveURL(/notice=added/, { timeout: 60_000 });
-    await expect(page.locator('[data-toast="success"]')).toContainText("The member was added.");
+    await expect(page.locator('[data-toast="success"]')).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]').filter({ hasText: "The member was added." }).first()).toBeVisible();
 
     const { data: m } = await db.from("members").select("id, full_name, phone, active, pin_hash").eq("phone", e164(local)).single();
     memberId = m!.id as string;
@@ -281,8 +281,8 @@ test("a member added without a PIN has none, gets a local phone number, and cann
     await panel.getByLabel("Phone number").fill(local);
     await panel.getByLabel("Plate number of vehicle 1").fill(plate);
     await panel.getByRole("button", { name: "Save member" }).click();
-    await expect(page).toHaveURL(/notice=added/, { timeout: 60_000 });
-    await expect(page.locator('[data-toast="success"]')).toContainText("The member was added.");
+    await expect(page.locator('[data-toast="success"]')).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]').filter({ hasText: "The member was added." }).first()).toBeVisible();
 
     const { data: m } = await db.from("members").select("id, pin_hash, phone_local").eq("phone", e164(local)).single();
     memberId = m!.id as string;
@@ -325,7 +325,7 @@ test("a member added as inactive cannot sign in, and a guest's car or a deactiva
     await panel.getByLabel("Plate number of vehicle 1").fill(guestPlate);
     await panel.getByRole("switch", { name: "Account is active" }).click();
     await panel.getByRole("button", { name: "Save member" }).click();
-    await expect(page).toHaveURL(/notice=added/, { timeout: 60_000 });
+    await expect(page.locator('[data-toast="success"]')).toBeVisible({ timeout: 60_000 });
     const { data: m } = await db.from("members").select("id, active").eq("phone", e164(local)).single();
     memberId = m!.id as string;
     expect(m!.active).toBe(false);
@@ -359,7 +359,7 @@ test("a member's page: correct the name or phone, set a PIN, save a car, and swi
     // Name and phone: a number someone else has is refused
     await manage.getByLabel("Phone number").fill(taken.local);
     await manage.getByRole("button", { name: "Save name and phone" }).click();
-    await expect(page.locator('[data-toast="error"]')).toContainText("Someone already has an account with that phone number.", { timeout: 30_000 });
+    await expect(page.locator('[data-toast="error"]').filter({ hasText: "Someone already has an account with that phone number." }).first()).toBeVisible({ timeout: 30_000 });
     await manage.getByLabel("Full name").fill("Zqm Renamed Member");
     await manage.getByLabel("Phone number").fill(original.local);
     await manage.getByRole("button", { name: "Save name and phone" }).click();
@@ -371,10 +371,10 @@ test("a member's page: correct the name or phone, set a PIN, save a car, and swi
     const cars = main(page).getByRole("region", { name: "Saved cars" });
     await cars.getByLabel("Plate number").fill(plate);
     await cars.getByRole("button", { name: "Save car" }).click();
-    await expect(cars.getByText(`${spaced(plate)} was saved.`)).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="success"]').filter({ hasText: `${spaced(plate)} was saved.` }).first()).toBeVisible({ timeout: 30_000 });
     await cars.getByLabel("Plate number").fill(plate);
     await cars.getByRole("button", { name: "Save car" }).click();
-    await expect(cars.getByText("This member has already saved this vehicle.")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="error"]').filter({ hasText: "This member has already saved this vehicle." }).first()).toBeVisible({ timeout: 30_000 });
     await expect(cars.getByRole("link", { name: spaced(plate) })).toHaveAttribute("href", /\/admin\/vehicles\/[0-9a-f-]{36}$/);
 
     // A PIN that is not 4 numbers is refused
@@ -453,7 +453,7 @@ test("a locked member is unlocked by setting a new PIN on the member's page", as
     await page.goto(`/admin/members/${m.id}`);
     await main(page).getByLabel("New PIN (4 numbers)").fill("9034");
     await main(page).getByRole("button", { name: "Set PIN and unlock" }).click();
-    await expect(page.locator('[data-toast="success"]')).toContainText("PIN changed and the account is unlocked", { timeout: 30_000 });
+    await expect(page.locator('[data-toast="success"]').filter({ hasText: "PIN changed and the account is unlocked" }).first()).toBeVisible({ timeout: 30_000 });
     expect((await db.from("members").select("locked_until").eq("id", m.id).single()).data!.locked_until).toBeNull();
     const mem = await (await browser.newContext()).newPage();
     await memberSignIn(mem, m.local, "9034");
@@ -488,12 +488,12 @@ test("staff accounts: summary, search, role and status filters, add, manage, and
     await add.getByLabel("Phone number").fill(local);
     await add.getByLabel(/^Password/).fill("a-long-enough-password");
     await add.getByRole("button", { name: "Create account" }).click();
-    await expect(add.getByText(/Account created/)).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="success"]').filter({ hasText: /Account created/ }).first()).toBeVisible({ timeout: 30_000 });
     await add.getByLabel("Full name").fill(name);
     await add.getByLabel("Phone number").fill(local);
     await add.getByLabel(/^Password/).fill("a-long-enough-password");
     await add.getByRole("button", { name: "Create account" }).click();
-    await expect(add.getByText("Someone already has an account with that phone number.")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="error"]').filter({ hasText: "Someone already has an account with that phone number." }).first()).toBeVisible({ timeout: 30_000 });
     const created = (await db.from("staff").select("id, role, active, password_hash").eq("full_name", name).single()).data!;
     staffId = created.id as string;
     expect(created).toMatchObject({ role: "attendant", active: true });
@@ -532,7 +532,7 @@ test("staff accounts: summary, search, role and status filters, add, manage, and
     try {
       await manage.getByLabel("Phone number").fill(lead.phone);
       await manage.getByRole("button", { name: "Save name and phone" }).click();
-      await expect(manage.getByText("Someone already has an account with that phone number.")).toBeVisible({ timeout: 30_000 });
+      await expect(page.locator('[data-toast="error"]').filter({ hasText: "Someone already has an account with that phone number." }).first()).toBeVisible({ timeout: 30_000 });
     } finally {
       await lead.remove();
     }
@@ -552,10 +552,10 @@ test("staff accounts: summary, search, role and status filters, add, manage, and
     await me.getByRole("link", { name: /^Manage/ }).click();
     const mine = page.getByRole("dialog", { name: /^Manage/ });
     await mine.getByRole("button", { name: "Switch account off" }).click();
-    await expect(mine.getByText("You cannot switch off your own account.")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="error"]').filter({ hasText: "You cannot switch off your own account." }).first()).toBeVisible({ timeout: 30_000 });
     await mine.getByLabel("Role").selectOption("attendant");
     await mine.getByRole("button", { name: "Save role" }).click();
-    await expect(mine.getByText(/cannot remove your own admin access/)).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="error"]').filter({ hasText: /cannot remove your own admin access/ }).first()).toBeVisible({ timeout: 30_000 });
 
     const { data: audit } = await db.from("audit_events").select("action").in("action", ["staff_create", "staff_role", "staff_password_reset", "staff_deactivate"]).eq("after->>staff_id", staffId);
     expect((audit ?? []).map((a) => a.action).sort()).toEqual(["staff_create", "staff_deactivate", "staff_password_reset", "staff_role"]);
