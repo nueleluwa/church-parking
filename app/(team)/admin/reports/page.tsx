@@ -4,6 +4,7 @@ import { IconAlert, IconCalendar, IconCar, IconPin, IconReport, IconTrend, IconU
 import { listAllServices } from "@/lib/db";
 import {
   CATEGORIES,
+  CATEGORY_INTRO,
   MAX_REPORT_DAYS,
   REPORTS,
   lagosDate,
@@ -185,7 +186,8 @@ export default async function ReportsPage({
       </nav>
 
       <section aria-label={`${category.name} reports`} className="surface">
-        <h2 className="mb-4 text-xl font-extrabold">{category.name} reports</h2>
+        <h2 className={`text-xl font-extrabold ${CATEGORY_INTRO[category.id] ? "" : "mb-4"}`}>{category.name} reports</h2>
+        {CATEGORY_INTRO[category.id] && <p className="mb-4 text-ink-soft">{CATEGORY_INTRO[category.id]}</p>}
 
         <div aria-hidden="true" className="hidden rounded-t-xl bg-page px-4 py-2.5 text-sm font-semibold text-ink-soft lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)_5rem_11rem] lg:gap-4">
           <span>Report name</span>

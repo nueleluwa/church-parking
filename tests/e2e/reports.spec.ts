@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
-import { CATEGORIES, REPORTS, reportsIn } from "../../lib/rules/report-catalogue";
+import { CATEGORIES, CATEGORY_INTRO, REPORTS, reportsIn } from "../../lib/rules/report-catalogue";
 import { adminClient, adminSignIn, createStaff, guestCheckIn, live, randomPlate, staffSignIn } from "./helpers";
 
 test.skip(!live, "needs .env.local with the Supabase key and admin login");
@@ -49,10 +49,10 @@ test("the page has its title, filters, six categories with real counts, and the 
 
   // No format that is not really made: CSV, Excel and the PDF are, nothing else is offered
   await expect(page.locator("main")).not.toContainText(/DOCX|PowerPoint|Google Sheets/i);
-  // Nothing under a group's heading but the reports: the dates and service are in the filters above, not repeated
+  // Parking activity has no line under its heading (its card says it), and no group repeats the dates and service line
   await expect(page.getByRole("heading", { name: "Parking activity reports" })).toBeVisible();
   await expect(page.getByTestId("report-scope")).toHaveCount(0);
-  await expect(page.locator("main")).not.toContainText("for the selected period");
+  await expect(page.locator("main")).not.toContainText("Check-ins, check-outs and parking activity for the selected period.");
   await expect(page.locator("main")).not.toContainText(/PHC 234|Domino/); // no figures or names from the design image
 });
 
@@ -65,6 +65,9 @@ test("choosing a category shows exactly its reports, and keeps the dates and ser
     await expect(nav.getByRole("link", { name: new RegExp(`^${c.name}`) })).toHaveAttribute("aria-current", "page");
     const shown = await page.locator("li[data-report] h3").allInnerTexts();
     expect(shown).toEqual(reportsIn(c.id).map((r) => r.name));
+    // The other groups keep their line under the heading; Parking activity has none
+    const intro = CATEGORY_INTRO[c.id];
+    if (intro) await expect(page.getByRole("region", { name: `${c.name} reports` })).toContainText(intro);
     const filters = page.getByRole("form", { name: "Report filters" });
     await expect(filters.locator('[name="from"]')).toHaveValue(day(-3));
     await expect(filters.locator('[name="to"]')).toHaveValue(today());
