@@ -81,13 +81,13 @@ body {
 
   /* Surfaces: one card, with the padding and radius every page shares */
   .surface {
-    @apply rounded-2xl border border-edge/15 bg-card p-4 sm:p-5;
+    @apply rounded-2xl border border-edge/15 bg-card p-4 sm:p-5 lg:p-6;
   }
   .surface-tint {
     @apply rounded-2xl bg-blush p-4 sm:p-5;
   }
   .metric {
-    @apply flex min-h-[6.5rem] items-center gap-3 rounded-2xl border border-edge/15 bg-card p-4 sm:gap-4 sm:p-5;
+    @apply flex min-h-[6.5rem] items-start gap-3 rounded-2xl border border-edge/15 bg-card p-4 sm:gap-4 sm:p-5 lg:p-6;
   }
   .metric-icon {
     @apply hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-page text-ink sm:flex;
@@ -141,13 +141,13 @@ body {
     @apply border-b border-edge/20 text-sm text-ink-soft;
   }
   .dt-th {
-    @apply px-2.5 py-3 text-sm font-semibold whitespace-nowrap;
+    @apply px-3 py-3 lg:px-4 text-sm font-semibold whitespace-nowrap;
   }
   .dt tbody {
     @apply divide-y divide-edge/15;
   }
   .dt-td {
-    @apply px-2.5 py-3 align-middle;
+    @apply px-3 py-3 lg:px-4 align-middle;
   }
   .dt tbody tr {
     @apply hover:bg-page;

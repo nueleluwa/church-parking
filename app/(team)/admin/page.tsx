@@ -20,9 +20,9 @@ import { MetricCard, MetricRow } from "@/components/ds/MetricCard";
 import { PageHeader } from "@/components/ds/PageHeader";
 import { VehicleIdentity } from "@/components/ds/VehicleIdentity";
 import { MenuRow } from "@/components/MenuRow";
-import { listActiveAreas, listAllServices, listOpenAlerts, listPeriodActivity, loadDashboardFigures } from "@/lib/db";
-import { formatLagosTime } from "@/lib/format";
-import { DASHBOARD_RANGES, formatPlate, lagosDate, parseDashboardPeriod } from "@/lib/rules";
+import { listActiveAreas, listAllServices, listOnSite, listOpenAlerts, listPeriodActivity, loadDashboardFigures } from "@/lib/db";
+import { formatDuration, formatLagosTime } from "@/lib/format";
+import { DASHBOARD_RANGES, formatPlate, isOverstaying, lagosDate, parseDashboardPeriod } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
 import { DashboardFilters } from "./DashboardFilters";
 
@@ -30,6 +30,7 @@ export const metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
 const ACTIVITY_ROWS = 8;
+const ON_SITE_ROWS = 6;
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 /** An entry or an exit, in words and a small mark, in black and grey only. */
@@ -64,11 +65,16 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
   const services = allServices.filter((s) => s.active || s.id === service?.id);
   const scope = { from: period.from, to: period.to, serviceId: service?.id ?? null };
 
-  const [figures, events, openAlerts] = await Promise.all([
+  const [figures, events, openAlerts, onSiteAll] = await Promise.all([
     loadDashboardFigures(scope, areas.map((a) => a.id)),
     listPeriodActivity(scope, ACTIVITY_ROWS),
     listOpenAlerts(200),
+    listOnSite(),
   ]);
+  // Who is on site right now, longest first: this is live, whatever dates are chosen
+  const nowMs = new Date().getTime();
+  const onSite = (service ? onSiteAll.filter((c) => c.serviceId === service.id) : onSiteAll).slice(0, ON_SITE_ROWS);
+  const onSiteTotal = service ? onSiteAll.filter((c) => c.serviceId === service.id).length : onSiteAll.length;
   const alerts = service ? openAlerts.filter((a) => a.serviceName === service.name) : openAlerts;
   const byArea = new Map(figures.areas.map((a) => [a.areaId, a]));
 
@@ -122,7 +128,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
         />
       </MetricRow>
 
-      <section aria-label="Parking areas" className="space-y-3">
+      <section aria-label="Parking areas" className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="t-section">Parking areas</h2>
           <Link href="/admin/settings/parking-areas" className="btn btn-quiet gap-2">
@@ -166,6 +172,42 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
           </ul>
         )}
         {!live && <p className="t-meta px-1">Checked in and Released are for {period.label.toLowerCase()}. Currently parked is live and does not change with the date.</p>}
+      </section>
+
+      <section aria-label="On site now" className="surface">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="t-section">On site now</h2>
+            <p data-testid="d-onsite-count" className="t-support mt-1">
+              {onSiteTotal === 0 ? "No cars are recorded as parked." : `${onSiteTotal} ${onSiteTotal === 1 ? "car" : "cars"} recorded as parked, longest first.`}
+            </p>
+          </div>
+          <Link href="/staff/sweep" className="text-sm font-semibold text-accent underline">
+            Open sweep
+          </Link>
+        </div>
+        {onSite.length === 0 ? (
+          <EmptyState>All clear. Cars appear here as soon as they check in.</EmptyState>
+        ) : (
+          <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {onSite.map((c) => (
+              <li key={c.id} className="min-w-0">
+                <Link href={`/admin/visits/${c.id}`} aria-label={`Visit of ${formatPlate(c.plate)}`} className="row-card justify-between">
+                  <VehicleIdentity plate={c.plate} detail={false}>
+                    <span className="t-support block">
+                      {c.areaName} · in at {formatLagosTime(c.checkedInAt)} · {formatDuration(Math.max(0, Math.floor((nowMs - Date.parse(c.checkedInAt)) / 60000)))}
+                    </span>
+                  </VehicleIdentity>
+                  {isOverstaying(c, nowMs) && (
+                    <Chip tone="alert" icon={<IconAlert className="h-3.5 w-3.5" />}>
+                      Overstaying
+                    </Chip>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section aria-label="Recent activity" className="surface">

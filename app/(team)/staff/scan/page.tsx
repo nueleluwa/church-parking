@@ -10,9 +10,9 @@ export default async function ScanPage() {
   const staff = await requireStaff("attendant");
   const { areas, station } = await stationContext();
   return (
-    <>
+    <div className="mx-auto w-full max-w-xl space-y-4">
       <StationPicker areas={areas} station={station} />
       <Scanner corrections={await correctionContext(staff)} areas={areas} station={station} />
-    </>
+    </div>
   );
 }

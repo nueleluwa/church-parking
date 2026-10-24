@@ -20,7 +20,7 @@ export function SettingsNav() {
   const path = (usePathname() ?? "").replace(/\/$/, "");
   const current = path.replace(/^\/admin\/settings\/?/, "").split("/")[0] ?? "";
   return (
-    <nav aria-label="Settings sections" className="-mx-4 overflow-x-auto border-b border-edge/20 px-4 print:hidden">
+    <nav aria-label="Settings sections" className="-mx-4 overflow-x-auto border-b border-edge/20 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 print:hidden">
       <ul className="flex min-w-max gap-1">
         {SETTINGS_SECTIONS.map((s) => {
           const on = s.slug === current;

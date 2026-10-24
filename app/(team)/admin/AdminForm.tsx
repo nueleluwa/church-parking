@@ -75,10 +75,12 @@ export function AdminForm({
           {state.message ?? "Saved."}
         </p>
       )}
-      <button disabled={pending} className={variant === "primary" ? primaryButton : variant === "red" ? redButton : secondaryButton}>
-        {pending && <Spinner />}
-        {pending ? busyLabel : submitLabel}
-      </button>
+      <div className="pt-1 sm:flex sm:justify-end">
+        <button disabled={pending} className={`${variant === "primary" ? primaryButton : variant === "red" ? redButton : secondaryButton} sm:!w-auto sm:min-w-44 sm:px-8`}>
+          {pending && <Spinner />}
+          {pending ? busyLabel : submitLabel}
+        </button>
+      </div>
     </form>
   );
 }

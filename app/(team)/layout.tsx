@@ -19,9 +19,9 @@ export const metadata: Metadata = {
  */
 export default async function TeamLayout({ children }: { children: React.ReactNode }) {
   const staff = await requireStaff("attendant");
-  const { systemName } = await getSettings();
+  const { systemName, churchName } = await getSettings();
   return (
-    <StaffChrome staff={staff} systemName={systemName}>
+    <StaffChrome staff={staff} systemName={systemName} churchName={churchName}>
       {children}
     </StaffChrome>
   );
