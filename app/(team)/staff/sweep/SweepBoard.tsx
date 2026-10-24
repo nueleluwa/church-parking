@@ -253,14 +253,14 @@ export function SweepBoard({
           </p>
         ) : (
           <>
-            <label className="mb-2 flex items-center gap-2 text-sm font-semibold">
+            <label className="mb-3 flex min-h-11 items-center gap-2 rounded-xl bg-page px-3 text-sm font-semibold">
               <input type="checkbox" checked={onPage} onChange={togglePage} className="h-5 w-5 accent-[var(--color-accent)]" />
               Select all {shown.length} on this page
             </label>
 
             <ul className="grid gap-3 wide:hidden">
               {shown.map((r) => (
-                <li key={r.id} className="rounded-xl border border-edge/10 p-3">
+                <li key={r.id} className={`rounded-xl border border-edge/10 border-l-4 p-3 ${r.overstaying ? "border-l-accent" : "border-l-edge/20"} ${selected.has(r.id) ? "bg-blush/50" : "bg-white"}`}>
                   <div className="flex items-start gap-3">
                     <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggle(r.id)} aria-label={`Select ${formatPlate(r.plate)}`} className="mt-1 h-5 w-5 shrink-0 accent-[var(--color-accent)]" />
                     <VehicleIdentity plate={r.plate} detail={false}>
@@ -270,7 +270,7 @@ export function SweepBoard({
                       <span className="t-support block">
                         <span data-area>{r.areaName}</span> · {r.entryDate} {r.entryTime}
                       </span>
-                      <span className="t-support flex items-center gap-1">
+                      <span className="t-support flex items-center gap-1 font-semibold text-ink">
                         <IconClock className="h-4 w-4" /> <Elapsed since={r.checkedInAt} initial={r.elapsed} />
                       </span>
                       <span className="mt-1.5 block">
@@ -359,7 +359,7 @@ export function SweepBoard({
           <p className="text-sm text-ink-soft">Record what you find. A car is released only at the exit, against its pass.</p>
         </div>
 
-        <section aria-label="End-of-service sweep" className="space-y-2 rounded-xl border border-edge/15 p-3">
+        <section aria-label="End-of-service sweep" className="space-y-2 rounded-xl border border-edge/15 bg-page/60 p-4">
           <h3 className="font-bold">End-of-service sweep</h3>
           <p className="text-sm text-ink-soft">
             About 30 minutes after a service ends, review the cars still recorded as parked. Mark each one still here, or gone.
@@ -398,7 +398,7 @@ export function SweepBoard({
           )}
         </section>
 
-        <section aria-label="Reconcile selected" className="space-y-2 rounded-xl border border-edge/15 p-3">
+        <section aria-label="Reconcile selected" className="space-y-2 rounded-xl border border-edge/15 bg-page/60 p-4">
           <h3 className="font-bold">Mark selected as still here</h3>
           <p className="text-sm text-ink-soft">Keeps each selected visit open. Cars that have gone are marked Gone one at a time, so none is closed by mistake.</p>
           <p className="text-sm font-semibold" data-testid="selected-count">

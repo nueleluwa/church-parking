@@ -3,6 +3,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { IconCar, IconScan, IconUser } from "@/components/icons";
 import { MemberNav } from "@/components/MemberNav";
 import { PMark } from "@/components/PMark";
+import { InstallApp } from "@/components/PwaSetup";
 import { card, outlineButton, pageMain, quietButton, redButton } from "@/components/ui";
 import { getSettings, openPassTokenForMember } from "@/lib/db";
 import { qrFlowConfig } from "@/lib/env";
@@ -77,6 +78,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ d
             </li>
           ))}
         </ol>
+
+        <InstallApp />
 
         {!member && signUpOpen && (
           <section aria-label="Members" className="rounded-card bg-card p-4 shadow-sm">

@@ -16,6 +16,13 @@ export function GET() {
       start_url: "/staff",
       scope: "/",
       display: "standalone",
+      lang: "en",
+      orientation: "portrait",
+      shortcuts: [
+        { name: "Scan pass", url: "/staff" },
+        { name: "Manual lookup", url: "/staff/search" },
+        { name: "Live Board", url: "/staff/dashboard" },
+      ],
       background_color: "#f6f3ef",
       theme_color: "#141414",
       icons: [
