@@ -12,6 +12,8 @@ const port = 3457;
 // The QR check-in is switched on for one test-only car park (its address is "qr-test", made and removed by the QR specs).
 // Every other car park keeps the original check-in, so the older specs are unaffected.
 process.env.QR_SESSION_FLOW = "pilot";
+// Hide Next's development overlay in the browser: it can sit over a button and swallow clicks (see app/layout.tsx).
+process.env.E2E_HIDE_DEV_OVERLAY = "1";
 process.env.QR_SESSION_AREAS = "qr-test";
 
 export default defineConfig({

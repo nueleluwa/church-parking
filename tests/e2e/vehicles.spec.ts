@@ -333,7 +333,7 @@ test("changing the owner of a parked car is refused; after release it works, and
     await edit.getByLabel("Linked member").fill("Vehicle Owner QA");
     await edit.getByRole("button", { name: /Vehicle Owner QA/ }).first().click();
     await edit.getByRole("button", { name: "Save vehicle" }).click();
-    await expect(edit.getByText(/checked in right now/).first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="error"]')).toContainText(/checked in right now/, { timeout: 30_000 });
     expect((await db.from("member_vehicles").select("member_id").eq("vehicle_id", v!.id)).data).toHaveLength(0);
 
     await db.rpc("release_visit", { p_visit: visit!.id, p_staff: await adminId(), p_method: "scan", p_today: today() });

@@ -371,10 +371,10 @@ test("a member's page: correct the name or phone, set a PIN, save a car, and swi
     const cars = main(page).getByRole("region", { name: "Saved cars" });
     await cars.getByLabel("Plate number").fill(plate);
     await cars.getByRole("button", { name: "Save car" }).click();
-    await expect(cars.getByText(`${spaced(plate)} was saved.`)).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="success"]')).toContainText(`${spaced(plate)} was saved.`, { timeout: 30_000 });
     await cars.getByLabel("Plate number").fill(plate);
     await cars.getByRole("button", { name: "Save car" }).click();
-    await expect(cars.getByText("This member has already saved this vehicle.")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="error"]')).toContainText("This member has already saved this vehicle.", { timeout: 30_000 });
     await expect(cars.getByRole("link", { name: spaced(plate) })).toHaveAttribute("href", /\/admin\/vehicles\/[0-9a-f-]{36}$/);
 
     // A PIN that is not 4 numbers is refused
@@ -488,7 +488,7 @@ test("staff accounts: summary, search, role and status filters, add, manage, and
     await add.getByLabel("Phone number").fill(local);
     await add.getByLabel(/^Password/).fill("a-long-enough-password");
     await add.getByRole("button", { name: "Create account" }).click();
-    await expect(add.getByText(/Account created/)).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="success"]')).toContainText(/Account created/, { timeout: 30_000 });
     await add.getByLabel("Full name").fill(name);
     await add.getByLabel("Phone number").fill(local);
     await add.getByLabel(/^Password/).fill("a-long-enough-password");
