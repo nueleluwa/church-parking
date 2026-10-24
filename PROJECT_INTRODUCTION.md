@@ -6,7 +6,7 @@ Church Parking is a digital parking system that helps churches replace paper tal
 
 ## Version 2: Short Introduction
 
-Church Parking is a digital parking system for churches that want a simpler and safer way to manage vehicle check-in during services. It is live at churchparking.online and used by Christ Church International. Drivers can check in with a phone or QR code, church staff can verify cars at the exit, and the parking lead can see live counts and follow up on missed check-outs without relying on paper tallies.
+Church Parking is a digital parking system for churches that want a simpler and safer way to manage vehicle check-in during services. It is live at churchparking.online and used by Celebration Church. Drivers can check in with a phone or QR code, church staff can verify cars at the exit, and the parking lead can see live counts and follow up on missed check-outs without relying on paper tallies.
 
 ## Version 3: Presentation Introduction
 

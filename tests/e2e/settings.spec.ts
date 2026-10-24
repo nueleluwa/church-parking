@@ -169,7 +169,7 @@ test("Users & access explains the roles from the real accounts and links to the 
 test("the form loads the saved values, the time zone is fixed, and no unsupported control is shown", async ({ page }) => {
   await openSettings(page);
   const church = page.getByRole("region", { name: "Church details" });
-  await expect(church.locator('[name="churchName"]')).toHaveValue("Christ Church International");
+  await expect(church.locator('[name="churchName"]')).toHaveValue("Celebration Church");
   await expect(church.locator('[name="campus"]')).toHaveValue("");
   await expect(church.locator('[name="systemName"]')).toHaveValue("Church Parking");
   const zone = church.locator("select").first();
@@ -208,7 +208,7 @@ test("saving church details persists, is audited, and shows up on the side menu,
   // The audit log says who changed what
   const { data: audit } = await db.from("audit_events").select("action, after").eq("action", "settings_update").order("id", { ascending: false }).limit(1).single();
   expect(audit!.after).toMatchObject({ group: "church", churchName: "Grace Chapel International", campus: "Port Harcourt", systemName: "Grace Parking" });
-  expect((audit!.after as { before: { churchName: string } }).before.churchName).toBe("Christ Church International");
+  expect((audit!.after as { before: { churchName: string } }).before.churchName).toBe("Celebration Church");
 
   // Where the settings are used
   await page.setViewportSize({ width: 1440, height: 900 });

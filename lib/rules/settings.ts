@@ -47,7 +47,7 @@ export type AppSettings = {
 };
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  churchName: "Christ Church International",
+  churchName: "Celebration Church",
   campus: "",
   systemName: "Church Parking",
   defaultSearch: "plate",
