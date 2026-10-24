@@ -1,0 +1,44 @@
+name: Something is not working
+description: A screen, a button or a number that is wrong or broken
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not put anyone's name, phone number or number plate in this report. If it is a security problem, do not use this form: read SECURITY.md.
+  - type: dropdown
+    id: who
+    attributes:
+      label: Who was using it?
+      options:
+        - A driver
+        - A member
+        - An attendant
+        - A coordinator
+        - An admin
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Which screen?
+      description: The address or the screen name, for example /admin/visits or "Scan Pass".
+    validations:
+      required: true
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened?
+      description: What you did, what you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Phone or computer and browser
+      description: For example "Samsung A14, Chrome" or "Windows laptop, Edge".
+  - type: textarea
+    id: pictures
+    attributes:
+      label: Screenshot
+      description: Drag a picture in here if you have one. Hide any names, numbers or plates first.

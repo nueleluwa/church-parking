@@ -1,0 +1,35 @@
+# Dependabot opens a pull request when a dependency has a new version. Security fixes (the alerts under Security) are separate and
+# always on. Nothing here deploys by itself: a pull request is only a proposal until someone merges it, and a merge to main deploys.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Africa/Lagos
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    groups:
+      # Small updates arrive together, so there is one pull request to check, not ten
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # A new major version of the framework changes how the app is built: plan it, do not take it automatically
+      - dependency-name: next
+        update-types:
+          - version-update:semver-major
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Africa/Lagos
+    labels:
+      - dependencies

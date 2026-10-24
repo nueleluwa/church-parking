@@ -1,0 +1,48 @@
+name: Real-phone test finding
+description: Something that did not work as described while testing on a real phone or with the printed signs
+labels: ["field-test"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For the checklist in docs/qr-rollout.md and docs/field-test.md. One finding per report. Do not put anyone's name, phone number or number plate here.
+  - type: dropdown
+    id: step
+    attributes:
+      label: Which check was it?
+      options:
+        - Check-in sign with the camera app
+        - Exit sign with the camera app
+        - Scanner inside another app (chat or bank app)
+        - Second phone, same number
+        - Closed the tab and waited
+        - Private tab
+        - Airplane mode at the exit
+        - Exit sign of a different car park
+        - Printed sign scanned from 1.5 m in daylight
+        - How long check-in and check-out took
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: phone
+    attributes:
+      label: Phone and browser
+      description: For example "iPhone 13, Safari" or "Tecno Spark, Chrome".
+    validations:
+      required: true
+  - type: input
+    id: carpark
+    attributes:
+      label: Car park
+      placeholder: Domino's, AA or Roadside
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened, and what should have happened?
+    validations:
+      required: true
+  - type: input
+    id: seconds
+    attributes:
+      label: How long it took (seconds), if you timed it
