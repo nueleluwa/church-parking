@@ -25,6 +25,7 @@ export default async function SystemPage() {
             <Row label="Time zone">Africa/Lagos (no clock changes)</Row>
             <Row label="Version">v{pkg.version}</Row>
             <Row label="Guest records kept for">24 months, then deleted every night</Row>
+            <Row label="Member visits and the audit log kept for">Always (nothing deletes them)</Row>
             <Row label="Open visits at midnight">Closed as missed at 00:00 Lagos time</Row>
           </dl>
         </section>
