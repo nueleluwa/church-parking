@@ -156,12 +156,15 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
         title="Live Parking"
         actions={
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          <p className="flex min-h-11 w-full items-center gap-2 rounded-xl border border-edge/15 bg-card px-4 text-sm font-medium sm:w-auto">
-            <span aria-hidden="true" className={`inline-block h-2.5 w-2.5 rounded-full ${offline ? "bg-ink-soft" : "bg-accent"}`} />
+          <p className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-full border border-edge/15 bg-card px-4 text-sm font-medium sm:flex-none">
+            <span
+              aria-hidden="true"
+              className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${offline ? "bg-ink-soft" : "animate-pulse bg-accent motion-reduce:animate-none"}`}
+            />
             <span data-testid="updated">{offline ? "No connection. Showing the last numbers." : `Live · Updated ${updated}`}</span>
           </p>
           {data.services.length > 0 && (
-            <label className="block w-full min-w-0 rounded-xl border border-edge/15 bg-card px-3 py-1.5 sm:w-auto">
+            <label className="order-last block w-full min-w-0 rounded-xl border border-edge/15 bg-card px-3 py-1.5 sm:order-none sm:w-auto">
               <span className="block text-xs font-medium text-ink-soft">Service</span>
               <select
                 value={data.serviceId ?? ""}
@@ -180,7 +183,7 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
             type="button"
             onClick={() => void refresh()}
             disabled={refreshing}
-            className="btn btn-primary w-full sm:w-auto"
+            className="btn btn-primary shrink-0"
           >
             {refreshing ? "Refreshing…" : "Refresh"}
           </button>
@@ -304,8 +307,6 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
         </>
       )}
 
-      <ParkedNow cars={data.onSite} total={data.onSiteTotal} />
-
       <section id="alerts" aria-label="Alerts" className="space-y-3 scroll-mt-4">
         <h2 className="t-section flex items-center gap-2">
           <IconAlert className="h-6 w-6 text-accent" />
@@ -355,6 +356,8 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
           </ul>
         )}
       </section>
+
+      <ParkedNow cars={data.onSite} total={data.onSiteTotal} />
     </div>
   );
 }

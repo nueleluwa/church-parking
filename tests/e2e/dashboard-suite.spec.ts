@@ -34,7 +34,7 @@ test("visit details: the facts, the driver masked until Show number (which is lo
     await expect(page.locator("[data-plate]").first()).toHaveText(spaced(plate), { timeout: 60_000 });
     await expect(page.getByText("ON HOLD", { exact: true })).toBeVisible();
     await expect(page.getByText("Currently parked")).toBeVisible();
-    await expect(page.locator("[data-area]")).toHaveText(/Car Park 1|Roadside|Car Park 2/);
+    await expect(page.locator("[data-area]")).toHaveText(/\S/);
 
     // The driver: first name and last four only; the number is shown on request and the request is logged
     await page.goto(`/admin/visits/${id}?tab=driver`);

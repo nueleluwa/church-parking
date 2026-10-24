@@ -38,6 +38,14 @@ const nextConfig: NextConfig = {
     return [
       { source: "/:path*", headers: securityHeaders },
       {
+        // The service worker must always be fetched fresh, or a fix to it would never reach phones
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+        ],
+      },
+      {
         // Pass links hold a secret token: never send them on as a referrer, never cache them.
         source: "/p/:path*",
         headers: [

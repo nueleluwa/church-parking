@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { IconSearch } from "@/components/icons";
-import { field, outlineButton, redButton } from "@/components/ui";
+import { outlineButton } from "@/components/ui";
 import type { CorrectionContext } from "@/lib/correction-context";
 import type { CarParkOption } from "@/lib/rules/station";
 import type { ScanCard } from "@/lib/rules/scan";
@@ -66,7 +66,11 @@ export function SearchBox({
 
   return (
     <div className="space-y-4">
-      <div role="tablist" aria-label="How to look the car up" className="flex border-b-2 border-edge/15">
+      <div
+        role="tablist"
+        aria-label="How to look the car up"
+        className="grid grid-cols-3 gap-1 rounded-full bg-panel p-1"
+      >
         {MODES.map((m) => (
           <button
             key={m.mode}
@@ -74,8 +78,8 @@ export function SearchBox({
             role="tab"
             aria-selected={m.mode === mode}
             onClick={() => pick(m.mode)}
-            className={`-mb-0.5 flex-1 whitespace-nowrap border-b-4 px-2 py-3 text-center text-sm font-semibold ${
-              m.mode === mode ? "border-accent text-accent" : "border-transparent text-ink-soft"
+            className={`min-h-11 rounded-full px-1 text-center text-sm font-semibold leading-tight transition ${
+              m.mode === mode ? "bg-action text-white shadow-sm" : "text-ink-soft hover:text-ink"
             }`}
           >
             {m.tab}
@@ -83,10 +87,11 @@ export function SearchBox({
         ))}
       </div>
 
-      <form noValidate onSubmit={submit} className="space-y-3">
-        <label className="block font-medium">
+      <form noValidate onSubmit={submit} className="space-y-3 rounded-card bg-card p-4 shadow-sm">
+        <label className="block text-sm font-semibold">
           {current.label}
-          <span className="relative mt-1 block">
+          <span className="relative mt-1.5 block">
+            <IconSearch className="pointer-events-none absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-soft" aria-hidden />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -96,7 +101,7 @@ export function SearchBox({
               autoComplete="off"
               placeholder={current.placeholder}
               required
-              className={`${field} mt-0! pr-12 ${mode === "phone" ? "" : "uppercase"}`}
+              className={`input mt-0! min-h-12 pl-11 pr-12 text-lg font-semibold ${mode === "phone" ? "" : "uppercase"}`}
             />
             {query && (
               <button
@@ -110,7 +115,7 @@ export function SearchBox({
             )}
           </span>
         </label>
-        <button disabled={pending} className={redButton}>
+        <button disabled={pending} className="btn btn-primary w-full">
           <IconSearch className="h-5 w-5" />
           {pending ? "Looking..." : "Search"}
         </button>
@@ -122,8 +127,8 @@ export function SearchBox({
         </p>
       )}
       {cards?.length === 0 && (
-        <div className="space-y-3 rounded-card bg-card p-4 text-center shadow-sm">
-          <p className="font-medium">No car found today. Check the number, or use Add car to register it.</p>
+        <div className="space-y-3 rounded-card bg-card p-5 text-center shadow-sm">
+          <p className="font-medium text-ink-soft">No car found today. Check the number, or use Add car to register it.</p>
           <Link
             href={mode === "plate" ? `/staff/register?plate=${encodeURIComponent(query.trim())}` : "/staff/register"}
             className={outlineButton}

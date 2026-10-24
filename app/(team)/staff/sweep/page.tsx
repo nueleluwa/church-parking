@@ -180,7 +180,7 @@ export default async function SweepPage({ searchParams }: { searchParams: Promis
             <button className="btn btn-primary flex-1 sm:flex-none">Apply filters</button>
           </div>
         </div>
-        <p className="text-xs text-ink-soft">
+        <p className="rounded-lg bg-page px-3 py-2 text-xs text-ink-soft">
           Overstaying means still recorded as parked 30 or more minutes after the service the car checked in for ended. Duration compares the time on site with the length of that service.
         </p>
       </GetForm>
