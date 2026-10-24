@@ -47,8 +47,12 @@ test("the page has its title, filters, six categories with real counts, and the 
   await expect(page.getByRole("heading", { name: "Parking activity reports" })).toBeVisible();
   await expect(page.locator("li[data-report]")).toHaveCount(5);
 
-  // No format that is not really made
-  await expect(page.locator("main")).not.toContainText(/PDF/i);
+  // No format that is not really made: CSV, Excel and the PDF are, nothing else is offered
+  await expect(page.locator("main")).not.toContainText(/DOCX|PowerPoint|Google Sheets/i);
+  // Nothing under a group's heading but the reports: the dates and service are in the filters above, not repeated
+  await expect(page.getByRole("heading", { name: "Parking activity reports" })).toBeVisible();
+  await expect(page.getByTestId("report-scope")).toHaveCount(0);
+  await expect(page.locator("main")).not.toContainText("for the selected period");
   await expect(page.locator("main")).not.toContainText(/PHC 234|Domino/); // no figures or names from the design image
 });
 
@@ -61,7 +65,9 @@ test("choosing a category shows exactly its reports, and keeps the dates and ser
     await expect(nav.getByRole("link", { name: new RegExp(`^${c.name}`) })).toHaveAttribute("aria-current", "page");
     const shown = await page.locator("li[data-report] h3").allInnerTexts();
     expect(shown).toEqual(reportsIn(c.id).map((r) => r.name));
-    await expect(page.getByTestId("report-scope")).toContainText("4 days");
+    const filters = page.getByRole("form", { name: "Report filters" });
+    await expect(filters.locator('[name="from"]')).toHaveValue(day(-3));
+    await expect(filters.locator('[name="to"]')).toHaveValue(today());
     await expect(page).toHaveURL(new RegExp(`from=${day(-3)}&to=${today()}`));
   }
 });
@@ -167,7 +173,7 @@ test("the service filter limits the report and its file name", async ({ page }) 
   const { data: services } = await db.from("services").select("id, name").eq("active", true).order("id");
   const service = services![0];
   await openReports(page, `?from=${day(-27)}&to=${today()}&service=${service.id}`);
-  await expect(page.getByTestId("report-scope")).toContainText(service.name);
+  await expect(page.locator('select[name="service"] option:checked')).toHaveText(service.name);
 
   const res = await page.request.get(`/admin/reports/export?report=vehicle-visit-history&from=${day(-27)}&to=${today()}&service=${service.id}`);
   expect(res.headers()["content-disposition"]).toMatch(/_automated-test-service\.csv|_service-1\.csv|\.csv/);
@@ -241,7 +247,7 @@ test("all reports in one Excel workbook: the button downloads a real workbook, i
   const bytes = fs.readFileSync((await file.path())!);
   expect(bytes.subarray(0, 2).toString(), "an .xlsx is a zip file").toBe("PK");
   expect(bytes.length).toBeGreaterThan(5000);
-  await expect(card.getByRole("status")).toContainText("Downloaded", { timeout: 60_000 });
+  await expect(card.getByRole("status").filter({ hasText: "Downloaded" })).toBeVisible({ timeout: 60_000 });
   await expect(page).toHaveURL(/\/admin\/reports/);
 
   // The same file by address: the right type, and every report is a sheet (plus Contents)
@@ -292,7 +298,7 @@ test("the PDF report: the button downloads a real PDF, it is audited, Analytics 
   await page.goto(`/admin/analytics?from=${day(-6)}&to=${day(-1)}`);
   await expect(page.getByRole("button", { name: "Download the analytics report as PDF" })).toBeVisible({ timeout: 60_000 });
   await page.goto(`/admin/analytics?from=${day(-6)}&to=${day(-1)}&area=cp1`);
-  await expect(page.getByRole("heading", { name: "Analytics", exact: true })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("main").getByRole("heading", { name: "Analytics", exact: true })).toBeVisible({ timeout: 60_000 });
   await expect(page.getByRole("button", { name: "Download the analytics report as PDF" })).toHaveCount(0);
 
   const lead = await createStaff("coordinator");

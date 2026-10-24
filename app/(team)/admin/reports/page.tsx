@@ -4,10 +4,8 @@ import { IconAlert, IconCalendar, IconCar, IconPin, IconReport, IconTrend, IconU
 import { listAllServices } from "@/lib/db";
 import {
   CATEGORIES,
-  CATEGORY_INTRO,
   MAX_REPORT_DAYS,
   REPORTS,
-  describeRange,
   lagosDate,
   parseRange,
   rangeDays,
@@ -56,7 +54,6 @@ export default async function ReportsPage({
   const tooLong = asked !== null && rangeDays(asked.from, asked.to) > MAX_REPORT_DAYS;
   const rangeError = given && !asked ? "Choose a start date that is not after the end date." : tooLong ? `Choose a period of up to ${MAX_REPORT_DAYS} days.` : null;
   const range = asked && !tooLong ? asked : fallback;
-  const days = rangeDays(range.from, range.to);
 
   const services = (await listAllServices()).filter((s) => s.active || String(s.id) === sp.service);
   const service = services.find((s) => String(s.id) === sp.service) ?? null;
@@ -188,11 +185,7 @@ export default async function ReportsPage({
       </nav>
 
       <section aria-label={`${category.name} reports`} className="surface">
-        <h2 className="text-xl font-extrabold">{category.name} reports</h2>
-        <p className="text-ink-soft">{CATEGORY_INTRO[category.id]}</p>
-        <p className="mb-4 mt-1 text-sm text-ink-soft" data-testid="report-scope">
-          {describeRange(range.from, range.to)} · {days} {days === 1 ? "day" : "days"} · {service ? service.name : "All services"} · Lagos time
-        </p>
+        <h2 className="mb-4 text-xl font-extrabold">{category.name} reports</h2>
 
         <div aria-hidden="true" className="hidden rounded-t-xl bg-page px-4 py-2.5 text-sm font-semibold text-ink-soft lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)_5rem_11rem] lg:gap-4">
           <span>Report name</span>
@@ -227,7 +220,7 @@ export default async function ReportsPage({
             i
           </span>
           <span>
-            Each report is worked out from the application&apos;s records when you download it, for the dates and service chosen above. Figures marked
+            Each report is worked out from the application&apos;s records when you download it, for the dates and service chosen above. Times are Lagos time. Figures marked
             &quot;right now&quot; or &quot;live&quot; are taken at that moment and are not limited to the dates. Reports are CSV files and contain no drivers&apos; names or phone numbers.
           </span>
         </p>
