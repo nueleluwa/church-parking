@@ -45,7 +45,7 @@ export function DashboardFilters({
   const box = "flex min-h-14 items-center gap-3 rounded-xl border border-edge/15 bg-card px-4";
   const select = "min-w-0 flex-1 appearance-none bg-transparent py-2 pr-6 font-semibold focus:outline-none";
   return (
-    <div role="group" aria-label="Dashboard filters" aria-busy={pending} className="grid w-full min-w-0 gap-3 sm:flex sm:w-auto sm:flex-wrap">
+    <div role="group" aria-label="Dashboard filters" aria-busy={pending} className="grid w-full min-w-0 gap-3 min-[380px]:grid-cols-2 sm:flex sm:w-auto sm:flex-wrap">
       <div className="min-w-0 sm:flex-none">
         <label className={`${box} focus-within:ring-4 focus-within:ring-blush`}>
           <IconCalendar aria-hidden="true" className="h-5 w-5 shrink-0 text-ink-soft" />

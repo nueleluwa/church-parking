@@ -1,12 +1,16 @@
+import { GetForm } from "@/components/ds/GetForm";
 import Link from "next/link";
+import { BulkBar, BulkCheck, BulkSelectAll, DeleteButton } from "@/components/ds/Bulk";
 import { IconPlus, IconSearch } from "@/components/icons";
 import { listAllServices } from "@/lib/db";
 import { serviceProgress, type ServiceProgress } from "@/lib/rules";
 import { requireStaff } from "@/lib/staff-auth";
 import { AdminForm } from "../../AdminForm";
-import { saveServiceAction } from "../../admin-actions";
+import { deleteServicesAction, saveServiceAction } from "../../admin-actions";
 import { Panel } from "../../Panel";
 import { Chip, SectionHead, addButton, card, input } from "../ui";
+
+const DELETE_NOTE = "A service that already has visits cannot be deleted: it is kept, and you can switch it off instead. Services nobody has used are removed."
 
 export const metadata = { title: "Services" };
 export const dynamic = "force-dynamic";
@@ -101,10 +105,10 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
             </Link>
           }
         >
-          Change a service&apos;s name or times. Drivers are put into the right service from these times. Switch a service off instead of deleting it, so old records keep their service.
+          Change a service&apos;s name or times. Drivers are put into the right service from these times. Delete a service that was never used, or switch it off so old records keep their service.
         </SectionHead>
 
-        <form noValidate aria-label="Filters" className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,2fr)_1fr_1fr_auto] sm:items-end">
+        <GetForm noValidate aria-label="Filters" className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,2fr)_1fr_1fr_auto] sm:items-end">
           <label className="col-span-2 block text-sm font-medium sm:col-span-1">
             Search by name
             <span className="relative mt-1 block">
@@ -137,7 +141,7 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
             </Link>
             <button className="btn btn-primary flex-1">Apply</button>
           </div>
-        </form>
+        </GetForm>
 
         {services.length === 0 ? (
           <p className="rounded-xl bg-page p-4 font-medium">
@@ -150,11 +154,15 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
           </p>
         ) : (
           <>
+            <div className="mb-3 empty:hidden">
+              <BulkBar group="services" noun="service" nounPlural="services" consequence={DELETE_NOTE} action={deleteServicesAction} />
+            </div>
             <ul className="grid gap-3 lg:hidden">
               {services.map((s) => {
                 const p = PROGRESS[serviceProgress(now, s)];
                 return (
                   <li key={s.id} className="flex min-w-0 items-center gap-3 rounded-xl border border-edge/10 p-3">
+                    <BulkCheck group="services" id={String(s.id)} label={`${s.name} (${DAYS[s.weekday]})`} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate t-card">{s.name}</span>
                       <span className="block text-sm text-ink-soft">
@@ -167,6 +175,7 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
                     <Link href={scope({ edit: String(s.id) })} aria-label={`Edit ${s.name} (${DAYS[s.weekday]})`} className="btn btn-quiet">
                       Edit
                     </Link>
+                    <DeleteButton id={String(s.id)} label={`${s.name} (${DAYS[s.weekday]})`} noun="service" consequence={DELETE_NOTE} action={deleteServicesAction} />
                   </li>
                 );
               })}
@@ -177,6 +186,9 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
                 <caption className="sr-only">Services</caption>
                 <thead>
                   <tr>
+                    <th scope="col" className="dt-th w-10">
+                      <BulkSelectAll group="services" noun="services" />
+                    </th>
                     {["Service", "Day", "Start", "End", "Status", "Actions"].map((c) => (
                       <th key={c} scope="col" className="dt-th">
                         {c}
@@ -189,6 +201,9 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
                     const p = PROGRESS[serviceProgress(now, s)];
                     return (
                       <tr key={s.id}>
+                        <td className="dt-td">
+                          <BulkCheck group="services" id={String(s.id)} label={`${s.name} (${DAYS[s.weekday]})`} />
+                        </td>
                         <td className="dt-td font-bold">{s.name}</td>
                         <td className="dt-td whitespace-nowrap">{DAYS[s.weekday]}</td>
                         <td className="dt-td whitespace-nowrap">{hhmm(s.starts_at)}</td>
@@ -197,9 +212,12 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
                           <Chip tone={p.tone}>{p.label}</Chip>
                         </td>
                         <td className="dt-td">
-                          <Link href={scope({ edit: String(s.id) })} aria-label={`Edit ${s.name} (${DAYS[s.weekday]})`} className="btn btn-quiet">
-                            Edit
-                          </Link>
+                          <div className="flex gap-2">
+                            <Link href={scope({ edit: String(s.id) })} aria-label={`Edit ${s.name} (${DAYS[s.weekday]})`} className="btn btn-quiet">
+                              Edit
+                            </Link>
+                            <DeleteButton id={String(s.id)} label={`${s.name} (${DAYS[s.weekday]})`} noun="service" consequence={DELETE_NOTE} action={deleteServicesAction} />
+                          </div>
                         </td>
                       </tr>
                     );
@@ -236,7 +254,7 @@ export default async function ServicesSettingsPage({ searchParams }: { searchPar
             <AdminForm action={saveServiceAction} submitLabel="Save service" savedMessage="Service schedule updated.">
               <ServiceFields service={editing} />
             </AdminForm>
-            <p className="rounded-xl bg-page p-3 text-sm text-ink-soft">Visits already made keep this service, whatever its name or times become. To stop drivers using it, switch it off rather than deleting it.</p>
+            <p className="rounded-xl bg-page p-3 text-sm text-ink-soft">Visits already made keep this service, whatever its name or times become. Delete it only if it was never used. To stop drivers using it, switch it off.</p>
           </div>
         </Panel>
       )}

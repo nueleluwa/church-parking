@@ -1,23 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useToast } from "@/components/ds/Toast";
+import { BulkBar, BulkCheck, BulkSelectAll, DeleteButton } from "@/components/ds/Bulk";
 import { Spinner } from "@/components/Spinner";
-import { errorBox, okBox, primaryButton, secondaryButton } from "@/components/ui";
+import { primaryButton, secondaryButton } from "@/components/ui";
 import { useFields } from "@/components/useFields";
 import type { AreaRecord } from "@/lib/db";
 import { AdminForm } from "../../AdminForm";
-import { setAreaActiveAction } from "../../admin-actions";
+import { deleteAreasAction, setAreaActiveAction } from "../../admin-actions";
 import { renameAreaAction, type RenameState } from "../../actions";
 import { Chip } from "../ui";
 
 export type AreaRow = AreaRecord & { parkedNow: number };
+
+const DELETE_NOTE = "A car park that already has visits cannot be deleted: it is kept, and you can switch it off instead. A car park nobody has used is removed, with its QR address.";
 
 /** One car park: its name, address, how many cars are in it now, a Rename form that opens in place, and Switch off / on. */
 function Row({ area }: { area: AreaRow }) {
   const [state, action, pending] = useActionState<RenameState, FormData>(renameAreaAction, {});
   const [editing, setEditing] = useState(false);
   const { bind } = useFields({ name: area.name });
+  const toast = useToast();
+
+  // The answer to a rename is a toast: "Name saved." or what went wrong
+  useEffect(() => {
+    if (state.ok) toast.success("Name saved.");
+    else if (state.error) toast.error(state.error);
+  }, [state, toast]);
 
   // After a successful save, close the form. The name shown comes from the saved result.
   const [handled, setHandled] = useState(state);
@@ -30,7 +41,8 @@ function Row({ area }: { area: AreaRow }) {
   return (
     <li className="py-4 first:pt-0 last:pb-0">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
+        <BulkCheck group="areas" id={String(area.id)} label={shownName} />
+        <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-2 t-card">
             <span className="truncate">{shownName}</span>
             <Chip tone={area.active ? "on" : "off"}>{area.active ? "Active" : "Off"}</Chip>
@@ -49,6 +61,7 @@ function Row({ area }: { area: AreaRow }) {
             <button onClick={() => setEditing(true)} aria-label={`Rename ${shownName}`} className="btn btn-quiet">
               Rename
             </button>
+            <DeleteButton id={String(area.id)} label={shownName} noun="car park" consequence={DELETE_NOTE} action={deleteAreasAction} />
           </div>
         )}
       </div>
@@ -60,11 +73,6 @@ function Row({ area }: { area: AreaRow }) {
             New name
             <input {...bind("name")} required maxLength={60} autoFocus autoComplete="off" className="input" />
           </label>
-          {state.error && (
-            <p role="alert" className={errorBox}>
-              {state.error}
-            </p>
-          )}
           <div className="grid grid-cols-2 gap-3">
             <button disabled={pending} className={primaryButton}>
               {pending && <Spinner />}
@@ -94,21 +102,25 @@ function Row({ area }: { area: AreaRow }) {
         </details>
       )}
 
-      {!editing && state.ok && (
-        <p role="status" className={`${okBox} mt-3`}>
-          Name saved.
-        </p>
-      )}
     </li>
   );
 }
 
 export function AreaList({ areas }: { areas: AreaRow[] }) {
   return (
-    <ul className="divide-y divide-edge/15">
-      {areas.map((a) => (
-        <Row key={a.id} area={a} />
-      ))}
-    </ul>
+    <>
+      <div className="mb-3 flex flex-wrap items-center gap-3 border-b border-edge/15 pb-3">
+        <BulkSelectAll group="areas" noun="car parks" />
+        <span className="text-sm font-semibold text-ink-soft">Select all</span>
+        <div className="ml-auto empty:hidden">
+          <BulkBar group="areas" noun="car park" nounPlural="car parks" consequence={DELETE_NOTE} action={deleteAreasAction} />
+        </div>
+      </div>
+      <ul className="divide-y divide-edge/15">
+        {areas.map((a) => (
+          <Row key={a.id} area={a} />
+        ))}
+      </ul>
+    </>
   );
 }

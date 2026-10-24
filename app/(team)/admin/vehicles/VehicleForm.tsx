@@ -1,9 +1,9 @@
 "use client";
 
+import { useToast } from "@/components/ds/Toast";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { Spinner } from "@/components/Spinner";
-import { errorBox } from "@/components/ui";
 import { findMembersAction, saveVehicleAction, type MemberChoice, type VehicleFormState } from "../vehicle-actions";
 
 export type FormVehicle = {
@@ -36,6 +36,7 @@ const note = "mt-1 text-sm font-medium text-accent";
 export function VehicleForm({ vehicle, doneHref }: { vehicle?: FormVehicle; doneHref: string }) {
   const router = useRouter();
   const editing = Boolean(vehicle);
+  const toast = useToast();
   const [state, setState] = useState<VehicleFormState>({});
   const [pending, start] = useTransition();
   const [ownership, setOwnership] = useState<"member" | "guest">(vehicle ? (vehicle.ownerId ? "member" : "guest") : "guest");
@@ -61,6 +62,7 @@ export function VehicleForm({ vehicle, doneHref }: { vehicle?: FormVehicle; done
     start(async () => {
       const result = await saveVehicleAction(data);
       setState(result);
+      if (result.error) toast.error(result.error);
       if (result.ok) {
         const plate = vehicle?.plate ?? String(data.get("plate") ?? "");
         const join = doneHref.includes("?") ? "&" : "?";
@@ -188,11 +190,6 @@ export function VehicleForm({ vehicle, doneHref }: { vehicle?: FormVehicle; done
           </span>
         </label>
 
-        {state.error && (
-          <p role="alert" className={errorBox}>
-            {state.error}
-          </p>
-        )}
       </div>
 
       <div className="flex gap-3 border-t border-edge/15 bg-white px-5 py-4">

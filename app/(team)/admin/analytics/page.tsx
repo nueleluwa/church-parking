@@ -1,3 +1,4 @@
+import { GetForm } from "@/components/ds/GetForm";
 import Link from "next/link";
 import { ActivityChart, DurationColumns } from "@/components/charts";
 import { PageHeader } from "@/components/ds/PageHeader";
@@ -187,7 +188,7 @@ export default async function AnalyticsPage({
         Insights from your parking operations
       </PageHeader>
 
-      <form noValidate aria-label="Filters" className={`${card} space-y-4`}>
+      <GetForm noValidate aria-label="Filters" className={`${card} space-y-4`}>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-[1fr_1fr_1.2fr_1.2fr_auto] lg:items-end">
           <label className="block text-sm font-medium">
             From
@@ -239,7 +240,7 @@ export default async function AnalyticsPage({
           {clamped && ` · Showing the latest ${MAX_DAYS} days of the range you chose`}
           {!finished && " · Today is not over yet, so figures may still rise and no comparison is shown"}
         </p>
-      </form>
+      </GetForm>
 
       <section aria-label="Summary" className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <Kpi id="a-checked-in" label="Cars checked in" value={String(k.checkedIn)} note="Visits in this period" trend={vs(k.checkedIn, p.checkedIn)} versus={versus} icon={<IconCar className="h-5 w-5" />} />

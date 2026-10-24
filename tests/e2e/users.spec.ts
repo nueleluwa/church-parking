@@ -220,7 +220,7 @@ test("adding a member: each problem shows on its own field, a good one is saved,
     await panel.getByLabel("Make and model of vehicle 1").fill("Toyota Camry");
     await panel.getByRole("button", { name: "Save member" }).click();
     await expect(page).toHaveURL(/notice=added/, { timeout: 60_000 });
-    await expect(main(page).getByRole("status")).toContainText("The member was added.");
+    await expect(page.locator('[data-toast="success"]')).toContainText("The member was added.");
 
     const { data: m } = await db.from("members").select("id, full_name, phone, active, pin_hash").eq("phone", e164(local)).single();
     memberId = m!.id as string;
@@ -282,7 +282,7 @@ test("a member added without a PIN has none, gets a local phone number, and cann
     await panel.getByLabel("Plate number of vehicle 1").fill(plate);
     await panel.getByRole("button", { name: "Save member" }).click();
     await expect(page).toHaveURL(/notice=added/, { timeout: 60_000 });
-    await expect(main(page).getByRole("status")).toContainText("The member was added.");
+    await expect(page.locator('[data-toast="success"]')).toContainText("The member was added.");
 
     const { data: m } = await db.from("members").select("id, pin_hash, phone_local").eq("phone", e164(local)).single();
     memberId = m!.id as string;
@@ -359,11 +359,11 @@ test("a member's page: correct the name or phone, set a PIN, save a car, and swi
     // Name and phone: a number someone else has is refused
     await manage.getByLabel("Phone number").fill(taken.local);
     await manage.getByRole("button", { name: "Save name and phone" }).click();
-    await expect(manage.getByText("Someone already has an account with that phone number.")).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="error"]')).toContainText("Someone already has an account with that phone number.", { timeout: 30_000 });
     await manage.getByLabel("Full name").fill("Zqm Renamed Member");
     await manage.getByLabel("Phone number").fill(original.local);
     await manage.getByRole("button", { name: "Save name and phone" }).click();
-    await expect(manage.getByText("Saved.").first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="success"]').first()).toBeVisible({ timeout: 30_000 });
     expect((await db.from("members").select("full_name").eq("id", original.id).single()).data!.full_name).toBe("Zqm Renamed Member");
 
     // A car: saved once, not twice, and not a number of cars that is too long
@@ -453,7 +453,7 @@ test("a locked member is unlocked by setting a new PIN on the member's page", as
     await page.goto(`/admin/members/${m.id}`);
     await main(page).getByLabel("New PIN (4 numbers)").fill("9034");
     await main(page).getByRole("button", { name: "Set PIN and unlock" }).click();
-    await expect(main(page).getByText(/PIN changed and the account is unlocked/)).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="success"]')).toContainText("PIN changed and the account is unlocked", { timeout: 30_000 });
     expect((await db.from("members").select("locked_until").eq("id", m.id).single()).data!.locked_until).toBeNull();
     const mem = await (await browser.newContext()).newPage();
     await memberSignIn(mem, m.local, "9034");
@@ -521,13 +521,13 @@ test("staff accounts: summary, search, role and status filters, add, manage, and
     await expect(manage).toBeVisible({ timeout: 60_000 });
     await manage.getByLabel("Role").selectOption("coordinator");
     await manage.getByRole("button", { name: "Save role" }).click();
-    await expect(manage.getByText("Saved.").first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="success"]').first()).toBeVisible({ timeout: 30_000 });
     expect((await db.from("staff").select("role").eq("id", staffId).single()).data!.role).toBe("coordinator");
 
     // New password, then name and phone (a taken number is refused)
     await manage.getByLabel(/^New password/).fill("another-long-password");
     await manage.getByRole("button", { name: "Set new password" }).click();
-    await expect(manage.getByText("Saved.").nth(1)).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-toast="success"]').last()).toBeVisible({ timeout: 30_000 });
     const lead = await createStaff("attendant");
     try {
       await manage.getByLabel("Phone number").fill(lead.phone);

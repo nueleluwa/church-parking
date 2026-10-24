@@ -151,7 +151,7 @@ test("adding a guest vehicle: each problem shows on its own field, a good one is
     await panel.getByLabel("Colour").fill("Grey");
     await panel.getByRole("button", { name: "Save vehicle" }).click();
     await expect(page).toHaveURL(/notice=added/, { timeout: 60_000 });
-    await expect(main(page).getByRole("status")).toContainText(`${spaced(plate)} was added.`);
+    await expect(page.locator('[data-toast="success"]')).toContainText(`${spaced(plate)} was added.`);
 
     const { data: saved } = await db.from("vehicles").select("id, plate, vehicle_type, make, colour, active, created_at").eq("plate", plate).single();
     expect(saved).toMatchObject({ plate, vehicle_type: "suv", make: "Honda CR-V", colour: "Grey", active: true });

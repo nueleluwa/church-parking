@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { BottomNav } from "@/app/(team)/staff/BottomNav";
 import { ToastProvider } from "@/components/ds/Toast";
+import { DesktopBar } from "@/components/DesktopBar";
 import { SideNav } from "@/components/SideNav";
 import { StaffHeader } from "@/components/StaffHeader";
 import { hasRole } from "@/lib/rules";
@@ -20,23 +21,24 @@ export function initialsOf(name: string): string {
  * The staff screens and the admin screens share it, and because it lives in a layout it
  * stays in place while the screen inside changes.
  */
-export function StaffChrome({ staff, children, systemName = "Church Parking" }: { staff: StaffSession; children: ReactNode; systemName?: string }) {
+export function StaffChrome({ staff, children, systemName = "Church Parking", churchName = "" }: { staff: StaffSession; children: ReactNode; systemName?: string; churchName?: string }) {
   const coordinator = hasRole(staff.role, "coordinator");
   const admin = hasRole(staff.role, "admin");
   const roleName = admin ? "Parking Admin" : coordinator ? "Coordinator" : "Attendant";
   return (
     <ToastProvider>
-      {coordinator && <SideNav admin={admin} name={staff.name} role={roleName} initials={initialsOf(staff.name)} systemName={systemName} />}
+      {coordinator && <SideNav admin={admin} name={staff.name} role={roleName} initials={initialsOf(staff.name)} systemName={systemName} churchName={churchName} />}
       <div className={coordinator ? "lg:pl-64 print:pl-0" : ""}>
-        <div className="print:hidden">
+        <div className={coordinator ? "lg:hidden print:hidden" : "print:hidden"}>
           <StaffHeader initials={initialsOf(staff.name)} wide={coordinator} />
         </div>
-        {/* Admin and coordinator pages: a 16px gutter on a phone, 24px on a tablet, 32px on a desktop, and a steady 24px between sections.
+        {coordinator && <DesktopBar />}
+        {/* Admin and coordinator pages: a 16px gutter on a phone, 24px on a tablet, 32px on a desktop, and a steady 24px between sections on a phone and 32px on a desktop.
             The width follows the screen (wide tables use it) but stops where a line of cards would become too long to scan. */}
         <main
           className={`mx-auto print:max-w-none print:p-0 ${
             coordinator
-              ? "max-w-md space-y-5 px-4 pb-28 pt-6 sm:max-w-3xl sm:space-y-6 sm:px-6 lg:max-w-5xl lg:px-8 lg:pb-12 lg:pt-8 xl:max-w-7xl 2xl:max-w-[100rem]"
+              ? "max-w-md space-y-5 px-4 pb-28 pt-6 sm:max-w-3xl sm:space-y-6 sm:px-6 lg:max-w-5xl lg:space-y-8 lg:px-8 lg:pb-12 lg:pt-2 xl:max-w-7xl 2xl:max-w-[90rem]"
               : "max-w-md space-y-4 px-4 pb-28 pt-5"
           }`}
         >

@@ -198,7 +198,7 @@ test("a saved change shows one dismissible toast; a failed request shows an erro
     await page.route("**/*", (route) => (route.request().method() === "POST" ? route.abort() : route.continue()));
     await church.getByLabel("Campus / location").fill("Lagos Island");
     await church.getByRole("button", { name: "Save changes" }).click();
-    await expect(church.getByRole("alert")).toContainText("We could not reach the server", { timeout: 30_000 });
+    await expect(page.locator('[data-toast="error"]')).toContainText("The change was not saved", { timeout: 30_000 });
     await expect(page.locator('[data-toast="error"]')).toHaveCount(1);
     await expect(page.locator('[data-toast="success"]')).toHaveCount(0);
     await expect(church.getByLabel("Campus / location")).toHaveValue("Lagos Island");
@@ -345,6 +345,6 @@ test("no form on a team screen uses the browser's own validation bubble: a missi
   const panel = page.getByRole("dialog", { name: "Add service" });
   await panel.getByLabel("Name").fill("");
   await panel.getByRole("button", { name: "Add service" }).click();
-  await expect(panel.getByRole("alert")).toContainText("Please fill in “Name”.");
+  await expect(page.locator('[data-toast="error"]')).toContainText("Please fill in “Name”.");
   await expect(panel.getByLabel("Name")).toBeFocused();
 });

@@ -87,7 +87,7 @@ body {
     @apply rounded-2xl bg-blush p-4 sm:p-5;
   }
   .metric {
-    @apply flex min-h-[6.5rem] items-center gap-3 rounded-2xl border border-edge/15 bg-card p-4 sm:gap-4 sm:p-5;
+    @apply flex min-h-[6.5rem] items-start gap-3 rounded-2xl border border-edge/15 bg-card p-4 sm:gap-4 sm:p-5 lg:p-6;
   }
   .metric-icon {
     @apply hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-page text-ink sm:flex;
@@ -175,6 +175,64 @@ body {
   /* Skeletons: neutral blocks that keep the shape of what is loading */
   .skeleton {
     @apply animate-pulse rounded-lg bg-panel motion-reduce:animate-none;
+  }
+}
+
+/* The success check: the circle pops in, a ring pulses out once, and the tick draws itself. Still, and fully drawn, for reduced motion. */
+.check-pop {
+  position: relative;
+  animation: check-pop 480ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.check-pop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 3px solid var(--color-success);
+  opacity: 0;
+  animation: check-ring 900ms 260ms ease-out;
+  pointer-events: none;
+}
+.check-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: check-draw 360ms 240ms ease-out forwards;
+}
+@keyframes check-pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes check-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes check-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .check-pop,
+  .check-path {
+    animation: none;
+  }
+  .check-path {
+    stroke-dashoffset: 0;
+  }
+  .check-pop::after {
+    display: none;
   }
 }
 

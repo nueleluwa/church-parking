@@ -1,5 +1,7 @@
+import { GetForm } from "@/components/ds/GetForm";
 import Link from "next/link";
 import { IconCheck, IconLock, IconPlus, IconSearch, IconUser, IconUsers } from "@/components/icons";
+import { BulkBar, BulkCheck, BulkSelectAll, DeleteButton } from "@/components/ds/Bulk";
 import { Chip } from "@/components/ds/Chip";
 import { MetricRow } from "@/components/ds/MetricCard";
 import { PageNumbers } from "@/components/Pager";
@@ -8,9 +10,11 @@ import { listStaff, recentActivityByStaff, staffLastActive, type StaffRecord } f
 import { formatVisitTime } from "@/lib/format";
 import { MEMBER_PAGE_SIZES, initials, lagosParts, pageNumbers, parseMemberPageSize, parseMemberStatus, registerRange } from "@/lib/rules";
 import { AdminForm } from "../AdminForm";
-import { createStaffAction, manageStaffAction } from "../admin-actions";
+import { createStaffAction, deleteStaffAction, manageStaffAction } from "../admin-actions";
 import { Panel } from "../Panel";
 import { Summary } from "./Summary";
+
+const DELETE_NOTE = "A staff account with activity on record cannot be deleted, because the audit log keeps who did what: it is kept, and you can switch it off instead. You cannot delete your own account or the last active admin."
 
 export type StaffSearch = { q?: string; role?: string; status?: string; size?: string; page?: string; add?: string; manage?: string };
 
@@ -99,7 +103,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
           </Link>
         </div>
 
-        <form noValidate aria-label="Filters" className="mb-4 space-y-3">
+        <GetForm noValidate aria-label="Filters" className="mb-4 space-y-3">
           <input type="hidden" name="tab" value="staff" />
           {size !== 20 && <input type="hidden" name="size" value={size} />}
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-[minmax(0,2fr)_1fr_1fr]">
@@ -136,7 +140,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
             </Link>
             <button className="btn btn-primary flex-1 sm:flex-none">Apply filters</button>
           </div>
-        </form>
+        </GetForm>
 
         {rows.length === 0 ? (
           <p className="rounded-xl bg-page p-4 font-medium">
@@ -149,9 +153,13 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
           </p>
         ) : (
           <>
+            <div className="mb-3 empty:hidden">
+              <BulkBar group="staff" noun="account" nounPlural="accounts" consequence={DELETE_NOTE} action={deleteStaffAction} />
+            </div>
             <ul className="grid gap-3 wide:hidden">
               {rows.map((s) => (
                 <li key={s.id} className="flex min-w-0 items-start gap-3 rounded-xl border border-edge/10 p-3">
+                  {s.id === meId ? <span className="h-5 w-5 shrink-0" aria-hidden="true" /> : <BulkCheck group="staff" id={s.id} label={s.full_name} />}
                   <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-panel text-sm font-extrabold">
                     {initials(s.full_name)}
                   </span>
@@ -177,6 +185,9 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
                 <caption className="sr-only">Staff accounts</caption>
                 <thead>
                   <tr>
+                    <th scope="col" className="dt-th w-10">
+                      <BulkSelectAll group="staff" noun="accounts" />
+                    </th>
                     {["Name", "Role", "Phone (sign-in)", "Last activity", "Status", "Date created", "Actions"].map((c) => (
                       <th key={c} scope="col" className="dt-th">
                         {c}
@@ -187,6 +198,7 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
                 <tbody>
                   {rows.map((s) => (
                     <tr key={s.id}>
+                      <td className="dt-td">{s.id === meId ? null : <BulkCheck group="staff" id={s.id} label={s.full_name} />}</td>
                       <td className="dt-td">
                         <span className="flex items-center gap-3">
                           <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-panel text-sm font-extrabold">
@@ -206,9 +218,12 @@ export async function StaffTab({ sp, meId }: { sp: StaffSearch; meId: string }) 
                       </td>
                       <td className="dt-td whitespace-nowrap">{lagosParts(s.created_at).date}</td>
                       <td className="dt-td">
-                        <Link href={scope({ manage: s.id, page: keepPage })} aria-label={`Manage ${s.full_name}`} className="btn btn-quiet">
-                          Manage
-                        </Link>
+                        <div className="flex gap-2">
+                          <Link href={scope({ manage: s.id, page: keepPage })} aria-label={`Manage ${s.full_name}`} className="btn btn-quiet">
+                            Manage
+                          </Link>
+                          {s.id !== meId && <DeleteButton id={s.id} label={s.full_name} noun="account" consequence={DELETE_NOTE} action={deleteStaffAction} />}
+                        </div>
                       </td>
                     </tr>
                   ))}

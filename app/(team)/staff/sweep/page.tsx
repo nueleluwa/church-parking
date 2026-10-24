@@ -1,3 +1,4 @@
+import { GetForm } from "@/components/ds/GetForm";
 import Link from "next/link";
 import { IconAlert, IconCar, IconLogout, IconSearch } from "@/components/icons";
 import { MetricCard, MetricRow } from "@/components/ds/MetricCard";
@@ -120,7 +121,7 @@ export default async function SweepPage({ searchParams }: { searchParams: Promis
         <MetricCard id="sw-released" label="Released today" value={String(releasedToday)} note="Released at the exit today" icon={<IconLogout className="h-5 w-5" />} />
       </MetricRow>
 
-      <form noValidate aria-label="Filters" className="surface space-y-4">
+      <GetForm noValidate aria-label="Filters" className="surface space-y-4">
         {sweepService && <input type="hidden" name="sweep" value={sweepService.id} />}
         {sort !== "oldest" && <input type="hidden" name="sort" value={sort} />}
         <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -182,7 +183,7 @@ export default async function SweepPage({ searchParams }: { searchParams: Promis
         <p className="text-xs text-ink-soft">
           Overstaying means still recorded as parked 30 or more minutes after the service the car checked in for ended. Duration compares the time on site with the length of that service.
         </p>
-      </form>
+      </GetForm>
 
       <SweepBoard
         // A new filter or sort starts a fresh selection; a refresh after an action keeps it

@@ -8,6 +8,35 @@ function fail(message: string): never {
 }
 
 const UNIQUE_VIOLATION = "23505";
+const FOREIGN_KEY_VIOLATION = "23503";
+
+export type DeleteResult = "ok" | "in_use" | "not_found";
+
+/**
+ * Delete one row only if nothing else points at it. The database enforces that (visits and the audit log keep their service, car
+ * park and staff member), so a record with history answers "in_use" and is left exactly as it was.
+ */
+async function deleteUnused(table: "services" | "areas" | "staff", id: number | string): Promise<DeleteResult> {
+  const { data, error } = await db().from(table).delete().eq("id", id).select("id");
+  if (error?.code === FOREIGN_KEY_VIOLATION) return "in_use";
+  if (error) fail(error.message);
+  return (data ?? []).length === 1 ? "ok" : "not_found";
+}
+
+export const deleteService = (id: number) => deleteUnused("services", id);
+export const deleteArea = (id: number) => deleteUnused("areas", id);
+export const deleteStaffAccount = (id: string) => deleteUnused("staff", id);
+
+/** How many cars this member has parked right now. */
+export async function countParkedForMember(memberId: string): Promise<number> {
+  const { count, error } = await db()
+    .from("visits")
+    .select("id", { count: "exact", head: true })
+    .eq("member_id", memberId)
+    .eq("status", "parked");
+  if (error) fail(error.message);
+  return count ?? 0;
+}
 
 // ---------- Services (AD-1) ----------
 

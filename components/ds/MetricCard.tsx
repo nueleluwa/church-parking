@@ -40,7 +40,7 @@ export function MetricCard({
         </span>
         {note && <span className={`mt-1.5 block text-xs leading-snug ${alert ? "font-semibold text-accent" : "text-ink-soft"}`}>{note}</span>}
       </span>
-      {href && <IconChevronRight aria-hidden="true" className="hidden h-5 w-5 shrink-0 text-ink-soft sm:block" />}
+      {href && <IconChevronRight aria-hidden="true" className="mt-0.5 hidden h-5 w-5 shrink-0 text-ink-soft sm:block" />}
     </>
   );
   return href ? (

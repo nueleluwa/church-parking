@@ -6,10 +6,15 @@ import { z } from "zod";
 import {
   clearAttempts,
   countActiveAdmins,
+  countParkedForMember,
   countParkedInArea,
   createArea,
   createService,
   createStaffAccount,
+  deleteArea,
+  deleteMember,
+  deleteService,
+  deleteStaffAccount,
   getMemberPhone,
   getStaffRecord,
   listAreaSlugs,
@@ -259,4 +264,118 @@ export async function savePreferenceSettingsAction(fd: FormData): Promise<AdminS
   }
   revalidatePath("/", "layout");
   return { ok: true, message: "Preferences saved." };
+}
+
+
+// ---------- Deleting, one or many (AD-1, AD-3) ----------
+
+/**
+ * What a delete tells the screen: which records went, and which were kept and why. A record with history is never forced: the
+ * database refuses it, so visits and the audit log always keep their service, car park and staff member.
+ */
+export type BulkDeleteState = { ok: boolean; error?: string; deleted: string[]; kept: { id: string; reason: string }[] };
+
+const MANY = z.array(z.string().min(1).max(40)).min(1).max(200);
+const none = (error: string): BulkDeleteState => ({ ok: false, error, deleted: [], kept: [] });
+
+async function deleteEach(
+  ids: string[],
+  one: (id: string) => Promise<"ok" | string>,
+  after: (id: string) => Promise<void>,
+): Promise<BulkDeleteState> {
+  const state: BulkDeleteState = { ok: true, deleted: [], kept: [] };
+  for (const id of new Set(ids)) {
+    const result = await one(id);
+    if (result === "ok") {
+      await after(id);
+      state.deleted.push(id);
+    } else state.kept.push({ id, reason: result });
+  }
+  return state;
+}
+
+const numeric = (id: string) => (/^\d{1,9}$/.test(id) ? Number(id) : null);
+const IN_USE = "It has visit history, so it cannot be deleted. Switch it off instead.";
+
+export async function deleteServicesAction(ids: string[]): Promise<BulkDeleteState> {
+  const staff = await admin();
+  if (!staff) return none(NOT_ADMIN.error!);
+  const p = MANY.safeParse(ids);
+  if (!p.success) return none("Choose at least one service.");
+  const state = await deleteEach(
+    p.data,
+    async (id) => {
+      const n = numeric(id);
+      if (n === null) return "That is not a service.";
+      const r = await deleteService(n);
+      return r === "ok" ? "ok" : r === "in_use" ? IN_USE : "It was already deleted.";
+    },
+    (id) => logAudit(staff.id, null, "service_delete", { after: { service_id: Number(id) } }),
+  );
+  revalidatePath("/", "layout");
+  return state;
+}
+
+export async function deleteAreasAction(ids: string[]): Promise<BulkDeleteState> {
+  const staff = await admin();
+  if (!staff) return none(NOT_ADMIN.error!);
+  const p = MANY.safeParse(ids);
+  if (!p.success) return none("Choose at least one car park.");
+  const state = await deleteEach(
+    p.data,
+    async (id) => {
+      const n = numeric(id);
+      if (n === null) return "That is not a car park.";
+      if ((await countParkedInArea(n)) > 0) return "Cars are still parked here.";
+      const r = await deleteArea(n);
+      return r === "ok" ? "ok" : r === "in_use" ? IN_USE : "It was already deleted.";
+    },
+    (id) => logAudit(staff.id, null, "area_delete", { after: { area_id: Number(id) } }),
+  );
+  revalidatePath("/", "layout");
+  return state;
+}
+
+export async function deleteStaffAction(ids: string[]): Promise<BulkDeleteState> {
+  const staff = await admin();
+  if (!staff) return none(NOT_ADMIN.error!);
+  const p = MANY.safeParse(ids);
+  if (!p.success) return none("Choose at least one account.");
+  let admins = await countActiveAdmins();
+  const state = await deleteEach(
+    p.data,
+    async (id) => {
+      if (id === staff.id) return "You cannot delete your own account.";
+      const target = await getStaffRecord(id);
+      if (!target) return "It was already deleted.";
+      if (target.role === "admin" && target.active && admins <= 1) return "There must be at least one active admin.";
+      const r = await deleteStaffAccount(id);
+      if (r === "ok" && target.role === "admin" && target.active) admins -= 1;
+      return r === "ok" ? "ok" : r === "in_use" ? "This person has activity on record, so the account cannot be deleted. Switch it off instead." : "It was already deleted.";
+    },
+    (id) => logAudit(staff.id, null, "staff_delete", { after: { staff_id: id } }),
+  );
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/staff");
+  return state;
+}
+
+/** Deleting a member keeps their visits (they become "Deleted member") and removes the account and saved cars. */
+export async function deleteMembersAction(ids: string[]): Promise<BulkDeleteState> {
+  const staff = await admin();
+  if (!staff) return none(NOT_ADMIN.error!);
+  const p = MANY.safeParse(ids);
+  if (!p.success || !p.data.every((id) => z.string().uuid().safeParse(id).success)) return none("Choose at least one member.");
+  const state = await deleteEach(
+    p.data,
+    async (id) => {
+      if ((await countParkedForMember(id)) > 0) return "This member has a car parked right now.";
+      await deleteMember(id);
+      return "ok";
+    },
+    (id) => logAudit(staff.id, null, "member_delete", { after: { member_id: id } }),
+  );
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/members");
+  return state;
 }

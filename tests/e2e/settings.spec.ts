@@ -169,7 +169,7 @@ test("Users & access explains the roles from the real accounts and links to the 
 test("the form loads the saved values, the time zone is fixed, and no unsupported control is shown", async ({ page }) => {
   await openSettings(page);
   const church = page.getByRole("region", { name: "Church details" });
-  await expect(church.locator('[name="churchName"]')).toHaveValue("Christ Church International");
+  await expect(church.locator('[name="churchName"]')).toHaveValue("Celebration Church");
   await expect(church.locator('[name="campus"]')).toHaveValue("");
   await expect(church.locator('[name="systemName"]')).toHaveValue("Church Parking");
   const zone = church.locator("select").first();
@@ -196,7 +196,7 @@ test("saving church details persists, is audited, and shows up on the side menu,
   await church.locator('[name="campus"]').fill("Port Harcourt");
   await church.locator('[name="systemName"]').fill("Grace Parking");
   await church.getByRole("button", { name: "Save changes" }).click();
-  await expect(church.getByRole("status")).toContainText("Church details saved", { timeout: 30_000 });
+  await expect(page.locator('[data-toast="success"]').filter({ hasText: "Settings saved successfully" })).toBeVisible({ timeout: 30_000 });
 
   // It is stored, and survives a reload
   const rows = Object.fromEntries(((await db.from("app_settings").select("key, value")).data ?? []).map((r) => [r.key, r.value]));
@@ -208,7 +208,7 @@ test("saving church details persists, is audited, and shows up on the side menu,
   // The audit log says who changed what
   const { data: audit } = await db.from("audit_events").select("action, after").eq("action", "settings_update").order("id", { ascending: false }).limit(1).single();
   expect(audit!.after).toMatchObject({ group: "church", churchName: "Grace Chapel International", campus: "Port Harcourt", systemName: "Grace Parking" });
-  expect((audit!.after as { before: { churchName: string } }).before.churchName).toBe("Christ Church International");
+  expect((audit!.after as { before: { churchName: string } }).before.churchName).toBe("Celebration Church");
 
   // Where the settings are used
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -236,15 +236,15 @@ test("church details are checked before saving, and nothing is saved when they a
 
   await church.locator('[name="churchName"]').fill("G");
   await church.getByRole("button", { name: "Save changes" }).click();
-  await expect(church.getByRole("alert")).toContainText("church name", { timeout: 30_000 });
+  await expect(page.locator('[data-toast="error"]').filter({ hasText: "church name" })).toBeVisible({ timeout: 30_000 });
   await church.locator('[name="churchName"]').fill("<b>Grace</b>");
   await church.getByRole("button", { name: "Save changes" }).click();
-  await expect(church.getByRole("alert")).toContainText("cannot contain", { timeout: 30_000 });
+  await expect(page.locator('[data-toast="error"]').filter({ hasText: "cannot contain" })).toBeVisible({ timeout: 30_000 });
   await church.locator('[name="churchName"]').fill("Grace Chapel");
   await church.locator('[name="systemName"]').fill("");
   await church.getByRole("button", { name: "Save changes" }).click();
-  await expect(church.getByRole("alert")).toContainText("system name", { timeout: 30_000 });
-  await expect(church.getByRole("status")).toHaveCount(0);
+  await expect(page.locator('[data-toast="error"]').filter({ hasText: "system name" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('[data-toast="success"]')).toHaveCount(0);
   expect((await db.from("app_settings").select("key")).data).toEqual([]);
 });
 
@@ -255,7 +255,7 @@ test("preferences: the default search tab and the staff session length are used"
   await prefs.locator('[name="defaultSearch"]').selectOption("phone");
   await prefs.locator('[name="staffSessionHours"]').selectOption("4");
   await prefs.getByRole("button", { name: "Save changes" }).click();
-  await expect(prefs.getByRole("status")).toContainText("Preferences saved", { timeout: 30_000 });
+  await expect(page.locator('[data-toast="success"]').filter({ hasText: "Settings saved successfully" })).toBeVisible({ timeout: 30_000 });
   expect((await db.from("app_settings").select("key, value").in("key", ["default_search", "staff_session_hours"])).data).toEqual(
     expect.arrayContaining([
       { key: "default_search", value: "phone" },
@@ -286,7 +286,7 @@ test("preferences: the default search tab and the staff session length are used"
   await prefs.locator('[name="staffSessionHours"]').selectOption("12");
   await prefs.locator('[name="defaultSearch"]').selectOption("plate");
   await prefs.getByRole("button", { name: "Save changes" }).click();
-  await expect(prefs.getByRole("status")).toContainText("Preferences saved", { timeout: 30_000 });
+  await expect(page.locator('[data-toast="success"]').filter({ hasText: "Settings saved successfully" })).toBeVisible({ timeout: 30_000 });
 });
 
 test("the other sections explain what is built in, what is not offered, and keep the activity log", async ({ page }) => {
@@ -316,7 +316,7 @@ test("changes appear in the activity log, and only an admin can open settings", 
   const church = page.getByRole("region", { name: "Church details" });
   await church.locator('[name="campus"]').fill("Main campus");
   await church.getByRole("button", { name: "Save changes" }).click();
-  await expect(church.getByRole("status")).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator('[data-toast="success"]')).toBeVisible({ timeout: 30_000 });
   await page.goto("/admin/settings?tab=system");
   await expect(page.getByRole("region", { name: "Activity log table, scroll sideways on a small screen" })).toContainText("Settings changed", { timeout: 60_000 });
 

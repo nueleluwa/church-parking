@@ -1,10 +1,9 @@
 "use client";
 
-import { useRef, useState, useTransition, type ReactNode } from "react";
+import { useRef, useTransition, type ReactNode } from "react";
 import { useToast } from "@/components/ds/Toast";
 import { firstProblem } from "@/components/validate";
 import { Spinner } from "@/components/Spinner";
-import { errorBox, okBox, primaryButton, redButton, secondaryButton } from "@/components/ui";
 import type { AdminState } from "./admin-actions";
 
 /**
@@ -27,11 +26,10 @@ export function AdminForm({
   /** Empty the fields after a good save (for "add" forms). */
   clearOnSuccess?: boolean;
   variant?: "primary" | "secondary" | "red";
-  /** What the toast says after the server confirms. The form still shows its own, more specific, message beside the button. */
+  /** What the toast says after the server confirms, unless the server sent a more specific message. */
   savedMessage?: string;
 }) {
   const toast = useToast();
-  const [state, setState] = useState<AdminState>({});
   const [pending, start] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -40,7 +38,7 @@ export function AdminForm({
     // Our own required-field message, instead of the browser's speech bubble (which looks different on every device)
     const problem = firstProblem(e.currentTarget, true);
     if (problem) {
-      setState({ error: problem.message });
+      toast.error(problem.message);
       problem.el.focus();
       return;
     }
@@ -51,12 +49,12 @@ export function AdminForm({
         result = await action(data);
       } catch {
         // The request itself failed (no signal, or the server could not answer). What was typed stays, so it can be sent again.
-        result = { error: "We could not reach the server. Check your connection and try again." };
-        toast.error("The change was not saved. Check your connection and try again.");
+        result = { error: "The change was not saved. Check your connection and try again." };
       }
-      setState(result);
+      if (result.error) toast.error(result.error);
       if (result.ok) {
-        toast.success(savedMessage);
+        // The server's own words when they say more than "saved" ("Car park added. Its QR address is..."), else the form's
+        toast.success(result.message && result.message.length > 30 ? result.message : savedMessage);
         if (clearOnSuccess) formRef.current?.reset();
       }
     });
@@ -65,20 +63,12 @@ export function AdminForm({
   return (
     <form ref={formRef} onSubmit={submit} noValidate className="space-y-3">
       {children}
-      {state.error && (
-        <p role="alert" className={errorBox}>
-          {state.error}
-        </p>
-      )}
-      {state.ok && (
-        <p role="status" className={okBox}>
-          {state.message ?? "Saved."}
-        </p>
-      )}
-      <button disabled={pending} className={variant === "primary" ? primaryButton : variant === "red" ? redButton : secondaryButton}>
-        {pending && <Spinner />}
-        {pending ? busyLabel : submitLabel}
-      </button>
+      <div className="pt-1 sm:flex sm:justify-end">
+        <button disabled={pending} className={`btn w-full sm:w-auto sm:min-w-44 ${variant === "primary" ? "btn-dark" : variant === "red" ? "btn-primary" : "btn-outline"}`}>
+          {pending && <Spinner />}
+          {pending ? busyLabel : submitLabel}
+        </button>
+      </div>
     </form>
   );
 }

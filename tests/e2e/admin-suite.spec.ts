@@ -91,7 +91,7 @@ test("QR signs: one for each car park, a printable A4 sign with the church name 
   await page.goto("/admin/settings/qr-signs/cp1");
   const sign = page.getByRole("article");
   await expect(sign.getByText("PARKING CHECK-IN")).toBeVisible({ timeout: 60_000 });
-  await expect(sign.getByText("Christ Church International").first()).toBeVisible();
+  await expect(sign.getByText("Celebration Church").first()).toBeVisible();
   await expect(sign.getByText(areas!.find((a) => a.slug === "cp1")!.name)).toBeVisible();
   await expect(sign.getByRole("img", { name: /QR code for/ }).locator("svg")).toBeVisible();
   await expect(page.getByRole("button", { name: "Print this sign" })).toBeVisible();
