@@ -59,8 +59,9 @@ test("the QR sign opens the right car park with a clear welcome, a way in for me
   await expect(page.getByRole("link", { name: "Create an account" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Continue as guest" })).toBeVisible();
 
-  // The privacy notice states how long guest records are kept
-  await expect(page.getByText(/We keep them for\s+24 months/)).toBeVisible();
+  // The privacy notice states how long guest records are kept, and that a member's visits are kept
+  await expect(page.getByText(/Guest details are deleted\s+after 24 months/)).toBeVisible();
+  await expect(page.getByText(/A member's visits are kept/)).toBeVisible();
 
   // The guest form asks for exactly three things, and never for a car park, a space, a price or a map
   await page.getByRole("button", { name: "Continue as guest" }).click();
