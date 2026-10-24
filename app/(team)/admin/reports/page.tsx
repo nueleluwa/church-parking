@@ -6,6 +6,7 @@ import {
   CATEGORIES,
   CATEGORY_INTRO,
   MAX_REPORT_DAYS,
+  REPORTS,
   describeRange,
   lagosDate,
   parseRange,
@@ -127,6 +128,23 @@ export default async function ReportsPage({
           {rangeError} Downloads are switched off until the dates are fixed.
         </p>
       )}
+
+      <section aria-label="All reports in one file" className="surface flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="t-section">All reports in one file</h2>
+          <p className="t-support mt-1">
+            One Excel workbook: a Contents sheet, then a sheet for each of the {REPORTS.length} reports, for the dates and service chosen above.
+            Contains no drivers&apos; names or phone numbers.
+          </p>
+        </div>
+        <DownloadButton
+          href={`/admin/reports/export?report=all&${scope}`}
+          report="all reports"
+          label="Download everything (Excel)"
+          format="Excel"
+          disabled={rangeError !== null}
+        />
+      </section>
 
       <nav aria-label="Report categories">
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
