@@ -6,7 +6,8 @@ import { IconAlert, IconCar, IconCheck, IconClock, IconMore, IconScan } from "@/
 
 type Tab = { href: string; label: string; full: string; icon: React.ReactNode; active: (path: string) => boolean };
 
-// Short words under the icons so six tabs fit on a small phone. `full` is read out by screen readers.
+// Short words under the icons so six tabs fit on a small phone. `full` is read out by screen readers, and it must contain the
+// visible word (someone who says "click History" has to match it).
 const scan: Tab = {
   href: "/staff",
   label: "Scan",
@@ -15,7 +16,7 @@ const scan: Tab = {
   // Scanning, looking a car up and adding one by hand are all part of the Scan tab
   active: (p) => ["/staff", "/staff/scan", "/staff/search", "/staff/register"].includes(p),
 };
-const history: Tab = { href: "/staff/history", label: "History", full: "Recent scans", icon: <IconClock />, active: (p) => p === "/staff/history" };
+const history: Tab = { href: "/staff/history", label: "History", full: "History, recent scans", icon: <IconClock />, active: (p) => p === "/staff/history" };
 const live: Tab = { href: "/staff/dashboard", label: "Live", full: "Live board", icon: <IconAlert />, active: (p) => p === "/staff/dashboard" };
 const sweep: Tab = { href: "/staff/sweep", label: "Sweep", full: "Sweep", icon: <IconCheck />, active: (p) => p === "/staff/sweep" };
 const admin: Tab = { href: "/admin", label: "Admin", full: "Admin", icon: <IconCar />, active: (p) => p.startsWith("/admin") };

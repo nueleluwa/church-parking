@@ -26,7 +26,7 @@ test("the attendant home shows the service now, the two main jobs and quick link
 
     // The header is the logo header with the person's initials
     await expect(page.locator("header img[alt='CCI']")).toBeVisible({ timeout: 60_000 });
-    await expect(page.locator("[data-header-right]")).toHaveText(/^TA$/);
+    await expect(page.locator("[data-header-right]")).toHaveText(/^TA(: more, and your account)?$/);
 
     // The service now (rule R-1 data), and the two jobs
     await expect(page.getByText("Active service")).toBeVisible();

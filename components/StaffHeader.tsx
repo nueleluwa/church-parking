@@ -47,11 +47,11 @@ export function StaffHeader({ initials, wide = false }: { initials: string; wide
   const avatar = (
     <Link
       href="/staff/more"
-      aria-label="More, and your account"
       data-header-right
       className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white text-sm font-extrabold text-night"
     >
       {initials}
+      <span className="sr-only">: more, and your account</span>
       <span
         aria-hidden="true"
         className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-night bg-success"

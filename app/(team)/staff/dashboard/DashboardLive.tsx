@@ -288,10 +288,10 @@ export function DashboardLive({ initial }: { initial: DashboardData }) {
                     {slug ? (
                       <Link
                         href={`/admin/visits?area=${slug}&status=parked`}
-                        aria-label={`${a.areaName}: see the cars parked here`}
                         className="surface block !p-4 transition hover:bg-page sm:!p-5"
                       >
                         {body}
+                        <span className="sr-only">: see the cars parked here</span>
                       </Link>
                     ) : (
                       <div className="surface !p-4 sm:!p-5">{body}</div>
